@@ -39,13 +39,6 @@ local function float_round(num, decimals)
   	return (math.floor(num * power + 0.5) / power)
 end
 
-local function float_round_vec3(v, decimals)
-	v.x = float_round(v.x, decimals)
-	v.y = float_round(v.y, decimals)
-	v.z = float_round(v.z, decimals)
-	return v
-end
-
 local function get_buffer_content(v, additional_value)
 	additional_value = additional_value or 0
 

@@ -20,32 +20,32 @@ local function dot(a, b)
 end
 
 local function identity(e)
-    e[ 0], e[ 1], e[ 2], e[ 3] = 1, 0, 0, 0
+	e[ 0], e[ 1], e[ 2], e[ 3] = 1, 0, 0, 0
 	e[ 4], e[ 5], e[ 6], e[ 7] = 0, 1, 0, 0
 	e[ 8], e[ 9], e[10], e[11] = 0, 0, 1, 0
-    e[12], e[13], e[14], e[15] = 0, 0, 0, 1
+	e[12], e[13], e[14], e[15] = 0, 0, 0, 1
 end
 
 local function copy(dest, source)
-    for i = 0, 15 do
-        dest[i] = source[i]
-    end
+	for i = 0, 15 do
+		dest[i] = source[i]
+	end
 end
 
 local tmat4 = {}
 local function multiply(a, b)
-    tmat4[0]  = a[0] * b[0]  + a[4] * b[1]  + a[8]  * b[2]  + a[12] * b[3]
-    tmat4[1]  = a[1] * b[0]  + a[5] * b[1]  + a[9]  * b[2]  + a[13] * b[3]
-    tmat4[2]  = a[2] * b[0]  + a[6] * b[1]  + a[10] * b[2]  + a[14] * b[3]
-    tmat4[3]  = a[3] * b[0]  + a[7] * b[1]  + a[11] * b[2]  + a[15] * b[3]
-    tmat4[4]  = a[0] * b[4]  + a[4] * b[5]  + a[8]  * b[6]  + a[12] * b[7]
-    tmat4[5]  = a[1] * b[4]  + a[5] * b[5]  + a[9]  * b[6]  + a[13] * b[7]
-    tmat4[6]  = a[2] * b[4]  + a[6] * b[5]  + a[10] * b[6]  + a[14] * b[7]
-    tmat4[7]  = a[3] * b[4]  + a[7] * b[5]  + a[11] * b[6]  + a[15] * b[7]
-    tmat4[8]  = a[0] * b[8]  + a[4] * b[9]  + a[8]  * b[10] + a[12] * b[11]
-    tmat4[9]  = a[1] * b[8]  + a[5] * b[9]  + a[9]  * b[10] + a[13] * b[11]
-    tmat4[10] = a[2] * b[8]  + a[6] * b[9]  + a[10] * b[10] + a[14] * b[11]
-    tmat4[11] = a[3] * b[8]  + a[7] * b[9]  + a[11] * b[10] + a[15] * b[11]
+	tmat4[0]  = a[0] * b[0]  + a[4] * b[1]  + a[8]  * b[2]  + a[12] * b[3]
+	tmat4[1]  = a[1] * b[0]  + a[5] * b[1]  + a[9]  * b[2]  + a[13] * b[3]
+	tmat4[2]  = a[2] * b[0]  + a[6] * b[1]  + a[10] * b[2]  + a[14] * b[3]
+	tmat4[3]  = a[3] * b[0]  + a[7] * b[1]  + a[11] * b[2]  + a[15] * b[3]
+	tmat4[4]  = a[0] * b[4]  + a[4] * b[5]  + a[8]  * b[6]  + a[12] * b[7]
+	tmat4[5]  = a[1] * b[4]  + a[5] * b[5]  + a[9]  * b[6]  + a[13] * b[7]
+	tmat4[6]  = a[2] * b[4]  + a[6] * b[5]  + a[10] * b[6]  + a[14] * b[7]
+	tmat4[7]  = a[3] * b[4]  + a[7] * b[5]  + a[11] * b[6]  + a[15] * b[7]
+	tmat4[8]  = a[0] * b[8]  + a[4] * b[9]  + a[8]  * b[10] + a[12] * b[11]
+	tmat4[9]  = a[1] * b[8]  + a[5] * b[9]  + a[9]  * b[10] + a[13] * b[11]
+	tmat4[10] = a[2] * b[8]  + a[6] * b[9]  + a[10] * b[10] + a[14] * b[11]
+	tmat4[11] = a[3] * b[8]  + a[7] * b[9]  + a[11] * b[10] + a[15] * b[11]
 	tmat4[12] = a[0] * b[12] + a[4] * b[13] + a[8]  * b[14] + a[12] * b[15]
 	tmat4[13] = a[1] * b[12] + a[5] * b[13] + a[9]  * b[14] + a[13] * b[15]
 	tmat4[14] = a[2] * b[12] + a[6] * b[13] + a[10] * b[14] + a[14] * b[15]
@@ -53,32 +53,32 @@ local function multiply(a, b)
 
 	for i = 0, 15 do
 		a[i] = tmat4[i]
-    end
+	end
 
 	return a
 end
 
 local function rotate(e, angle, ax, ay, az, length)
-    local c = math.cos(angle)
-    local s = math.sin(angle)
+	local c = math.cos(angle)
+	local s = math.sin(angle)
 
-    local invc = 1.0 - c
+	local invc = 1.0 - c
 
-    local x = (ax / length) * invc
-    local y = (ay / length) * invc
-    local z = (az / length) * invc
+	local x = (ax / length) * invc
+	local y = (ay / length) * invc
+	local z = (az / length) * invc
 
-    e[0]  = c + x * ax;
-    e[1]  = x * ay + s * az;
-    e[2]  = x * az - s * ay;
+	e[0]  = c + x * ax;
+	e[1]  = x * ay + s * az;
+	e[2]  = x * az - s * ay;
 
-    e[4]  = y * ax - s * az;
-    e[5]  = c + y * ay;
-    e[6]  = y * az + s * ax;
+	e[4]  = y * ax - s * az;
+	e[5]  = c + y * ay;
+	e[6]  = y * az + s * ax;
 
-    e[8]  = z * ax + s * ay;
-    e[9]  = z * ay - s * ax;
-    e[10] = c + z * az;
+	e[8]  = z * ax + s * ay;
+	e[9]  = z * ay - s * ax;
+	e[10] = c + z * az;
 end
 
 function mat4:constructor(m)
@@ -86,21 +86,21 @@ function mat4:constructor(m)
 	self.e = ffi.cast('float*', self.data:getFFIPointer())
 	self._changed = true
 
-    if type(m) == 'table' then
-        if #m == 16 then
-            for i = 0, 15 do
+	if type(m) == 'table' then
+		if #m == 16 then
+			for i = 0, 15 do
 				self.e[i] = tonumber(m[i + 1])
 			end
-        else
-            copy(self.e, m.e)
-        end
+		else
+			copy(self.e, m.e)
+		end
 	else
-        identity(self.e)
-    end
+		identity(self.e)
+	end
 end
 
 function mat4:clone()
-    return mat4(self)
+	return mat4(self)
 end
 
 function mat4:copy(other)
@@ -110,8 +110,8 @@ end
 
 function mat4:identity()
 	self._changed = true
-    identity(self.e)
-    return self
+	identity(self.e)
+	return self
 end
 
 function mat4:multiply(other)
@@ -121,8 +121,8 @@ function mat4:multiply(other)
 end
 
 function mat4:inverse()
-    self._changed = true
-    local e = self.e
+	self._changed = true
+	local e = self.e
 	tmat4[0]  = e[5] * e[10] * e[15] - e[5] * e[11] * e[14] - e[9] * e[6] * e[15] + e[9] * e[7] * e[14] + e[13] * e[6] * e[11] - e[13] * e[7] * e[10]
 	tmat4[4]  =-e[4] * e[10] * e[15] + e[4] * e[11] * e[14] + e[8] * e[6] * e[15] - e[8] * e[7] * e[14] - e[12] * e[6] * e[11] + e[12] * e[7] * e[10]
 	tmat4[8]  = e[4] * e[9]  * e[15] - e[4] * e[11] * e[13] - e[8] * e[5] * e[15] + e[8] * e[7] * e[13] + e[12] * e[5] * e[11] - e[12] * e[7] * e[9]
@@ -141,20 +141,20 @@ function mat4:inverse()
 	tmat4[15] = e[0] * e[5]  * e[10] - e[0] * e[6]  * e[9]  - e[4] * e[1] * e[10] + e[4] * e[2] * e[9]  + e[8]  * e[1] * e[6]  - e[8]  * e[2] * e[5]
 
 	local det = e[0] * tmat4[0] + e[1] * tmat4[4] + e[2] * tmat4[8] + e[3] * tmat4[12]
-    copy(e, tmat4)
+	copy(e, tmat4)
 
-    if det ~= 0.0 then
-        local invdet = 1.0 / det
-        for i = 0, 15 do
-            e[i] = e[i] * invdet
-        end
-    end
+	if det ~= 0.0 then
+		local invdet = 1.0 / det
+		for i = 0, 15 do
+			e[i] = e[i] * invdet
+		end
+	end
 	return self
 end
 
 function mat4:transpose()
 	self._changed = true
-    local e = self.e
+	local e = self.e
 	temp_array[0]  = e[0]
 	temp_array[1]  = e[4]
 	temp_array[2]  = e[8]
@@ -171,7 +171,7 @@ function mat4:transpose()
 	temp_array[13] = e[7]
 	temp_array[14] = e[11]
 	temp_array[15] = e[15]
-    copy(e, temp_array)
+	copy(e, temp_array)
 	return self
 end
 
@@ -180,23 +180,23 @@ function mat4:set_position_and_rotation(position, angle, axis)
 	if type(angle) == "table" or type(angle) == "cdata" then
 		angle, axis = angle:to_angle_axis()
 	end
-    local length = axis:len()
-    local e = self.e
+	local length = axis:len()
+	local e = self.e
 
-    if length ~= 0 then
-        rotate(e, angle, axis.x, axis.y, axis.z, length)
+	if length ~= 0 then
+		rotate(e, angle, axis.x, axis.y, axis.z, length)
 
-        e[3], e[7], e[11] = 0, 0, 0
-    else
-        e[0], e[1], e[ 2] = 0, 0, 0
-        e[4], e[5], e[ 6] = 0, 0, 0
-        e[8], e[9], e[10] = 0, 0, 0
-    end
+		e[3], e[7], e[11] = 0, 0, 0
+	else
+		e[0], e[1], e[ 2] = 0, 0, 0
+		e[4], e[5], e[ 6] = 0, 0, 0
+		e[8], e[9], e[10] = 0, 0, 0
+	end
 
 	e[12] = position.x
 	e[13] = position.y
-    e[14] = position.z
-    e[15] = 1
+	e[14] = position.z
+	e[15] = 1
 end
 
 function mat4:scale(x, y, z)
@@ -207,8 +207,8 @@ function mat4:scale(x, y, z)
 	identity(temp_array)
 	temp_array[0]  = x
 	temp_array[5]  = y
-    temp_array[10] = z
-    multiply(self.e, temp_array)
+	temp_array[10] = z
+	multiply(self.e, temp_array)
 	return self
 end
 
@@ -221,7 +221,7 @@ function mat4:translate(x, y, z)
 	temp_array[12] = x
 	temp_array[13] = y
 	temp_array[14] = z
-    multiply(self.e, temp_array)
+	multiply(self.e, temp_array)
 	return self
 end
 
@@ -235,7 +235,7 @@ function mat4:shear(yx, xy, zx, zy, xz, yz)
 	temp_array[8] = xz or 0
 	temp_array[9] = yz or 0
 
-    multiply(self.e, temp_array)
+	multiply(self.e, temp_array)
 	return self
 end
 
@@ -246,12 +246,12 @@ function mat4:rotate(angle, axis)
 	end
 	local length = axis:len()
 
-    if length ~= 0 then
-        identity(temp_array)
-        rotate(temp_array, angle, axis.x, axis.y, axis.z, length)
+	if length ~= 0 then
+		identity(temp_array)
+		rotate(temp_array, angle, axis.x, axis.y, axis.z, length)
 		multiply(self.e, temp_array)
 	end
-    return self
+	return self
 end
 
 function mat4:reflect(position, normal)
@@ -275,7 +275,7 @@ function mat4:reflect(position, normal)
 	temp_array[14] =-2 * nz * d
 	temp_array[15] = 1
 
-    multiply(self.e, temp_array)
+	multiply(self.e, temp_array)
 	return self
 end
 
@@ -302,7 +302,7 @@ local function look_at_LH(self, eye, center, up)
 	temp_array[14] = -dot(f, eye);
 	temp_array[15] = 1
 
-    multiply(self.e, temp_array)
+	multiply(self.e, temp_array)
 	return self
 end
 
@@ -329,7 +329,7 @@ local function look_at_RH(self, eye, center, up)
 	temp_array[14] =  dot(f, eye);
 	temp_array[15] = 1
 
-    multiply(self.e, temp_array)
+	multiply(self.e, temp_array)
 	return self
 end
 
@@ -357,7 +357,7 @@ local function look_at_np(self, eye, look_at, up)
 	temp_array[15] = 1
 
 	multiply(self.e, temp_array)
-  	return self
+	return self
 end
 
 function mat4:multiply_vec4(v, out)
@@ -477,18 +477,18 @@ function mat4.is_mat4(t)
 	return type(t) == "table"
 end
 
-mat4.look_at 			= look_at_LH
-mat4.look_at_LH 		= look_at_LH
-mat4.look_at_RH 		= look_at_RH
-mat4.look_at_np 		= look_at_np
+mat4.look_at			= look_at_LH
+mat4.look_at_LH			= look_at_LH
+mat4.look_at_RH			= look_at_RH
+mat4.look_at_np			= look_at_np
 
-mat4.ortho 				= ortho_LH_NO
+mat4.ortho				= ortho_LH_NO
 mat4.ortho_LH_NO 		= ortho_LH_NO
 mat4.ortho_RH_NO 		= ortho_RH_NO
 
-mat4.perspective 		= perspective_LH_NO
-mat4.perspective_LH_NO 	= perspective_LH_NO
-mat4.perspective_RH_NO 	= perspective_RH_NO
+mat4.perspective		= perspective_LH_NO
+mat4.perspective_LH_NO	= perspective_LH_NO
+mat4.perspective_RH_NO	= perspective_RH_NO
 
 -- metamethods --
 function mat4.__index(t, k)

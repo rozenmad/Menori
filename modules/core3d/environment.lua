@@ -10,22 +10,7 @@
 -- @module Environment
 local class = require 'menori.modules.libs.class'
 
-local ShaderObject = require 'menori.modules.shaderobject'
-
 local Environment = class('Environment')
-
-Environment.default_shader = ShaderObject([[
-    uniform mat4 m_model;
-    uniform mat4 m_view;
-    uniform mat4 m_projection;
-    #ifdef VERTEX
-        vec4 position(mat4 transform_projection, vec4 vertex_position) {
-            return m_projection * m_view * m_model * vertex_position;
-        }
-    #endif
-]])
-
-local shader_cache_list = {}
 
 --- Constructor
 function Environment:constructor(camera)
@@ -55,14 +40,7 @@ function Environment:set_fog_color(r, g, b, a)
 	self.uniform_table.fog_color = {r, g, b, a}
 end
 
-function Environment:_clear_shader_cache_list()
-	--[[for k in pairs(shader_cache_list) do
-	    shader_cache_list[k] = nil
-	end]]
-end
-
 function Environment:send_uniforms_to(shader)
-	print(shader)
 	local camera = self.camera
 	shader:send_matrix("m_view", camera.m_view)
 	shader:send_matrix("m_projection", camera.m_projection)
@@ -71,18 +49,17 @@ function Environment:send_uniforms_to(shader)
 		shader:send(k, v)
 	end
 
-	self:send_light_sources_uniforms(shader)
-	--shader_cache_list[shader] = true
+	self:send_light_sources_to(shader)
 end
 
-function Environment:send_light_sources_uniforms(shader)
+function Environment:send_light_sources_to(shader)
 	shader:send('light_count', #self.lights)
-    for i = 1, #self.lights do
-    	local light_index_str =  "lights[" .. (i - 1) .. "]."
-    	local light = self.lights[i]
+	for i = 1, #self.lights do
+		local light_index_str =  "lights[" .. (i - 1) .. "]."
+		local light = self.lights[i]
 
-    	light:to_uniforms(shader, light_index_str)
-    end
+		light:to_uniforms(shader, light_index_str)
+	end
 end
 
 return

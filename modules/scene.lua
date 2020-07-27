@@ -40,8 +40,6 @@ function scene:render_nodes(node, environment, renderstates, filter)
 	temp_environment = environment
 	local camera = temp_environment.camera
 
-	environment:_clear_shader_cache_list()
-
 	if camera.mode == '2d' then
 		camera:_push_transform()
 	end

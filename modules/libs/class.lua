@@ -22,11 +22,11 @@ end
 
 local function implement(self, ...)
 	for _, class in pairs({...}) do
-	  	for k, v in pairs(class) do
+		for k, v in pairs(class) do
 			if self[k] == nil and type(v) == "function" then
-		  		self[k] = v
+				self[k] = v
 			end
-	  	end
+		end
 	end
 end
 

@@ -36,7 +36,7 @@ end
 function PerspectiveCamera:update_view_matrix()
 	self.m_view:identity()
 	self.m_view:look_at(self.eye, self.center, self.up)
-    return self.m_view
+	return self.m_view
 end
 
 function PerspectiveCamera:get_corner_normals()

@@ -1,2 +1,2 @@
 # Menori
-library for simple 3D rendering in LOVE
+library for simple 3D rendering in LÖVE
