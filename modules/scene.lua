@@ -31,7 +31,6 @@ end
 
 --- Recursively calls render on all nodes.
 function scene:render_nodes(node, environment, renderstates, filter)
-	renderstates = renderstates or {}
 	filter = filter or default_filter
 	self:_recursive_render_nodes(node, false)
 	table.sort(self.list_drawable_nodes, node_sort)
@@ -40,11 +39,11 @@ function scene:render_nodes(node, environment, renderstates, filter)
 	temp_environment = environment
 	local camera = temp_environment.camera
 
-	if camera.mode == '2d' then
-		camera:_push_transform()
+	if camera._camera_2d_mode then
+		camera:_apply_transform()
 	end
 
-	if renderstates then
+	if renderstates and #renderstates > 0 then
 		local prev_canvas = love.graphics.getCanvas()
 		lovg.setCanvas(renderstates)
 		if renderstates.clear then
@@ -57,6 +56,7 @@ function scene:render_nodes(node, environment, renderstates, filter)
 		for _, n in ipairs(self.list_drawable_nodes) do
 			filter(n, self, temp_environment)
 		end
+		love.graphics.setShader()
 		love.graphics.setCanvas(prev_canvas)
 	else
 		for _, n in ipairs(self.list_drawable_nodes) do
@@ -77,6 +77,9 @@ function scene:_recursive_render_nodes(parent_node, transform_flag)
 		parent_node:update_local_transform()
 		transform_flag = true
 	end
+	if parent_node.render and parent_node.render_flag then
+		self.list_drawable_nodes[#self.list_drawable_nodes + 1] = parent_node
+	end
 	local i = 1
 	local childs = parent_node._childs
 	while i <= #childs do
@@ -84,7 +87,6 @@ function scene:_recursive_render_nodes(parent_node, transform_flag)
 		if node.detach_flag then
 			table.remove(childs, i)
 		else
-			if node.render and node.render_flag then self.list_drawable_nodes[#self.list_drawable_nodes + 1] = node end
 			self:_recursive_render_nodes(node, transform_flag)
 			i = i + 1
 		end
@@ -98,11 +100,12 @@ function scene:update_nodes(node, environment)
 end
 
 function scene:_recursive_update_nodes(parent_node, update_flag)
+	if parent_node.update and update_flag then
+		parent_node:update(self, temp_environment)
+	end
 	for _, node in ipairs(parent_node._childs) do
-		if not node.update_flag then update_flag = false end
-
-		if node.update and update_flag then
-			node:update(self, temp_environment)
+		if not node.update_flag then
+			update_flag = false
 		end
 		self:_recursive_update_nodes(node, update_flag)
 	end

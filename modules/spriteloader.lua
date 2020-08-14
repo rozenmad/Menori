@@ -51,21 +51,6 @@ function spriteloader.from_image(image)
 	return Sprite:new({love.graphics.newQuad(0, 0, w, h, w, h)}, image)
 end
 
-function spriteloader.from_tileset_image(image, x, y, w, h)
-	local image_w, image_h = image:getDimensions()
-	local quads = {}
-	local iws = math.floor((image_w - x) / w)
-	local ihs = math.floor((image_h - y) / h)
-	for j = 0, ihs - 1 do
-		for i = 0, iws - 1 do
-			local px = i * w
-			local py = j * h
-			quads[#quads + 1] = love.graphics.newQuad(px, py, w, h, image_w, image_h)
-		end
-	end
-	return Sprite:new(quads, image)
-end
-
 --- Load sprite from Aseprite array slices using sprite cache list.
 function spriteloader.load_slice(path, name)
 	if not list[name] then list[name] = load_slice(path, name) end

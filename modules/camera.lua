@@ -29,10 +29,10 @@ function camera:constructor()
 	self.oy = 0
 	self.matrix = matrix4x4()
 
-	self.mode = '2d'
+	self._camera_2d_mode = true
 end
 
-function camera:_push_transform()
+function camera:_apply_transform()
 	if self._update then
 		local pos = vec3(-self.x + self.ox, -self.y + self.oy, 0.0)
 		self.matrix:set_position_and_rotation(pos, -self.rotation, vec3(0, 0, 1))
@@ -40,7 +40,14 @@ function camera:_push_transform()
 
 		self._update = false
 	end
-	love.graphics.multiplyMatrix(self.matrix)
+
+	love.graphics.applyTransform(self.matrix:to_transform_object())
+
+	--[[
+		love.graphics.scale(1 / self.sx, 1 / self.sy)
+		love.graphics.translate(-self.x + self.ox, -self.y + self.oy)
+		love.graphics.rotate(-self.rotation)
+	]]
 end
 
 function camera:move(dx, dy)

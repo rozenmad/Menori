@@ -99,6 +99,30 @@ function mat4:constructor(m)
 	end
 end
 
+local temp_transform = love.math.newTransform()
+local temp_mat = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+function mat4:to_transform_object()
+	local e = self.e
+	temp_mat[ 1] = e[ 0]
+	temp_mat[ 2] = e[ 1]
+	temp_mat[ 3] = e[ 2]
+	temp_mat[ 4] = e[ 3]
+	temp_mat[ 5] = e[ 4]
+	temp_mat[ 6] = e[ 5]
+	temp_mat[ 7] = e[ 6]
+	temp_mat[ 8] = e[ 7]
+	temp_mat[ 9] = e[ 8]
+	temp_mat[10] = e[ 9]
+	temp_mat[11] = e[10]
+	temp_mat[12] = e[11]
+	temp_mat[13] = e[12]
+	temp_mat[14] = e[13]
+	temp_mat[15] = e[14]
+	temp_mat[16] = e[15]
+	temp_transform:setMatrix('column', temp_mat)
+	return temp_transform
+end
+
 function mat4:clone()
 	return mat4(self)
 end

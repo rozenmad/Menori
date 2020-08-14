@@ -36,5 +36,20 @@ function imageloader.has(filename)
 	return list[filename] ~= nil
 end
 
+function imageloader.from_tileset_image(image, x, y, w, h)
+	local image_w, image_h = image:getDimensions()
+	local quads = {}
+	local iws = math.floor((image_w - x) / w)
+	local ihs = math.floor((image_h - y) / h)
+	for j = 0, ihs - 1 do
+		for i = 0, iws - 1 do
+			local px = i * w
+			local py = j * h
+			quads[#quads + 1] = love.graphics.newQuad(px, py, w, h, image_w, image_h)
+		end
+	end
+	return quads
+end
+
 return
 imageloader

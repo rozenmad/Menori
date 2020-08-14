@@ -24,7 +24,7 @@ function scenedispatcher:init_scene_viewport(w, h)
 	self.w = w
 	self.h = h
 	self.canvas = lovg.newCanvas(self.w, self.h, {format = 'normal', msaa = 0})
-	self.canvas:setFilter('linear', 'linear')
+	self.canvas:setFilter('nearest', 'nearest')
 
 	self:update_viewport()
 end
