@@ -98,26 +98,25 @@ end
 --- Recursively calls update on all nodes.
 function scene:update_nodes(node, environment)
 	temp_environment = environment
-	self:_recursive_update_nodes(node, node.update_flag)
+	self:_recursive_update_nodes(node)
 end
 
-function scene:_recursive_update_nodes(parent_node, update_flag)
-	if parent_node.update and update_flag then
-		parent_node:update(self, temp_environment)
-	end
-
-	local i = 1
-	local childs = parent_node._childs
-	while i <= #childs do
-		local node = childs[i]
-		if not node.update_flag then
-			update_flag = false
+function scene:_recursive_update_nodes(parent_node)
+	if parent_node.update_flag then
+		if parent_node.update then
+			parent_node:update(self, temp_environment)
 		end
-		self:_recursive_update_nodes(node, update_flag)
-		if node.detach_flag then
-			table.remove(childs, i)
-		else
-			i = i + 1
+
+		local i = 1
+		local childs = parent_node._childs
+		while i <= #childs do
+			local node = childs[i]
+			if node.detach_flag then
+				table.remove(childs, i)
+			else
+				self:_recursive_update_nodes(node)
+				i = i + 1
+			end
 		end
 	end
 end

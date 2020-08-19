@@ -32,9 +32,9 @@ function camera:constructor()
 	self._camera_2d_mode = true
 end
 
-function camera:set_center_offset()
-	self.ox = math.floor(scenedispatcher.w / 2)
-    self.oy = math.floor(scenedispatcher.h / 2)
+function camera:set_center_offset(ox, oy)
+	self.ox = math.floor(scenedispatcher.w / 2) + (ox or 0)
+	self.oy = math.floor(scenedispatcher.h / 2) + (oy or 0)
 end
 
 function camera:_apply_transform()
