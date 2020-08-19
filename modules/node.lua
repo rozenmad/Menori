@@ -10,17 +10,16 @@
 --- Mixin this class to your game object.
 --- Transform class included (see transform).
 -- @module Node
-local class 		= require 'menori.modules.libs.class'
-local matrix4x4     = require 'menori.modules.libs.matrix4x4'
+local class		= require 'menori.modules.libs.class'
+local matrix4x4 = require 'menori.modules.libs.matrix4x4'
 
 local node = class('Node')
+node.layer = 0
 
 --- Constructor for mixin.
 function node:constructor()
 	self._childs = {}
 	self._parent = nil
-
-	self.layer = 0
 
 	self.detach_flag = false
 	self.update_flag = true

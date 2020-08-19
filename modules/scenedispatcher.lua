@@ -79,6 +79,7 @@ function scenedispatcher:render(dt)
 end
 
 function scenedispatcher:present()
+	lovg.setShader()
 	lovg.draw(self.canvas, ox, oy, 0, canvas_scale, canvas_scale)
 end
 

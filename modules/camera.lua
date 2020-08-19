@@ -8,12 +8,12 @@
 
 --- Camera for 2D scenes.
 -- @module Camera
-local class         = require 'menori.modules.libs.class'
-local matrix4x4     = require 'menori.modules.libs.matrix4x4'
+local class         	= require 'menori.modules.libs.class'
+local matrix4x4     	= require 'menori.modules.libs.matrix4x4'
+local scenedispatcher 	= require 'menori.modules.scenedispatcher'
 
 local cpml = require 'libs.cpml'
 local vec3 = cpml.vec3
-local mat4 = cpml.mat4
 
 local camera = class('Camera')
 
@@ -32,22 +32,30 @@ function camera:constructor()
 	self._camera_2d_mode = true
 end
 
+function camera:set_center_offset()
+	self.ox = math.floor(scenedispatcher.w / 2)
+    self.oy = math.floor(scenedispatcher.h / 2)
+end
+
 function camera:_apply_transform()
 	if self._update then
-		local pos = vec3(-self.x + self.ox, -self.y + self.oy, 0.0)
-		self.matrix:set_position_and_rotation(pos, -self.rotation, vec3(0, 0, 1))
-		self.matrix:scale(1 / self.sx, 1 / self.sy, 1.0)
+		local sx = 1 / self.sx
+		local sy = 1 / self.sy
+
+		self.matrix:identity()
+		self.matrix:translate(self.ox, self.oy, 0)
+		self.matrix:scale(sx, sy, 1)
+		self.matrix:translate(-self.x, -self.y, 0)
+		self.matrix:rotate(-self.rotation, vec3.unit_z)
 
 		self._update = false
 	end
+	love.graphics.applyTransform(self.matrix:to_temp_transform_object())
+end
 
-	love.graphics.applyTransform(self.matrix:to_transform_object())
-
-	--[[
-		love.graphics.scale(1 / self.sx, 1 / self.sy)
-		love.graphics.translate(-self.x + self.ox, -self.y + self.oy)
-		love.graphics.rotate(-self.rotation)
-	]]
+function camera:get_viewport()
+	local x, y = self:get_position()
+	return x, y, scenedispatcher.w, scenedispatcher.h
 end
 
 function camera:move(dx, dy)

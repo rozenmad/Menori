@@ -27,10 +27,16 @@ local scene = class('Scene')
 --- Constructor
 function scene:constructor()
 	self.list_drawable_nodes = {}
+	self.render_time = 0
+end
+
+function scene:current_render_time()
+	return self.render_time
 end
 
 --- Recursively calls render on all nodes.
 function scene:render_nodes(node, environment, renderstates, filter)
+	self.render_time = love.timer.getTime()
 	filter = filter or default_filter
 	self:_recursive_render_nodes(node, false)
 	table.sort(self.list_drawable_nodes, node_sort)
@@ -56,7 +62,6 @@ function scene:render_nodes(node, environment, renderstates, filter)
 		for _, n in ipairs(self.list_drawable_nodes) do
 			filter(n, self, temp_environment)
 		end
-		love.graphics.setShader()
 		love.graphics.setCanvas(prev_canvas)
 	else
 		for _, n in ipairs(self.list_drawable_nodes) do
@@ -65,6 +70,7 @@ function scene:render_nodes(node, environment, renderstates, filter)
 	end
 
 	lovg.pop()
+	love.graphics.setShader()
 
 	local count = #self.list_drawable_nodes
 	self.list_drawable_nodes = {}
@@ -84,30 +90,35 @@ function scene:_recursive_render_nodes(parent_node, transform_flag)
 	local childs = parent_node._childs
 	while i <= #childs do
 		local node = childs[i]
-		if node.detach_flag then
-			table.remove(childs, i)
-		else
-			self:_recursive_render_nodes(node, transform_flag)
-			i = i + 1
-		end
+		self:_recursive_render_nodes(node, transform_flag)
+		i = i + 1
 	end
 end
 
 --- Recursively calls update on all nodes.
 function scene:update_nodes(node, environment)
 	temp_environment = environment
-	self:_recursive_update_nodes(node, true)
+	self:_recursive_update_nodes(node, node.update_flag)
 end
 
 function scene:_recursive_update_nodes(parent_node, update_flag)
 	if parent_node.update and update_flag then
 		parent_node:update(self, temp_environment)
 	end
-	for _, node in ipairs(parent_node._childs) do
+
+	local i = 1
+	local childs = parent_node._childs
+	while i <= #childs do
+		local node = childs[i]
 		if not node.update_flag then
 			update_flag = false
 		end
 		self:_recursive_update_nodes(node, update_flag)
+		if node.detach_flag then
+			table.remove(childs, i)
+		else
+			i = i + 1
+		end
 	end
 end
 

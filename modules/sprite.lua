@@ -34,28 +34,6 @@ function sprite:clone()
 	return sprite:new(self.quads, self.image)
 end
 
---- Get origin.
-function sprite:get_origin()
-	return self.origin_x, self.origin_y
-end
-
---- Set origin.
-function sprite:set_origin(ox, oy)
-	self.origin_x = ox
-	self.origin_y = oy
-	for i, v in ipairs(self.quads) do
-		--v:setOrigin(ox, oy)
-	end
-	return self
-end
-
-function sprite:set_offset_pixels(px, py, w, h)
-	local ox = px / w
-	local oy = py / h
-	self:set_origin(ox, oy)
-	return self
-end
-
 --- Get current index of frame.
 function sprite:get_frame_index()
 	return self.index

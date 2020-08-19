@@ -16,10 +16,14 @@ local Input = {}
 Input.button = {
 	A = 'z', -- kp1
 	B = 'x', -- kp2
-	W_arrow = 'w', -- w
-	A_arrow = 'a', -- a
-	S_arrow = 's', -- s
-	D_arrow = 'd', -- d
+	W_arrow = 'kp8', -- w
+	A_arrow = 'kp4', -- a
+	S_arrow = 'kp5', -- s
+	D_arrow = 'kp6', -- d
+	W_arrow_ex = 'up',
+	A_arrow_ex = 'left',
+	S_arrow_ex = 'down',
+	D_arrow_ex = 'right',
 }
 
 
@@ -46,19 +50,19 @@ end
 
 --- Button Move W
 Input.key_move_w = function(press_repeat)
-	return Input.keyboard_is_down(Input.button.W_arrow, press_repeat)
+	return Input.keyboard_is_down(Input.button.W_arrow, press_repeat) or Input.keyboard_is_down(Input.button.W_arrow_ex, press_repeat)
 end
 --- Button Move A
 Input.key_move_a = function(press_repeat)
-	return Input.keyboard_is_down(Input.button.A_arrow, press_repeat)
+	return Input.keyboard_is_down(Input.button.A_arrow, press_repeat) or Input.keyboard_is_down(Input.button.A_arrow_ex, press_repeat)
 end
 --- Button Move S
 Input.key_move_s = function(press_repeat)
-	return Input.keyboard_is_down(Input.button.S_arrow, press_repeat)
+	return Input.keyboard_is_down(Input.button.S_arrow, press_repeat) or Input.keyboard_is_down(Input.button.S_arrow_ex, press_repeat)
 end
 --- Button Move D
 Input.key_move_d = function(press_repeat)
-	return Input.keyboard_is_down(Input.button.D_arrow, press_repeat)
+	return Input.keyboard_is_down(Input.button.D_arrow, press_repeat) or Input.keyboard_is_down(Input.button.D_arrow_ex, press_repeat)
 end
 
 --- Button Space

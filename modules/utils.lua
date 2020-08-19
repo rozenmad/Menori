@@ -30,10 +30,10 @@ local function get_bound3(vt, matrix)
 	return b
 end
 
---[[love.audio.replay = function(audio)
+love.audio.replay = function(audio)
 	if audio:isPlaying() then audio:stop() end
 	audio:play()
-end]]
+end
 
 return {
 	get_bound3 				= get_bound3,

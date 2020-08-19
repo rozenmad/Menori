@@ -101,7 +101,7 @@ end
 
 local temp_transform = love.math.newTransform()
 local temp_mat = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-function mat4:to_transform_object()
+function mat4:to_temp_transform_object()
 	local e = self.e
 	temp_mat[ 1] = e[ 0]
 	temp_mat[ 2] = e[ 1]
