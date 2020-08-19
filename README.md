@@ -1,2 +1,2 @@
 # Menori
-library for simple 3D rendering in LÖVE
+LÖVE library for simple 3D and 2D rendering based on scene graph.
