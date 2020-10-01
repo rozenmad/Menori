@@ -19,6 +19,7 @@ local canvas_scale = 1
 local scenedispatcher = class('SceneDispatcher')
 
 local lovg = love.graphics
+local default_effect = nil
 
 function scenedispatcher:init_scene_viewport(w, h)
 	self.w = w
@@ -27,6 +28,8 @@ function scenedispatcher:init_scene_viewport(w, h)
 	self.canvas:setFilter('nearest', 'nearest')
 
 	self:update_viewport()
+	self.next_scene = nil
+	self.effect = default_effect
 end
 
 function scenedispatcher:update_viewport()
@@ -40,6 +43,13 @@ function scenedispatcher:update_viewport()
 
 	ox = (w - self.w * canvas_scale) / 2
 	oy = (h - self.h * canvas_scale) / 2
+end
+
+function scenedispatcher:switch(effect, name)
+	self.next_scene = list[name]
+	assert(effect)
+	assert(self.next_scene)
+	self.effect = effect
 end
 
 function scenedispatcher:add(name, scene_object)
@@ -75,11 +85,20 @@ function scenedispatcher:render(dt)
 	self.canvas:renderTo(function (...)
 		lovg.clear()
 		if current_scene then current_scene:render(dt) end
+		if self.next_scene then
+			if self.effect.update then self.effect:update() end
+			if self.effect.render then self.effect:render() end
+			if self.effect:completed() then
+				current_scene = self.next_scene
+				self.next_scene = nil
+				self.effect = nil
+			end
+		end
 	end)
+	lovg.setShader()
 end
 
 function scenedispatcher:present()
-	lovg.setShader()
 	lovg.draw(self.canvas, ox, oy, 0, canvas_scale, canvas_scale)
 end
 

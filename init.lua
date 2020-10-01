@@ -20,6 +20,7 @@ local menori = {
 	glTFLoader			= require(modules .. 'core3d.gltf'),
 	Model				= require(modules .. 'core3d.model'),
 
+	AnimationList		= require(modules .. 'animationlist'),
 	Camera				= require(modules .. 'camera'),
 	ImageLoader			= require(modules .. 'imageloader'),
 	Input				= require(modules .. 'input'),

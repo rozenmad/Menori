@@ -18,11 +18,9 @@ function sprite:constructor(quads, image)
 	self.image = image
 	self.index = 1
 
-	self.duration = 0.20
-	self.duration_accumulator = 0
-	self.max_loops = -1
-	self.loop_counter = 0
 	self.stop = false
+	self.duration_accumulator = 0
+	self.duration = 0.2 / self:get_frame_count()
 end
 
 function sprite:get_frame_viewport()
@@ -62,12 +60,10 @@ function sprite:get_frame_uv(i)
 	return {x / image_w, (x + w) / image_w, y / image_h, (y + h) / image_h}
 end
 
-function sprite:reset(time, max_loops)
-	self.duration = time / self:get_frame_count()
-	self.max_loops = max_loops
+function sprite:reset(duration)
+	self.duration = duration / self:get_frame_count()
 	self.stop = false
 	self.duration_accumulator = 0
-	self.loop_counter = 0
 	return self
 end
 
@@ -79,13 +75,8 @@ function sprite:update(dt)
 		self.duration_accumulator = 0
 		self.index = self.index + 1
 		if self.index > self:get_frame_count() then
-			self.loop_counter = self.loop_counter + 1
-			if self.max_loops ~= -1 and self.loop_counter >= self.max_loops then
-				self.index = self:get_frame_count()
-				self.stop = true
-			else
-				self.index = 1
-			end
+			self.index = self.index - 1
+			self.stop = true
 		end
 	end
 end

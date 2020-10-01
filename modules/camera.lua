@@ -32,9 +32,12 @@ function camera:constructor()
 	self._camera_2d_mode = true
 end
 
-function camera:set_center_offset(ox, oy)
-	self.ox = math.floor(scenedispatcher.w / 2) + (ox or 0)
-	self.oy = math.floor(scenedispatcher.h / 2) + (oy or 0)
+function camera:set_center(nx, ny)
+	nx = nx or 0.5
+	ny = ny or 0.5
+	self._update = false
+	self.ox = math.floor(scenedispatcher.w * nx)
+	self.oy = math.floor(scenedispatcher.h * ny)
 end
 
 function camera:_apply_transform()
@@ -76,11 +79,6 @@ function camera:scale(sx, sy)
 	self.sy = sy or sx
 end
 
-function camera:set_center(nx, ny, w, h)
-	self.ox = w * nx
-	self.oy = h * ny
-end
-
 function camera:set_position(x, y)
 	self._update = true
 	self.x = x or self.x
@@ -92,14 +90,15 @@ function camera:get_position()
 end
 
 function camera:set_position_inside_bound(x, y, w, h)
-	local x1 = x + self.ox
-	local x2 = x - self.ox
-	local y1 = y + self.oy
-	local y2 = y - self.oy
-	if x2 < 0 then x = self.ox end
-	if x1 > w then x = w - self.ox end
-	if y2 < 0 then y = self.oy end
-	if y1 > h then y = h - self.oy end
+	local x1 = x - self.ox
+	local x2 = x + self.ox
+	local y1 = y - self.oy
+	local y2 = y + self.oy
+	if x1 < 0 then x = self.ox end
+	if y1 < 0 then y = self.oy end
+	if x2 > w then x = w - self.ox end
+	if y2 > h then y = h - self.oy end
+
 	self:set_position(x, y)
 end
 

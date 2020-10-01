@@ -63,5 +63,42 @@ function global:loop()
 		end
 	end
 end
+local class = require 'menori.modules.libs.class'
 
-return global
+local script = class('script')
+
+local function wait(object, tvalue)
+	while true do
+		local all = true
+		for k, v in pairs(tvalue) do
+			if object[k] ~= v then
+				all = false
+			end
+		end
+		if all then
+			break
+		end
+		coroutine.yield()
+	end
+end
+
+function script:constructor(coroutine_fn, opt)
+	self.opt = opt or {}
+	self.handle = coroutine.create(function()
+		repeat
+			coroutine_fn()
+		until opt.loop
+	end)
+	self.complete = false
+end
+
+function script:update()
+	local handle = self.handle
+	if coroutine.status(handle) ~= 'dead' then
+		assert(coroutine.resume(handle))
+	else
+		self.complete = true
+	end
+end
+
+return script
