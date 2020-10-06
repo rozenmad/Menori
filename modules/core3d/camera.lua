@@ -31,11 +31,17 @@ function PerspectiveCamera:constructor(fov, aspect, nclip, fclip)
 	self.center 	= vec3( 0, 0, 0)
 	self.eye 		= vec3( 0, 0, 1)
 	self.up 		= vec3( 0,-1, 0)
+
+	self.swap_look_at = false
 end
 
 function PerspectiveCamera:update_view_matrix()
 	self.m_view:identity()
-	self.m_view:look_at(self.center, self.eye, self.up)
+	if self.swap_look_at then
+		self.m_view:look_at(self.center, self.eye, self.up)
+	else
+		self.m_view:look_at(self.eye, self.center, self.up)
+	end
 	return self.m_view
 end
 
@@ -64,8 +70,9 @@ function PerspectiveCamera:move(direction)
 	self.eye = self.eye + direction
 end
 
-function PerspectiveCamera:set_direction(direction)
-	self.center = self.eye + direction * 32
+function PerspectiveCamera:set_direction(direction, distance)
+	distance = distance or 1
+	self.center = self.eye + direction * distance
 end
 
 function PerspectiveCamera:rotate_position(angle)
