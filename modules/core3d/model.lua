@@ -12,7 +12,7 @@ local Model = Node:extend('Model')
 
 local cpml = require 'libs.cpml'
 
-local default_shader = ShaderObject([[
+Model.default_shader = ShaderObject([[
 #ifdef VERTEX
 	uniform mat4 m_model;
 	uniform mat4 m_view;
@@ -37,9 +37,28 @@ function Model.create_mesh_from_primitive(primitive, mode)
 
 	mesh:setVertexMap(primitive.indices)
 	if primitive.material and primitive.material.image_data then
-	mesh:setTexture(primitive.material.image_data)
+		mesh:setTexture(primitive.material.image_data)
 	end
 	return mesh
+end
+
+function Model.generate_indices(size)
+	local indices = {}
+	for j = 0, size / 4 - 1 do
+		local v = j * 6
+		local i = j * 4
+		indices[v + 1] = i + 1
+		indices[v + 2] = i + 2
+		indices[v + 3] = i + 3
+		indices[v + 4] = i + 2
+		indices[v + 5] = i + 4
+		indices[v + 6] = i + 3
+	end
+	return indices
+end
+
+function Model.create_primitive(vertices)
+	return {vertices = vertices, indices = Model.generate_indices(#vertices)}
 end
 
 function Model:constructor(node, shader)
@@ -47,7 +66,7 @@ function Model:constructor(node, shader)
 	self.local_matrix:set_position_and_rotation(cpml.vec3(node.translation), cpml.quat(node.rotation))
 	self.local_matrix:scale(cpml.vec3(node.scale))
 
-	self.shader = shader or default_shader
+	self.shader = shader or Model.default_shader
 
 	self.primitives = {}
 	for i, p in ipairs(node.primitives) do

@@ -12,6 +12,23 @@ local class = require 'menori.modules.libs.class'
 
 local Environment = class('Environment')
 
+local cpml = require 'libs.cpml'
+local vec3 = cpml.vec3
+
+local directional_light = class('DirectionalLight')
+
+function directional_light:constructor(dx, dy, dz, color)
+	self.direction = vec3(dx, dy, dz):normalize()
+	self.color = color
+	self.type = 1
+end
+
+function directional_light:to_uniforms(shader, light_index_str)
+	shader:send(light_index_str .. 'direction', {self.direction:unpack()})
+	shader:send(light_index_str .. 'color', self.color)
+	shader:send(light_index_str .. 'type', self.type)
+end
+
 --- Constructor
 function Environment:constructor(camera)
 	self.camera = camera
@@ -29,6 +46,10 @@ end
 
 function Environment:set_optional_uniform(name, value)
 	self.uniform_table[name] = value
+end
+
+function Environment:add_direction_light(dx, dy, dz, color)
+	self.lights[#self.lights + 1] = directional_light(dx, dy, dz, color)
 end
 
 function Environment:add_light(light)

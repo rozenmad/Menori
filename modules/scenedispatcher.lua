@@ -29,6 +29,7 @@ function scenedispatcher:init_scene_viewport(w, h)
 
 	self:update_viewport()
 	self.next_scene = nil
+	self.depthstencil = true
 	self.effect = default_effect
 end
 
@@ -82,19 +83,19 @@ function scenedispatcher:update(dt)
 end
 
 function scenedispatcher:render(dt)
-	self.canvas:renderTo(function (...)
-		lovg.clear()
-		if current_scene then current_scene:render(dt) end
-		if self.next_scene then
-			if self.effect.update then self.effect:update() end
-			if self.effect.render then self.effect:render() end
-			if self.effect:completed() then
-				current_scene = self.next_scene
-				self.next_scene = nil
-				self.effect = nil
-			end
+	love.graphics.setCanvas({self.canvas, depthstencil = self.depthstencil})
+	lovg.clear()
+	if current_scene then current_scene:render(dt) end
+	if self.next_scene then
+		if self.effect.update then self.effect:update() end
+		if self.effect.render then self.effect:render() end
+		if self.effect:completed() then
+			current_scene = self.next_scene
+			self.next_scene = nil
+			self.effect = nil
 		end
-	end)
+	end
+	love.graphics.setCanvas()
 	lovg.setShader()
 end
 

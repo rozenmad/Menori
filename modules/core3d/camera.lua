@@ -21,8 +21,8 @@ local PerspectiveCamera = class('PerspectiveCamera')
 function PerspectiveCamera:constructor(fov, aspect, nclip, fclip)
 	fov = fov or 60
 	aspect = aspect or 1.6666667
-	nclip = nclip or 0.1
-	fclip = fclip or 32.0
+	nclip = nclip or 0.01
+	fclip = fclip or 1000.0
 
 	self.m_projection = matrix4x4():perspective_LH_NO(fov, aspect, nclip, fclip)
 	self.m_inv_projection = self.m_projection:clone():inverse()
@@ -35,7 +35,7 @@ end
 
 function PerspectiveCamera:update_view_matrix()
 	self.m_view:identity()
-	self.m_view:look_at(self.eye, self.center, self.up)
+	self.m_view:look_at(self.center, self.eye, self.up)
 	return self.m_view
 end
 
@@ -58,6 +58,14 @@ function PerspectiveCamera:get_corner_normals()
 		vec3(matrix4x4.unproject(vec3(x2, y1, 1), inverse_vp, viewport)),
 		vec3(matrix4x4.unproject(vec3(x2, y2, 1), inverse_vp, viewport)),
 	}
+end
+
+function PerspectiveCamera:move(direction)
+	self.eye = self.eye + direction
+end
+
+function PerspectiveCamera:set_direction(direction)
+	self.center = self.eye + direction * 32
 end
 
 function PerspectiveCamera:rotate_position(angle)
