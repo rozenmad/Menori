@@ -123,6 +123,28 @@ function mat4:to_temp_transform_object()
 	return temp_transform
 end
 
+function mat4:get_table_view()
+	local t = {}
+	local e = self.e
+	t[ 1] = e[0]
+	t[ 2] = e[4]
+	t[ 3] = e[8]
+	t[ 4] = e[12]
+	t[ 5] = e[1]
+	t[ 6] = e[5]
+	t[ 7] = e[9]
+	t[ 8] = e[13]
+	t[ 9] = e[2]
+	t[10] = e[6]
+	t[11] = e[10]
+	t[12] = e[14]
+	t[13] = e[3]
+	t[14] = e[7]
+	t[15] = e[11]
+	t[16] = e[15]
+	return t
+end
+
 function mat4:clone()
 	return mat4(self)
 end

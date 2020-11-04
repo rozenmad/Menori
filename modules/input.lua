@@ -26,18 +26,21 @@ Input.button = {
 	D_arrow_ex = 'right',
 }
 
+local function _create_keycheck(fn)
+	return function(button, press_repeat)
+		if press_repeat == nil then press_repeat = true end
 
---- Check keyboard button is down.
-Input.keyboard_is_down = function(button, press_repeat)
-	if press_repeat == nil then press_repeat = true end
+		local state = fn(button)
+		if press_repeat then return state end
 
-	local state = love.keyboard.isDown(button)
-	if press_repeat then return state end
-
-	if state and button_list[button] then return false end
-	button_list[button] = state
-	return state
+		if state and button_list[button] then return false end
+		button_list[button] = state
+		return state
+	end
 end
+
+Input.keyboard_is_down = _create_keycheck(love.keyboard.isDown)
+Input.mouse_is_down = _create_keycheck(love.mouse.isDown)
 
 --- Button A
 Input.key_a = function(press_repeat)

@@ -57,10 +57,30 @@ function scenedispatcher:add(name, scene_object)
 	list[name] = scene_object
 end
 
+function scenedispatcher:get(name)
+	return list[name]
+end
+
 function scenedispatcher:set(name)
-	local scene = list[name]
-	assert(scene)
-	current_scene = scene
+	self:_change_scene(list[name])
+end
+
+function scenedispatcher:_change_preparation(a, b)
+	love.mousepressed 	= b:_input_listeners_callback('mousepressed')
+	love.mousemoved 	= b:_input_listeners_callback('mousemoved')
+	love.mousereleased 	= b:_input_listeners_callback('mousereleased')
+	love.textinput 		= b:_input_listeners_callback('textinput')
+	love.keypressed 	= b:_input_listeners_callback('keypressed')
+	love.wheelmoved 	= b:_input_listeners_callback('wheelmoved')
+
+	if a and a.on_leave then a:on_leave() end
+	if b and b.on_enter then b:on_enter() end
+	return b
+end
+
+function scenedispatcher:_change_scene(next_scene)
+	assert(next_scene)
+	current_scene = self:_change_preparation(current_scene, next_scene)
 end
 
 function scenedispatcher:get_current()
@@ -90,7 +110,7 @@ function scenedispatcher:render(dt)
 		if self.effect.update then self.effect:update() end
 		if self.effect.render then self.effect:render() end
 		if self.effect:completed() then
-			current_scene = self.next_scene
+			self:_change_scene(self.next_scene)
 			self.next_scene = nil
 			self.effect = nil
 		end

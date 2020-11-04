@@ -32,6 +32,7 @@ Model.mesh_format = {
 }
 
 function Model.create_mesh_from_primitive(primitive, mode)
+	assert(#primitive.vertices > 0)
 	mode = mode or 'triangles'
 	local mesh = love.graphics.newMesh(Model.mesh_format, primitive.vertices, mode)
 
