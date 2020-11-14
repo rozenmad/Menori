@@ -48,7 +48,7 @@ end
 
 function shaderobject:send_matrix(name, matrix, layout)
 	if self.shader:hasUniform(name) then
-		self.shader:send(name, matrix:get_table_view())
+		self.shader:send(name, matrix:to_temp_table())
 	end
 end
 

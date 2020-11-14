@@ -19,7 +19,7 @@ function instanced_mesh:constructor(primitive, image, instanced_format, shader)
     self.instance_data_ptr = self.instanced_buffer:get_data_pointer('float*')
 
     self.count = 0
-    self:_attach_buffer()
+    self:_attach_buffers()
 end
 
 function instanced_mesh:increase_ic()
@@ -47,13 +47,15 @@ end
 
 function instanced_mesh:get_instance_data(index, userdata)
     if index + 1 > self.instanced_buffer.size then
-        self:_detach_buffer()
+        self:_detach_buffers()
         self.instanced_buffer:reallocate(index + index)
-        self:_attach_buffer()
+        self:_attach_buffers()
         self.instance_data_ptr = self.instanced_buffer:get_data_pointer('float*')
     end
-    self.hashtable[index + 1] = userdata -- start from 0, size - 1
-    self.inverse_hashtable[userdata.id] = index + 1
+    if userdata then
+        self.hashtable[index + 1] = userdata -- start from 0, size - 1
+        self.inverse_hashtable[userdata.id] = index + 1
+    end
     return self.instance_data_ptr + (index * self.instanced_buffer.attributes_count)
 end
 
@@ -94,14 +96,14 @@ function instanced_mesh:remove_instance(userdata)
     return false
 end
 
-function instanced_mesh:_attach_buffer()
+function instanced_mesh:_attach_buffers()
     local buffer = self.instanced_buffer
     for i, v in ipairs(buffer.format) do
         self.mesh_data:attachAttribute(v[1], buffer.mesh, "perinstance")
     end
 end
 
-function instanced_mesh:_detach_buffer()
+function instanced_mesh:_detach_buffers()
     local buffer = self.instanced_buffer
     for i, v in ipairs(buffer.format) do
         self.mesh_data:detachAttribute(v[1])

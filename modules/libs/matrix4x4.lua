@@ -4,6 +4,7 @@
 	@author rozenmad
 	2020
 -------------------------------------------------------------------------------
+	this module based on Cirno's Perfect Math Library - mat4
 --]]
 
 local ffi = require 'ffi'
@@ -123,7 +124,7 @@ function mat4:to_temp_transform_object()
 	return temp_transform
 end
 
-function mat4:get_table_view()
+function mat4:to_temp_table()
 	local t = {}
 	local e = self.e
 	t[ 1] = e[0]
@@ -433,8 +434,8 @@ function mat4:multiply_vec3(v, out)
 end
 
 function mat4.unproject(win, viewproj, viewport)
-	local x = (2 * win.x) / viewport[3] - 1
-	local y = (2 * win.y) / viewport[4] - 1
+	local x = (2 * (win.x - viewport[1])) / viewport[3] - 1
+	local y = (2 * (win.y - viewport[2])) / viewport[4] - 1
 	local z = win.z * 2 - 1
 	local ray = {x = x, y = y, z = z, w = 1}
 	viewproj:clone():inverse():multiply_vec4(ray)

@@ -45,12 +45,8 @@ function PerspectiveCamera:update_view_matrix()
 	return self.m_view
 end
 
-function PerspectiveCamera:get_corner_normals()
-	local x1 = 0
-	local y1 = 0
-	local x2 = SceneDispatcher.w
-	local y2 = SceneDispatcher.h
-	local viewport = {0.0, 0.0, x2, y2}
+function PerspectiveCamera:get_corner_normals(viewport)
+	viewport = viewport or {0.0, 0.0, SceneDispatcher.w, SceneDispatcher.h}
 
 	local temp_view = self.m_view:clone()
 	temp_view[12] = 0
@@ -59,15 +55,15 @@ function PerspectiveCamera:get_corner_normals()
 	local inverse_vp = self.m_projection * temp_view
 
 	return {
-		vec3(matrix4x4.unproject(vec3(x1, y1, 1), inverse_vp, viewport)),
-		vec3(matrix4x4.unproject(vec3(x1, y2, 1), inverse_vp, viewport)),
-		vec3(matrix4x4.unproject(vec3(x2, y1, 1), inverse_vp, viewport)),
-		vec3(matrix4x4.unproject(vec3(x2, y2, 1), inverse_vp, viewport)),
+		vec3(matrix4x4.unproject(vec3(viewport[1], viewport[2], 1), inverse_vp, viewport)),
+		vec3(matrix4x4.unproject(vec3(viewport[1], viewport[4], 1), inverse_vp, viewport)),
+		vec3(matrix4x4.unproject(vec3(viewport[3], viewport[2], 1), inverse_vp, viewport)),
+		vec3(matrix4x4.unproject(vec3(viewport[3], viewport[4], 1), inverse_vp, viewport)),
 	}
 end
 
-function PerspectiveCamera:get_unproject_point(x, y)
-	local viewport = {0.0, 0.0, SceneDispatcher.w, SceneDispatcher.h}
+function PerspectiveCamera:get_unproject_point(x, y, viewport)
+	viewport = viewport or {0.0, 0.0, SceneDispatcher.w, SceneDispatcher.h}
 
 	local temp_view = self.m_view:clone()
 	temp_view[12] = 0
