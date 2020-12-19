@@ -58,8 +58,8 @@ function Model.generate_indices(size)
 	return indices
 end
 
-function Model.create_primitive(vertices)
-	return {vertices = vertices, indices = Model.generate_indices(#vertices)}
+function Model.create_primitive(vertices, image)
+	return { vertices = vertices, indices = Model.generate_indices(#vertices), material = { image_data = image } }
 end
 
 function Model:constructor(node, shader)

@@ -28,22 +28,12 @@ local scene = class('Scene')
 function scene:constructor()
 	self.list_drawable_nodes = {}
 	self.render_time = 0
-
-	self.event_callbacks = {}
-end
-
-function scene:set_input_listener(event, name, callback)
-	self.event_callbacks[event] = self.event_callbacks[event] or {}
-	self.event_callbacks[event][name] = callback
 end
 
 function scene:_input_listeners_callback(event_name)
 	return function(...)
-		if self.event_callbacks[event_name] then
-			for k, v in pairs(self.event_callbacks[event_name]) do
-				v(...)
-			end
-		end
+		local event = self[event_name]
+		if event then event(self, ...) end
 	end
 end
 
@@ -101,7 +91,7 @@ function scene:_recursive_render_nodes(parent_node, transform_flag)
 		transform_flag = true
 	end
 	if parent_node.render and parent_node.render_flag then
-		self.list_drawable_nodes[#self.list_drawable_nodes + 1] = parent_node
+		table.insert(self.list_drawable_nodes, parent_node)
 	end
 	local i = 1
 	local childs = parent_node._childs

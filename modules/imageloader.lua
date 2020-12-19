@@ -16,7 +16,7 @@ local filter = 'nearest'
 love.graphics.setDefaultFilter(filter, filter)
 
 function imageloader.load(filename, mipmaps)
-	local image = love.graphics.newImage(filename, {mipmaps = mipmaps})
+	local image = love.graphics.newImage(filename, { mipmaps = mipmaps })
 	if mipmaps then
 		image:setMipmapFilter('nearest', 0.0)
 	end

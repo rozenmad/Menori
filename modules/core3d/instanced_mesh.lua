@@ -1,6 +1,7 @@
 local class = require 'menori.modules.libs.class'
 local geometry_buffer = require 'menori.modules.core3d.geometry_buffer'
 local model = require 'menori.modules.core3d.model'
+local ffi = require 'ffi'
 
 local instanced_mesh = class('mesh')
 
@@ -16,7 +17,7 @@ function instanced_mesh:constructor(primitive, image, instanced_format, shader)
     self.instanced_buffer_size = 128
     self.instanced_buffer = geometry_buffer(self.instanced_buffer_size, instanced_format)
 
-    self.instance_data_ptr = self.instanced_buffer:get_data_pointer('float*')
+    --self.instance_data_ptr = self.instanced_buffer:get_data_pointer('float*')
 
     self.count = 0
     self:_attach_buffers()
@@ -45,18 +46,18 @@ function instanced_mesh:update_instanced_buffer()
     end
 end
 
-function instanced_mesh:get_instance_data(index, userdata)
+function instanced_mesh:get_instance_data(index, userdata, ct)
     if index + 1 > self.instanced_buffer.size then
         self:_detach_buffers()
         self.instanced_buffer:reallocate(index + index)
         self:_attach_buffers()
-        self.instance_data_ptr = self.instanced_buffer:get_data_pointer('float*')
     end
-    if userdata then
+    --[[if userdata then
         self.hashtable[index + 1] = userdata -- start from 0, size - 1
         self.inverse_hashtable[userdata.id] = index + 1
-    end
-    return self.instance_data_ptr + (index * self.instanced_buffer.attributes_count)
+    end]]
+    local ptr = self.instanced_buffer:get_data_pointer(index)
+    return ffi.cast(ct, ptr)
 end
 
 function instanced_mesh:remove_instance(userdata)

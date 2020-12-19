@@ -21,23 +21,34 @@ local scenedispatcher = class('SceneDispatcher')
 local lovg = love.graphics
 local default_effect = nil
 
-function scenedispatcher:init_scene_viewport(w, h)
-	self.w = w
-	self.h = h
-	self.canvas = lovg.newCanvas(self.w, self.h, {format = 'normal', msaa = 0})
-	self.canvas:setFilter('nearest', 'nearest')
-
-	self:update_viewport()
+function scenedispatcher:constructor()
 	self.next_scene = nil
 	self.depthstencil = true
 	self.effect = default_effect
 end
 
-function scenedispatcher:update_viewport()
-	local w, h = love.window.getMode()
-	local dpi_scale = love.window.getDPIScale()
-	w = math.floor(w / dpi_scale)
-	h = math.floor(h / dpi_scale)
+function scenedispatcher:resize_viewport(w, h)
+	self.resizable = w == nil or h == nil
+	if self.resizable then
+		w, h = love.graphics.getDimensions()
+	end
+	self.w = w
+	self.h = h
+	self.canvas = lovg.newCanvas(self.w, self.h, { format = 'normal', msaa = 0 })
+	self.canvas:setFilter('nearest', 'nearest')
+
+	self:update_viewport_position()
+end
+
+function scenedispatcher:getDimensions()
+	return self.w, self.h
+end
+
+function scenedispatcher:update_viewport_position()
+	local w, h = love.graphics.getDimensions()
+	local dpi = love.window.getDPIScale()
+	w = math.floor(w / dpi)
+	h = math.floor(h / dpi)
 	local sx = w / self.w
 	local sy = h / self.h
 	canvas_scale = math.min(sx, sy)
@@ -65,22 +76,22 @@ function scenedispatcher:set(name)
 	self:_change_scene(list[name])
 end
 
-function scenedispatcher:_change_preparation(a, b)
-	love.mousepressed 	= b:_input_listeners_callback('mousepressed')
-	love.mousemoved 	= b:_input_listeners_callback('mousemoved')
-	love.mousereleased 	= b:_input_listeners_callback('mousereleased')
-	love.textinput 		= b:_input_listeners_callback('textinput')
-	love.keypressed 	= b:_input_listeners_callback('keypressed')
-	love.wheelmoved 	= b:_input_listeners_callback('wheelmoved')
+function scenedispatcher:_change_scene(next_scene)
+	assert(next_scene)
+	local a = current_scene
+	local b = next_scene
+
+	love.mousepressed = b:_input_listeners_callback('mousepressed')
+	love.mousereleased = b:_input_listeners_callback('mousereleased')
+	love.textinput = b:_input_listeners_callback('textinput')
+	love.mousemoved = b:_input_listeners_callback('mousemoved')
+	love.keypressed = b:_input_listeners_callback('keypressed')
+	love.keyreleased = b:_input_listeners_callback('keyreleased')
+	love.wheelmoved = b:_input_listeners_callback('wheelmoved')
 
 	if a and a.on_leave then a:on_leave() end
 	if b and b.on_enter then b:on_enter() end
-	return b
-end
-
-function scenedispatcher:_change_scene(next_scene)
-	assert(next_scene)
-	current_scene = self:_change_preparation(current_scene, next_scene)
+	current_scene = b
 end
 
 function scenedispatcher:get_current()
@@ -103,7 +114,7 @@ function scenedispatcher:update(dt)
 end
 
 function scenedispatcher:render(dt)
-	love.graphics.setCanvas({self.canvas, depthstencil = self.depthstencil})
+	love.graphics.setCanvas({ self.canvas, depthstencil = self.depthstencil })
 	lovg.clear()
 	if current_scene then current_scene:render(dt) end
 	if self.next_scene then
@@ -123,4 +134,16 @@ function scenedispatcher:present()
 	lovg.draw(self.canvas, ox, oy, 0, canvas_scale, canvas_scale)
 end
 
-return scenedispatcher()
+local instance = scenedispatcher()
+function love.resize(w, h)
+	if instance.resizable then
+		instance:resize_viewport()
+	else
+		instance:update_viewport_position()
+	end
+	for _, v in pairs(list) do
+		if v.resize then v:resize(w, h) end
+	end
+end
+
+return instance

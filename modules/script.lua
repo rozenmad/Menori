@@ -5,7 +5,7 @@
 	2020
 -------------------------------------------------------------------------------
 --]]
-
+--[[
 local script = {}
 script.__index = script
 
@@ -62,7 +62,7 @@ function global:loop()
 			end
 		end
 	end
-end
+end]]
 local class = require 'menori.modules.libs.class'
 
 local script = class('script')
@@ -83,11 +83,11 @@ local function wait(object, tvalue)
 end
 
 function script:constructor(coroutine_fn, opt)
-	self.opt = opt or {}
+	self.opt = opt or { loop = false }
 	self.handle = coroutine.create(function()
 		repeat
-			coroutine_fn()
-		until opt.loop
+			coroutine_fn(wait)
+		until not self.opt.loop
 	end)
 	self.complete = false
 end

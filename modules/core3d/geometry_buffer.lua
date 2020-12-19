@@ -3,15 +3,24 @@ local ffi = require 'ffi'
 
 local geometry_buffer = class('mesh_buffer')
 
+local function attribute_sizeof(type)
+    if type == 'byte' then
+        return 1
+    elseif type == 'float' then
+        return 4
+    else
+        return 2
+    end
+end
+
 function geometry_buffer:constructor(size, format)
     self.format = format
     self.bytesize = 0
     self.attributes_count = 0
     for i, v in ipairs(format) do
-        self.bytesize = self.bytesize + ffi.sizeof(v[2]) * v[3]
+        self.bytesize = self.bytesize + attribute_sizeof(v[2]) * v[3]
         self.attributes_count = self.attributes_count + v[3]
     end
-
     self:reallocate(size)
 end
 
@@ -26,10 +35,11 @@ function geometry_buffer:reallocate(size)
         ffi.copy(dst, src, self.data:getSize())
     end
     self.data = temp_data
+    self.ptr = ffi.cast('unsigned char*', self.data:getFFIPointer())
 end
 
-function geometry_buffer:get_data_pointer(ct)
-    return ffi.cast(ct, self.data:getFFIPointer())
+function geometry_buffer:get_data_pointer(index)
+    return self.ptr + (self.bytesize * index)
 end
 
 function geometry_buffer:update(count)
