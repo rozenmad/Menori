@@ -17,6 +17,8 @@ function sprite:constructor(quads, image)
 	self.quads = quads
 	self.image = image
 	self.index = 1
+	self.ox = 0
+	self.oy = 0
 
 	self.stop = false
 	self.duration_accumulator = 0
@@ -41,6 +43,12 @@ end
 function sprite:set_frame_index(index)
 	assert(index <= #self.quads, string.format('Sprite frame is out of range - %i, max - %i', index, #self.quads))
 	self.index = index
+end
+
+function sprite:set_pivot(px, py)
+	local x, y, w, h = self:get_frame_viewport()
+	self.ox = px * w
+	self.oy = py * h
 end
 
 --- Get frame count.
@@ -82,8 +90,10 @@ function sprite:update(dt)
 end
 
 --- Draw this sprite.
-function sprite:draw(...)
-	love.graphics.draw(self.image, self.quads[self.index], ...)
+function sprite:draw(x, y, ...)
+	x = (x or 0) - self.ox
+	y = (y or 0) - self.oy
+	love.graphics.draw(self.image, self.quads[self.index], x, y, ...)
 end
 
 return sprite

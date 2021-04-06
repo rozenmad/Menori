@@ -26,6 +26,16 @@ local function load_slice(path, name)
 
 	local iw, ih = image:getDimensions()
 
+	local frames
+	if #data.frames <= 0 then -- if slices frames is hash type
+		frames = {}
+		for k, v in pairs(data.frames) do
+			frames[#frames + 1] = v
+		end
+	else
+		frames = data.frames
+	end
+
 	local spritesheet = {}
 
 	for _, slice in ipairs(meta.slices) do
@@ -33,7 +43,7 @@ local function load_slice(path, name)
 		for i, key in ipairs(slice.keys) do
 			local bounds = key.bounds
 
-			local frame = data.frames[i].frame
+			local frame = frames[i].frame
 			local ox = frame.x
 			local oy = frame.y
 			quads[i] = love.graphics.newQuad(ox+bounds.x, oy+bounds.y, bounds.w, bounds.h, iw, ih)

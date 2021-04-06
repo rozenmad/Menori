@@ -8,9 +8,11 @@
 
 local Node = require 'menori.modules.node'
 local ShaderObject = require 'menori.modules.shaderobject'
-local Model = Node:extend('Model')
-
+local ml = require 'menori.modules.ml'
+local vec3 = ml.vec3
 local cpml = require 'libs.cpml'
+
+local Model = Node:extend('Model')
 
 Model.default_shader = ShaderObject([[
 #ifdef VERTEX
@@ -21,6 +23,14 @@ Model.default_shader = ShaderObject([[
 
 	vec4 position(mat4 transform_projection, vec4 vertex_position) {
 		return m_projection * m_view * m_model * vertex_position;
+	}
+#endif
+#ifdef PIXEL
+	vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords)
+	{
+		vec4 texcolor = Texel(t, texture_coords);
+		if( texcolor.a <= 0.0 ) discard;
+		return texcolor * color;
 	}
 #endif
 ]])
@@ -64,8 +74,8 @@ end
 
 function Model:constructor(node, shader)
 	Model.super.constructor(self)
-	self.local_matrix:set_position_and_rotation(cpml.vec3(node.translation), cpml.quat(node.rotation))
-	self.local_matrix:scale(cpml.vec3(node.scale))
+	self.local_matrix:set_position_and_rotation(vec3(node.translation), cpml.quat(node.rotation))
+	self.local_matrix:scale(vec3(node.scale))
 
 	self.shader = shader or Model.default_shader
 

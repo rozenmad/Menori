@@ -23,7 +23,6 @@ local default_effect = nil
 
 function scenedispatcher:constructor()
 	self.next_scene = nil
-	self.depthstencil = true
 	self.effect = default_effect
 end
 
@@ -36,7 +35,6 @@ function scenedispatcher:resize_viewport(w, h)
 	self.h = h
 	self.canvas = lovg.newCanvas(self.w, self.h, { format = 'normal', msaa = 0 })
 	self.canvas:setFilter('nearest', 'nearest')
-
 	self:update_viewport_position()
 end
 
@@ -81,14 +79,6 @@ function scenedispatcher:_change_scene(next_scene)
 	local a = current_scene
 	local b = next_scene
 
-	love.mousepressed = b:_input_listeners_callback('mousepressed')
-	love.mousereleased = b:_input_listeners_callback('mousereleased')
-	love.textinput = b:_input_listeners_callback('textinput')
-	love.mousemoved = b:_input_listeners_callback('mousemoved')
-	love.keypressed = b:_input_listeners_callback('keypressed')
-	love.keyreleased = b:_input_listeners_callback('keyreleased')
-	love.wheelmoved = b:_input_listeners_callback('wheelmoved')
-
 	if a and a.on_leave then a:on_leave() end
 	if b and b.on_enter then b:on_enter() end
 	current_scene = b
@@ -114,8 +104,9 @@ function scenedispatcher:update(dt)
 end
 
 function scenedispatcher:render(dt)
-	love.graphics.setCanvas({ self.canvas, depthstencil = self.depthstencil })
+	love.graphics.setCanvas({ self.canvas, depth = true, stencil = true })
 	lovg.clear()
+	lovg.push()
 	if current_scene then current_scene:render(dt) end
 	if self.next_scene then
 		if self.effect.update then self.effect:update() end
@@ -128,6 +119,7 @@ function scenedispatcher:render(dt)
 	end
 	love.graphics.setCanvas()
 	lovg.setShader()
+	lovg.pop()
 end
 
 function scenedispatcher:present()
@@ -135,7 +127,8 @@ function scenedispatcher:present()
 end
 
 local instance = scenedispatcher()
-function love.resize(w, h)
+
+function scenedispatcher.resize(w, h)
 	if instance.resizable then
 		instance:resize_viewport()
 	else
@@ -143,6 +136,12 @@ function love.resize(w, h)
 	end
 	for _, v in pairs(list) do
 		if v.resize then v:resize(w, h) end
+	end
+end
+
+function scenedispatcher.mousemoved(x, y, dx, dy, istouch)
+	for _, v in pairs(list) do
+		if v.mousemoved then v:mousemoved(x, y, dx, dy, istouch) end
 	end
 end
 

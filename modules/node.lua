@@ -11,7 +11,8 @@
 --- Transform class included (see transform).
 -- @module Node
 local class		= require 'menori.modules.libs.class'
-local matrix4x4 = require 'menori.modules.libs.matrix4x4'
+local ml 		= require 'menori.modules.ml'
+local mat4		= ml.mat4
 
 local node = class('Node')
 node.layer = 0
@@ -25,8 +26,8 @@ function node:constructor()
 	self.update_flag = true
 	self.render_flag = true
 
-	self.local_matrix = matrix4x4()
-	self.world_matrix = matrix4x4()
+	self.local_matrix = mat4()
+	self.world_matrix = mat4()
 end
 
 function node:update_transform(_child)

@@ -9,11 +9,11 @@
 --- An Environment contains the uniform values specific for a location. For example, the lights are part of the Environment.
 -- @module Environment
 local class = require 'menori.modules.libs.class'
+local ml 	= require 'menori.modules.ml'
+
+local vec3 = ml.vec3
 
 local Environment = class('Environment')
-
-local cpml = require 'libs.cpml'
-local vec3 = cpml.vec3
 
 local directional_light = class('DirectionalLight')
 
@@ -21,12 +21,40 @@ function directional_light:constructor(dx, dy, dz, color)
 	self.direction = vec3(dx, dy, dz):normalize()
 	self.color = color
 	self.type = 1
+	self.enabled = true
 end
 
 function directional_light:to_uniforms(shader, light_index_str)
-	shader:send(light_index_str .. 'direction', {self.direction:unpack()})
-	shader:send(light_index_str .. 'color', self.color)
-	shader:send(light_index_str .. 'type', self.type)
+	if self.enabled then
+		shader:send(light_index_str .. 'direction', {self.direction:unpack()})
+		shader:send(light_index_str .. 'color', self.color)
+		shader:send(light_index_str .. 'type', self.type)
+	else
+		shader:send(light_index_str .. 'type', 0)
+	end
+end
+
+local point_light = class('PointLight')
+
+function point_light:constructor(x, y, z, color, power, distance)
+	self.position = vec3(x, y, z)
+	self.color = color
+	self.power = power
+	self.distance = distance
+	self.type = 2
+	self.enabled = true
+end
+
+function point_light:to_uniforms(shader, light_index_str)
+	if self.enabled then
+		shader:send(light_index_str .. 'position', {self.position:unpack()})
+		shader:send(light_index_str .. 'color', self.color)
+		shader:send(light_index_str .. 'distance', self.distance)
+		shader:send(light_index_str .. 'power', self.power)
+		shader:send(light_index_str .. 'type', self.type)
+	else
+		shader:send(light_index_str .. 'type', 0)
+	end
 end
 
 --- Constructor
@@ -48,8 +76,12 @@ function Environment:set_optional_uniform(name, value)
 	self.uniform_table[name] = value
 end
 
-function Environment:add_direction_light(dx, dy, dz, color)
-	self.lights[#self.lights + 1] = directional_light(dx, dy, dz, color)
+function Environment:add_direction_light(...)
+	self.lights[#self.lights + 1] = directional_light(...)
+end
+
+function Environment:add_point_light(...)
+	self.lights[#self.lights + 1] = point_light(...)
 end
 
 function Environment:add_light(light)
@@ -76,9 +108,8 @@ end
 function Environment:send_light_sources_to(shader)
 	shader:send('light_count', #self.lights)
 	for i = 1, #self.lights do
-		local light_index_str =  "lights[" .. (i - 1) .. "]."
 		local light = self.lights[i]
-
+		local light_index_str =  "lights[" .. (i - 1) .. "]."
 		light:to_uniforms(shader, light_index_str)
 	end
 end

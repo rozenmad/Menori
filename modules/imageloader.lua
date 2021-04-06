@@ -25,7 +25,6 @@ function imageloader.load(filename, mipmaps)
 end
 
 --- Find image in cache list or load if not exist in cache.
--- @return [Image](https://love2d.org/wiki/Image)
 function imageloader.find(filename)
 	return list[filename] or imageloader.load(filename)
 end

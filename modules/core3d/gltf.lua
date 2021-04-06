@@ -7,10 +7,6 @@
 --]]
 
 local json = require 'libs.json'
-local cpml = require 'libs.cpml'
-local vec3 = cpml.vec3
-local quat = cpml.quat
-
 local ImageLoader = require 'menori.modules.imageloader'
 
 local gl_component_offset = {

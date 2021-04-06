@@ -8,12 +8,12 @@
 
 --- Camera for 2D scenes.
 -- @module Camera
-local class         	= require 'menori.modules.libs.class'
-local matrix4x4     	= require 'menori.modules.libs.matrix4x4'
-local scenedispatcher 	= require 'menori.modules.scenedispatcher'
+local class				= require 'menori.modules.libs.class'
+local ml 				= require 'menori.modules.ml'
+local scenedispatcher 		= require 'menori.modules.scenedispatcher'
 
-local cpml = require 'libs.cpml'
-local vec3 = cpml.vec3
+local mat4 = ml.mat4
+local vec3 = ml.vec3
 
 local camera = class('Camera')
 
@@ -27,7 +27,7 @@ function camera:constructor()
 	self.sy = 1
 	self.ox = 0
 	self.oy = 0
-	self.matrix = matrix4x4()
+	self.matrix = mat4()
 
 	self._camera_2d_mode = true
 end

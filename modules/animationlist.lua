@@ -1,3 +1,11 @@
+--[[
+-------------------------------------------------------------------------------
+	Menori
+	@author rozenmad
+	2020
+-------------------------------------------------------------------------------
+--]]
+
 local class = require 'menori.modules.libs.class'
 
 local animation_list = class('animation_list')

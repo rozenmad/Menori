@@ -14,6 +14,8 @@ local class 		= require('menori.modules.libs.class')
 local lovg = love.graphics
 local temp_environment
 
+local temp_renderstate = { clear = true }
+
 local function node_sort(a, b)
 	return a.layer < b.layer
 end
@@ -30,19 +32,13 @@ function scene:constructor()
 	self.render_time = 0
 end
 
-function scene:_input_listeners_callback(event_name)
-	return function(...)
-		local event = self[event_name]
-		if event then event(self, ...) end
-	end
-end
-
 function scene:current_render_time()
 	return self.render_time
 end
 
 --- Recursively calls render on all nodes.
 function scene:render_nodes(node, environment, renderstates, filter)
+	renderstates = renderstates or temp_renderstate
 	self.render_time = love.timer.getTime()
 	filter = filter or default_filter
 	self:_recursive_render_nodes(node, false)
@@ -56,24 +52,27 @@ function scene:render_nodes(node, environment, renderstates, filter)
 		camera:_apply_transform()
 	end
 
-	if renderstates and #renderstates > 0 then
-		local prev_canvas = love.graphics.getCanvas()
+	local canvases = #renderstates > 0
+
+	local prev_canvas = love.graphics.getCanvas()
+	if canvases then
 		lovg.setCanvas(renderstates)
-		if renderstates.clear then
-			if renderstates.colors then
-				lovg.clear(unpack(renderstates.colors))
-			else
-				lovg.clear()
-			end
+	end
+
+	if renderstates.clear then
+		if renderstates.colors then
+			lovg.clear(unpack(renderstates.colors))
+		else
+			lovg.clear()
 		end
-		for _, n in ipairs(self.list_drawable_nodes) do
-			filter(n, self, temp_environment)
-		end
+	end
+
+	for _, n in ipairs(self.list_drawable_nodes) do
+		filter(n, self, temp_environment)
+	end
+
+	if canvases then
 		love.graphics.setCanvas(prev_canvas)
-	else
-		for _, n in ipairs(self.list_drawable_nodes) do
-			filter(n, self, temp_environment)
-		end
 	end
 
 	lovg.pop()

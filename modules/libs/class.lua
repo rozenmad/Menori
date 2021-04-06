@@ -33,9 +33,9 @@ end
 new_class = function(name, base_class)
 	local t = {
 		new 		= new,
-		extend 		= extend,
+		extend 	= extend,
 		implement 	= implement,
-		super 		= base_class,
+		super 	= base_class,
 		class_name 	= name or 'unnamed class'
 	}
 	t.__index = t
