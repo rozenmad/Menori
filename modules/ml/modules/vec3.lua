@@ -196,5 +196,9 @@ function vec3.pow(a, b)
 end
 
 return setmetatable(vec3, { __call = function(_, x, y, z)
+	if type(x) == 'table' then
+		local xx, yy, zz = x.x or x[1], x.y or x[2], x.z or x[3]
+		return new(xx, yy, zz)
+	end
 	return new(x, y, z)
 end })

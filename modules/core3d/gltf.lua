@@ -53,11 +53,14 @@ local function get_buffer_content(v, additional_value)
 	return values
 end
 
-local function read_primitive(primitive, attribute_type)
-	local index = primitive.attributes[attribute_type]
-	assert(index ~= nil)
-	return get_buffer_content(index)
-end
+local attribute_list = {
+	'POSITION',
+	'NORMAL',
+	'TEXCOORD_0',
+	'TEXCOORD_1',
+}
+
+local default = {0, 0, 0}
 
 local function load_mesh(mesh)
 	local primitives = {}
@@ -66,9 +69,18 @@ local function load_mesh(mesh)
 
 		local vt = {}
 		local tc_index = 1
-		local p   = read_primitive(primitive, 'POSITION')
-		local n   = read_primitive(primitive, 'NORMAL')
-		local tc0 = read_primitive(primitive, 'TEXCOORD_0')
+		local pdata = {}
+
+		for i, v in ipairs(attribute_list) do
+			if primitive.attributes[v] then
+				pdata[v] = get_buffer_content(primitive.attributes[v])
+			end
+		end
+
+		local p   = pdata['POSITION']   or default
+		local n   = pdata['NORMAL']     or default
+		local tc0 = pdata['TEXCOORD_0'] or default
+
 		for i = 1, #p, 3 do
 			local x = float_round(p[i+0], 2)
 			local y = float_round(p[i+1], 2)
@@ -78,6 +90,7 @@ local function load_mesh(mesh)
 			vt[#vt + 1] = {x, y, z, t, s, n[i], n[i+1], n[i+2]}
 			tc_index = tc_index + 2
 		end
+
 		local material
 		if primitive.material then
 			material = materials[primitive.material + 1]
@@ -143,7 +156,7 @@ local function load(path, filename)
 	materials = {}
 	for i, v in ipairs(data.materials or {}) do
 		local material = {}
-		local baseColorTexture = v.pbrMetallicRoughness.baseColorTexture
+		local baseColorTexture = v.pbrMetallicRoughness and v.pbrMetallicRoughness.baseColorTexture
 		if baseColorTexture then
 			local image = get_image_by_index(v.pbrMetallicRoughness.baseColorTexture.index)
 			material.image_data = image.data
@@ -153,6 +166,14 @@ local function load(path, filename)
 			local image = get_image_by_index(v.emissiveTexture.index)
 			material.image_data = image.data
 			material.image_name = image.name
+		end
+		if v.extensions then
+			if v.extensions.KHR_materials_pbrSpecularGlossiness then
+				local diffuse_t = v.extensions.KHR_materials_pbrSpecularGlossiness.diffuseTexture
+				local image = get_image_by_index(diffuse_t.index)
+				material.image_data = image.data
+				material.image_name = image.name
+			end
 		end
 		materials[i] = material
 	end

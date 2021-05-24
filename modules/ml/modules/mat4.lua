@@ -224,7 +224,7 @@ function mat4_mt:set_position_and_rotation(position, angle, axis)
 	if type(angle) == "table" or type(angle) == "cdata" then
 		angle, axis = angle:to_angle_axis()
 	end
-	local length = axis:len()
+	local length = axis:length()
 	local e = self.e
 
 	if length ~= 0 then

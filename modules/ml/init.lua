@@ -9,6 +9,7 @@ local files = {
 	"vec3",
 	"vec4",
 	"mat4",
+	"quat",
 }
 
 for _, file in ipairs(files) do

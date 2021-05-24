@@ -32,7 +32,7 @@ function PerspectiveCamera:constructor(fov, aspect, nclip, fclip)
 	self.eye 		= vec3( 0, 0, 1 )
 	self.up 		= vec3( 0,-1, 0 )
 
-	self.swap_look_at = false
+	self.swap_look_at = true
 end
 
 function PerspectiveCamera:update_view_matrix()
@@ -74,6 +74,16 @@ function PerspectiveCamera:get_unproject_point(x, y, viewport)
 	return vec3(mat4.unproject(vec3(x, y, 1), inverse_vp, viewport))
 end
 
+function PerspectiveCamera:set_position(position)
+	local direction = self:get_direction()
+	self.eye = position + direction
+	self.center = position
+end
+
+function PerspectiveCamera:get_position()
+	return self.center
+end
+
 function PerspectiveCamera:move(direction)
 	self.eye = self.eye + direction
 	self.center = self.center + direction
@@ -84,14 +94,21 @@ function PerspectiveCamera:set_direction(direction, distance)
 	self.center = self.eye + direction * distance
 end
 
-function PerspectiveCamera:rotate_position(angle)
-	local v = self:direction()
+function PerspectiveCamera:rotation(hangle, vangle)
+	local v = cpml.vec3(1, 0, 0)
 
-	self.eye.z = self.center.z + (math.sin(angle)*v.x + math.cos(angle)*v.z)
-	self.eye.x = self.center.x + (math.cos(angle)*v.x - math.sin(angle)*v.z)
+	local r = cpml.quat.from_angle_axis(math.rad(hangle), 0, 1, 0)
+	local p = cpml.quat.from_angle_axis(math.rad(vangle), 0, 0, 1)
+	local euler = r * p
+
+	local v = euler:mul_vec3(v)
+	self.eye = self.center + vec3(v.x, v.y, v.z)
+
+	--self.eye.z = self.center.z + (math.sin(angle)*v.x + math.cos(angle)*v.z)
+	--self.eye.x = self.center.x + (math.cos(angle)*v.x - math.sin(angle)*v.z)
 end
 
-function PerspectiveCamera:direction()
+function PerspectiveCamera:get_direction()
 	return (self.center - self.eye):normalize()
 end
 

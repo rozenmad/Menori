@@ -10,31 +10,29 @@
 local modules = 'menori.modules.'
 
 local menori = {
-	PerspectiveCamera		= require(modules .. 'core3d.camera'),
-	Environment			= require(modules .. 'core3d.environment'),
+	PerspectiveCamera = require(modules .. 'core3d.camera'),
+	Environment       = require(modules .. 'core3d.environment'),
 
-	glTFLoader			= require(modules .. 'core3d.gltf'),
-	Model				= require(modules .. 'core3d.model'),
-	GeometryBuffer		= require(modules .. 'core3d.geometry_buffer'),
-	InstancedMesh		= require(modules .. 'core3d.instanced_mesh'),
+	glTFLoader        = require(modules .. 'core3d.gltf'),
+	Model             = require(modules .. 'core3d.model'),
+	ModelNode         = require(modules .. 'core3d.model_node'),
+	GeometryBuffer    = require(modules .. 'core3d.geometry_buffer'),
+	InstancedMesh     = require(modules .. 'core3d.instanced_mesh'),
 
-	AnimationList		= require(modules .. 'animationlist'),
-	Camera			= require(modules .. 'camera'),
-	ImageLoader			= require(modules .. 'imageloader'),
-	Input				= require(modules .. 'input'),
-	Node				= require(modules .. 'node'),
-	Scene				= require(modules .. 'scene'),
-	ShaderObject		= require(modules .. 'shaderobject'),
-	SceneDispatcher		= require(modules .. 'scenedispatcher'),
-	Sprite			= require(modules .. 'sprite'),
-	SpriteLoader		= require(modules .. 'spriteloader'),
-	Script			= require(modules .. 'script'),
+	AnimationList     = require(modules .. 'animationlist'),
+	Camera            = require(modules .. 'camera'),
+	ImageLoader       = require(modules .. 'imageloader'),
+	Input             = require(modules .. 'input'),
+	Node              = require(modules .. 'node'),
+	Scene             = require(modules .. 'scene'),
+	ShaderObject      = require(modules .. 'shaderobject'),
+	SceneDispatcher   = require(modules .. 'scenedispatcher'),
+	Sprite            = require(modules .. 'sprite'),
+	SpriteLoader      = require(modules .. 'spriteloader'),
+	Script            = require(modules .. 'script'),
 
-	utils				= require(modules .. 'utils'),
-	class				= require(modules .. 'libs.class'),
-
-	-- globals --
-	ml				= require(modules .. 'ml'),
+	class             = require(modules .. 'libs.class'),
+	ml                = require(modules .. 'ml'),
 }
 
 return menori

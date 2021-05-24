@@ -194,5 +194,9 @@ function vec4.pow(a, b)
 end
 
 return setmetatable(vec4, { __call = function(_, x, y, z, w)
+	if type(x) == 'table' then
+		local xx, yy, zz, ww = x.x or x[1], x.y or x[2], x.z or x[3], x.w or x[4]
+		return new(xx, yy, zz, ww)
+	end
 	return new(x, y, z, w)
 end })

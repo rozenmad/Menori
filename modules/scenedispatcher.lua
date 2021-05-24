@@ -26,15 +26,16 @@ function scenedispatcher:constructor()
 	self.effect = default_effect
 end
 
-function scenedispatcher:resize_viewport(w, h)
+function scenedispatcher:resize_viewport(w, h, opt)
 	self.resizable = w == nil or h == nil
 	if self.resizable then
 		w, h = love.graphics.getDimensions()
 	end
 	self.w = w
 	self.h = h
+	local filter = opt.canvas_filter or 'nearest'
 	self.canvas = lovg.newCanvas(self.w, self.h, { format = 'normal', msaa = 0 })
-	self.canvas:setFilter('nearest', 'nearest')
+	self.canvas:setFilter(filter, filter)
 	self:update_viewport_position()
 end
 
@@ -93,7 +94,7 @@ function scenedispatcher:update(dt)
 	accumulator = accumulator + dt
 	while accumulator >= tick_period do
 		update_count = update_count + 1
-		if current_scene then current_scene:update(dt) end
+		if current_scene and current_scene.update then current_scene:update(dt) end
 
 		accumulator = accumulator - tick_period
 		if update_count > 3 then
@@ -107,7 +108,7 @@ function scenedispatcher:render(dt)
 	love.graphics.setCanvas({ self.canvas, depth = true, stencil = true })
 	lovg.clear()
 	lovg.push()
-	if current_scene then current_scene:render(dt) end
+	if current_scene and current_scene.render then current_scene:render(dt) end
 	if self.next_scene then
 		if self.effect.update then self.effect:update() end
 		if self.effect.render then self.effect:render() end

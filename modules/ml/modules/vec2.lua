@@ -194,5 +194,9 @@ function vec2.pow(a, b)
 end
 
 return setmetatable(vec2, { __call = function(_, x, y)
+	if type(x) == 'table' then
+		local xx, yy = x.x or x[1], x.y or x[2]
+		return new(xx, yy)
+	end
 	return new(x, y)
 end })
