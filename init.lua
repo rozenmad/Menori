@@ -16,6 +16,7 @@ local menori = {
 	glTFLoader        = require(modules .. 'core3d.gltf'),
 	Model             = require(modules .. 'core3d.model'),
 	ModelNode         = require(modules .. 'core3d.model_node'),
+	ModelNodeTree     = require(modules .. 'core3d.model_node_tree'),
 	GeometryBuffer    = require(modules .. 'core3d.geometry_buffer'),
 	InstancedMesh     = require(modules .. 'core3d.instanced_mesh'),
 

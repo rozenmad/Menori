@@ -29,8 +29,6 @@ ModelNode.default_shader = ShaderObject([[
 
 function ModelNode:constructor(model_instance, shader)
 	ModelNode.super.constructor(self)
-	self.local_matrix:set_position_and_rotation(vec3(model_instance.translation), quat(model_instance.rotation))
-	self.local_matrix:scale(vec3(model_instance.scale))
 
 	self.shader = shader or ModelNode.default_shader
 	self.model_instance = model_instance

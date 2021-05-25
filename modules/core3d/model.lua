@@ -6,12 +6,18 @@
 -------------------------------------------------------------------------------
 --]]
 
-local Model = {}
+local class = require 'menori.modules.libs.class'
+local ml = require 'menori.modules.ml'
+local mat4 = ml.mat4
+local vec3 = ml.vec3
+local quat = ml.quat
+
+local Model = class('Model')
 
 Model.mesh_format = {
 	{"VertexPosition", "float", 3},
-	{"VertexTexCoord", "float", 2},
 	{"aNormal", "float", 3},
+	{"VertexTexCoord", "float", 2},
 }
 
 function Model.create_primitive(vertices, image)
@@ -19,11 +25,14 @@ function Model.create_primitive(vertices, image)
 end
 
 function Model.create_mesh_from_primitive(primitive, mode)
-	assert(#primitive.vertices > 0)
+	local count = primitive.count or #primitive.vertices
+	assert(count > 0)
 	mode = mode or 'triangles'
-	local mesh = love.graphics.newMesh(Model.mesh_format, primitive.vertices, mode)
+	local mesh = love.graphics.newMesh(Model.mesh_format, primitive.vertices, mode, 'dynamic')
 
-	mesh:setVertexMap(primitive.indices)
+	if primitive.indices then
+		mesh:setVertexMap(primitive.indices, primitive.indices_type_size <= 2 and 'uint16' or 'uint32')
+	end
 	if primitive.material and primitive.material.image_data then
 		mesh:setTexture(primitive.material.image_data)
 	end
@@ -45,17 +54,11 @@ function Model.generate_indices(size)
 	return indices
 end
 
-function Model.create(mesh)
-	local model_instance = {
-		primitives = {},
-		translation = mesh.translation,
-		rotation = mesh.rotation,
-		scale = mesh.scale,
-	}
+function Model:constructor(mesh)
+	self.primitives = {}
 	for i, p in ipairs(mesh.primitives) do
-		model_instance.primitives[i] = Model.create_mesh_from_primitive(p)
+		self.primitives[i] = Model.create_mesh_from_primitive(p)
 	end
-	return model_instance
 end
 
 return Model

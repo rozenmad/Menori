@@ -8,8 +8,9 @@
 
 local json = require 'libs.json'
 local ImageLoader = require 'menori.modules.imageloader'
+local ffi = require 'ffi'
 
-local gl_component_offset = {
+local gl_component_size = {
 	[5120] = 1,
 	[5121] = 1,
 	[5122] = 2,
@@ -18,77 +19,137 @@ local gl_component_offset = {
 	[5126] = 4,
 }
 
+local gl_type = {
+	['SCALAR'] = 1,
+	['VEC2'] = 2,
+	['VEC3'] = 3,
+	['VEC4'] = 4,
+	['MAT2'] = 4,
+	['MAT3'] = 9,
+	['MAT4'] = 16,
+}
+
 local function unpack_type(component_type)
-	if component_type == 5120 then return 'b'  end
-	if component_type == 5121 then return 'B'  end
-	if component_type == 5122 then return 'h'  end
-	if component_type == 5123 then return 'H'  end
-	if component_type == 5125 then return 'I4' end
-	if component_type == 5126 then return 'f'  end
+	if component_type == 5120 then
+		return 'b'
+	elseif component_type == 5121 then
+		return 'B'
+	elseif component_type == 5122 then
+		return 'h'
+	elseif component_type == 5123 then
+		return 'H'
+	elseif component_type == 5125 then
+		return 'I4'
+	elseif component_type == 5126 then
+		return 'f'
+	end
 end
 
 local buffers, images, materials, meshes
 local data
 
-local function float_round(num, decimals)
- 	local power = 10 ^ (decimals or 0)
-  	return (math.floor(num * power + 0.5) / power)
-end
-
-local function get_buffer_content(v, additional_value)
-	additional_value = additional_value or 0
-
-	local accessor = data.accessors[v + 1]
+local function get_buffer(accessor_index)
+	local accessor = data.accessors[accessor_index + 1]
 	local buffer_view = data.bufferViews[accessor.bufferView + 1]
 
-	local buffer = buffers[buffer_view.buffer + 1]
+	local data = buffers[buffer_view.buffer + 1]
 
-	local offset = buffer_view.byteOffset
-	local values = {}
-	local component_offset = gl_component_offset[accessor.componentType]
-	local utype = unpack_type(accessor.componentType)
-	for i = offset, offset + buffer_view.byteLength - 1, component_offset do
-		values[#values + 1] = love.data.unpack(utype, buffer, i + 1) + additional_value
+	local offset = buffer_view.byteOffset or 0
+	local length = buffer_view.byteLength
+
+	local component_size = gl_component_size[accessor.componentType]
+	local component_type = unpack_type(accessor.componentType)
+
+	local type_elements_count = gl_type[accessor.type]
+	return {
+		data = data,
+		offset = offset + (accessor.byteOffset or 0),
+		length = length,
+
+		stride = buffer_view.byteStride or (component_size * type_elements_count),
+		component_size = component_size,
+		component_type = component_type,
+
+		type_elements_count = type_elements_count,
+		count = accessor.count,
+	}
+end
+
+local function get_indices_content(v)
+	local buffer = get_buffer(v)
+	local element_size = buffer.component_size * buffer.type_elements_count
+
+	local temp_data = love.data.newByteData(buffer.count * element_size)
+	local temp_data_pointer = ffi.cast('char*', temp_data:getFFIPointer())
+
+	local data = ffi.cast('char*', buffer.data:getFFIPointer()) + buffer.offset
+
+	for i = 0, buffer.count - 1 do
+		ffi.copy(temp_data_pointer + i * element_size, data + i * buffer.stride, element_size)
 	end
-	return values
+
+	return temp_data, element_size
 end
 
 local attribute_list = {
 	'POSITION',
 	'NORMAL',
 	'TEXCOORD_0',
-	'TEXCOORD_1',
 }
 
-local default = {0, 0, 0}
+local function attrib_exist(attribute)
+	for i, v in ipairs(attribute_list) do
+		if v == attribute then
+			return true
+		end
+	end
+end
 
 local function load_mesh(mesh)
 	local primitives = {}
 	for j, primitive in ipairs(mesh.primitives) do
-		local indices = get_buffer_content(primitive.indices, 1)
+		local indices, indices_type_size
+		if primitive.indices then
+			indices, indices_type_size = get_indices_content(primitive.indices)
+		end
 
-		local vt = {}
-		local tc_index = 1
-		local pdata = {}
+		local length = 0
+		local components_stride = 0
+		local attribute_buffers = {}
+		local count = 0
+		local mesh_format = {}
 
-		for i, v in ipairs(attribute_list) do
-			if primitive.attributes[v] then
-				pdata[v] = get_buffer_content(primitive.attributes[v])
+		for k, v in pairs(primitive.attributes) do
+			if attrib_exist(k) then
+				local buffer = get_buffer(v)
+				attribute_buffers[k] = buffer
+
+				count = buffer.count
+
+				local element_size = buffer.component_size * buffer.type_elements_count
+				length = length + buffer.count * element_size
+				components_stride = components_stride + element_size
 			end
 		end
 
-		local p   = pdata['POSITION']   or default
-		local n   = pdata['NORMAL']     or default
-		local tc0 = pdata['TEXCOORD_0'] or default
+		local start_offset = 0
+		local temp_data = love.data.newByteData(length)
+		local temp_data_pointer = ffi.cast('char*', temp_data:getFFIPointer())
 
-		for i = 1, #p, 3 do
-			local x = float_round(p[i+0], 2)
-			local y = float_round(p[i+1], 2)
-			local z = float_round(p[i+2], 2)
-			local t = tc0[tc_index+0]
-			local s = tc0[tc_index+1]
-			vt[#vt + 1] = {x, y, z, t, s, n[i], n[i+1], n[i+2]}
-			tc_index = tc_index + 2
+		for i, v in pairs(attribute_list) do
+			local buffer = attribute_buffers[v]
+			if buffer then
+				local element_size = buffer.component_size * buffer.type_elements_count
+				for i = 0, buffer.count - 1 do
+					local p1 = buffer.offset + i * buffer.stride
+					local data = ffi.cast('char*', buffer.data:getFFIPointer()) + p1
+
+					local p2 = start_offset + i * components_stride
+
+					ffi.copy(temp_data_pointer + p2, data, element_size)
+				end
+				start_offset = start_offset + element_size
+			end
 		end
 
 		local material
@@ -98,31 +159,34 @@ local function load_mesh(mesh)
 			material = {}
 		end
 		primitives[j] = {
-			vertices = vt, indices = indices, material = material
+			vertices = temp_data,
+			indices = indices,
+			indices_type_size = indices_type_size,
+			material = material,
+			count = count
 		}
 	end
 	return primitives
 end
 
-local function read_scene_nodes(nodes)
-	local node_list = {}
+local nodes_mt = {}
+nodes_mt.__index = nodes_mt
+function nodes_mt.find_by_name(nodes, name)
 	for i, v in ipairs(nodes) do
-		local t = v.translation or {0, 0, 0}
-		local s = v.scale or {1, 1, 1}
-		local r = v.rotation or {0, 0, 0, 0}
+		if v.name == name then
+			return v
+		end
+	end
+end
 
+local function read_scene_nodes(nodes)
+	setmetatable(nodes, nodes_mt)
+	for i, v in ipairs(nodes) do
 		 -- get mesh index or 0
 		local mesh_index = v.mesh or -1
-		local node = {
-			primitives = meshes[mesh_index+1],
-			extras = v.extras,
-			translation = t,
-			scale = s,
-			rotation = r,
-		}
-		node_list[v.name] = node
+		v.primitives = meshes[mesh_index + 1]
 	end
-	return node_list
+	return nodes
 end
 
 local function get_image_by_index(index)
@@ -134,7 +198,7 @@ local function load(path, filename)
 
 	buffers = {}
 	for i, v in ipairs(data.buffers) do
-		buffers[i] = love.filesystem.read(path .. v.uri)
+		buffers[i] = love.filesystem.read('data', path .. v.uri)
 	end
 
 	images  = {}

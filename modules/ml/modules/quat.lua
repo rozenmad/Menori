@@ -1,3 +1,12 @@
+--[[
+-------------------------------------------------------------------------------
+	Menori
+	@author rozenmad
+	2020
+-------------------------------------------------------------------------------
+	this module based on CPML - Cirno's Perfect Math Library
+--]]
+
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3 = require(modules .. "vec3")
 
