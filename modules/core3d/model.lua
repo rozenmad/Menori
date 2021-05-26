@@ -23,11 +23,10 @@ end
 function Model.create_mesh_from_primitive(primitive, mode)
 	local count = primitive.count or #primitive.vertices
 	assert(count > 0)
+
 	local vertexformat = primitive.vertexformat or Model.vertexformat_default
 	mode = mode or 'triangles'
-	for i, v in ipairs(vertexformat) do
-		print(v[1], v[2], v[3])
-	end 
+
 	local mesh = love.graphics.newMesh(vertexformat, primitive.vertices, mode, 'dynamic')
 
 	if primitive.indices then

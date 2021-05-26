@@ -19,8 +19,8 @@ node.layer = 0
 
 --- Constructor for mixin.
 function node:constructor()
-	self._childs = {}
-	self._parent = nil
+	self.childs = {}
+	self.parent = nil
 
 	self.detach_flag = false
 	self.update_flag = true
@@ -30,11 +30,10 @@ function node:constructor()
 	self.world_matrix = mat4()
 end
 
-function node:update_transform(_child)
-	if self._parent then self._parent:update_transform(self) end
-	if self.local_matrix:is_changed() then
-		self:update_local_transform()
-		if _child then _child.local_matrix._changed = true end
+function node:update_transform()
+	self:update_local_transform()
+	for _, v in ipairs(self.childs) do
+		v:update_local_transform()
 	end
 end
 
@@ -42,7 +41,7 @@ function node:update_local_transform()
 	local local_matrix = self.local_matrix
 	local world_matrix = self.world_matrix
 
-	local parent = self._parent
+	local parent = self.parent
 	if parent then
 		world_matrix:copy(parent.world_matrix)
 		world_matrix:multiply(local_matrix)
@@ -55,15 +54,15 @@ end
 --- Get child node by index.
 -- @treturn Node
 function node:get_child_by_index(index)
-	assert(index <= #self._childs and index > 0, 'child index out of range')
-	return self._childs[index]
+	assert(index <= #self.childs and index > 0, 'child index out of range')
+	return self.childs[index]
 end
 
 --- Remove all childs from this node.
 function node:remove_childs()
-	for i = #self._childs, 1, -1 do
-		self._childs[i]._parent = nil
-		self._childs[i] = nil
+	for i = #self.childs, 1, -1 do
+		self.childs[i].parent = nil
+		self.childs[i] = nil
 	end
 end
 
@@ -71,26 +70,26 @@ end
 -- @treturn Node,...
 function node:attach(node)
 	--[[for i, node in ipairs({...}) do
-		self._childs[#self._childs + 1] = node
-		node._parent = self
+		self.childs[#self.childs + 1] = node
+		node.parent = self
 	end
 	return ...]]
-	self._childs[#self._childs + 1] = node
-	node._parent = self
+	self.childs[#self.childs + 1] = node
+	node.parent = self
 	return node
 end
 
 --- Detach child from this node.
 function node:detach(child)
-	for i, v in ipairs(self._childs) do
+	for i, v in ipairs(self.childs) do
 		if v == child then
-			table.remove(self._childs, i)
+			table.remove(self.childs, i)
 		end
 	end
 end
 
 function node:map_recursive(cb)
-	for i, v in ipairs(self._childs) do
+	for i, v in ipairs(self.childs) do
 		cb(v, i)
 		v:map_recursive(cb)
 	end
@@ -98,21 +97,21 @@ end
 
 --- Detach this node from parent.
 function node:detach_from_parent()
-	node._parent = nil
+	node.parent = nil
 	self.detach_flag = true
 end
 
 function node:childs_count()
-	return #self._childs
+	return #self.childs
 end
 
 --- Print all childs of this node.
 function node:debug_print(node, tabs)
 	node = node or self
 	tabs = tabs or ''
-	print(tabs .. '-> ' .. string.format('Node: %s Child count: %i', node, #node._childs))
+	print(tabs .. '-> ' .. string.format('Node: %s Child count: %i', node, #node.childs))
 	tabs = tabs .. '\t'
-	for i, v in ipairs(node._childs) do
+	for i, v in ipairs(node.childs) do
 		self:debug_print(v, tabs)
 	end
 end

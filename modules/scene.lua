@@ -93,7 +93,7 @@ function scene:_recursive_render_nodes(parent_node, transform_flag)
 		table.insert(self.list_drawable_nodes, parent_node)
 	end
 	local i = 1
-	local childs = parent_node._childs
+	local childs = parent_node.childs
 	while i <= #childs do
 		local node = childs[i]
 		self:_recursive_render_nodes(node, transform_flag)
@@ -114,7 +114,7 @@ function scene:_recursive_update_nodes(parent_node)
 		end
 
 		local i = 1
-		local childs = parent_node._childs
+		local childs = parent_node.childs
 		while i <= #childs do
 			local node = childs[i]
 			if node.detach_flag then

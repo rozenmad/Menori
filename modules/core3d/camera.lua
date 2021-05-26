@@ -14,6 +14,7 @@ local SceneDispatcher 		= require 'menori.modules.scenedispatcher'
 
 local mat4 = ml.mat4
 local vec3 = ml.vec3
+local quat = ml.quat
 
 local PerspectiveCamera = class('PerspectiveCamera')
 
@@ -95,10 +96,10 @@ function PerspectiveCamera:set_direction(direction, distance)
 end
 
 function PerspectiveCamera:rotation(hangle, vangle)
-	local v = cpml.vec3(1, 0, 0)
+	local v = vec3(1, 0, 0)
 
-	local r = cpml.quat.from_angle_axis(math.rad(hangle), 0, 1, 0)
-	local p = cpml.quat.from_angle_axis(math.rad(vangle), 0, 0, 1)
+	local r = quat.from_angle_axis(math.rad(hangle), 0, 1, 0)
+	local p = quat.from_angle_axis(math.rad(vangle), 0, 0, 1)
 	local euler = r * p
 
 	local v = euler:mul_vec3(v)

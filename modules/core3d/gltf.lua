@@ -10,6 +10,13 @@ local json = require 'libs.json'
 local ImageLoader = require 'menori.modules.imageloader'
 local ffi = require 'ffi'
 
+local datatypes = {
+	'byte',
+	'unorm16',
+	'',
+	'float',
+}
+
 local attribute_aliases = {
 	['POSITION'] = 'VertexPosition',
 	['TEXCOORD'] = 'VertexTexCoord',
@@ -142,8 +149,9 @@ local function load_mesh(mesh)
 			local element_size = buffer.component_size * buffer.type_elements_count
 			length = length + buffer.count * element_size
 			components_stride = components_stride + element_size
+
 			table.insert(vertexformat, {
-				attribute_name, 'float', buffer.type_elements_count
+				attribute_name, datatypes[buffer.component_size], buffer.type_elements_count
 			})
 		end
 
@@ -246,7 +254,7 @@ local function load(path, filename)
 		local mesh_index = v.mesh or -1
 		v.primitives = meshes[mesh_index + 1]
 	end
-	return nodes
+	return nodes, data.scenes
 end
 
 return {

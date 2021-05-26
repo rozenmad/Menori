@@ -23,14 +23,13 @@ ModelNode.default_shader = ShaderObject([[
 #endif
 ]])
 
-function ModelNode:constructor(model_instance, shader, matrix)
+function ModelNode:constructor(model, shader, matrix)
 	ModelNode.super.constructor(self)
+      self.shader = shader or ModelNode.default_shader
       if matrix then
             self.local_matrix:copy(matrix)
       end
-
-	self.shader = shader or ModelNode.default_shader
-	self.model_instance = model_instance
+	self.model = model
 end
 
 function ModelNode:render(scene, environment, shader)
@@ -39,7 +38,7 @@ function ModelNode:render(scene, environment, shader)
 	environment:send_uniforms_to(shader)
 
 	shader:send_matrix('m_model', self.world_matrix)
-	for _, v in ipairs(self.model_instance.primitives) do
+	for _, v in ipairs(self.model.primitives) do
 		love.graphics.draw(v)
 	end
 	shader:detach()
