@@ -1,8 +1,5 @@
 local Node = require 'menori.modules.node'
 local ShaderObject = require 'menori.modules.shaderobject'
-local ml = require 'menori.modules.ml'
-local vec3 = ml.vec3
-local quat = ml.quat
 
 local ModelNode = Node:extend('ModelNode')
 
@@ -11,7 +8,6 @@ ModelNode.default_shader = ShaderObject([[
       uniform mat4 m_model;
       uniform mat4 m_view;
       uniform mat4 m_projection;
-      attribute vec3 aNormal;
 
       vec4 position(mat4 transform_projection, vec4 vertex_position) {
             return m_projection * m_view * m_model * vertex_position;
@@ -27,8 +23,11 @@ ModelNode.default_shader = ShaderObject([[
 #endif
 ]])
 
-function ModelNode:constructor(model_instance, shader)
+function ModelNode:constructor(model_instance, shader, matrix)
 	ModelNode.super.constructor(self)
+      if matrix then
+            self.local_matrix:copy(matrix)
+      end
 
 	self.shader = shader or ModelNode.default_shader
 	self.model_instance = model_instance

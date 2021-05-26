@@ -7,14 +7,10 @@
 --]]
 
 local class = require 'menori.modules.libs.class'
-local ml = require 'menori.modules.ml'
-local mat4 = ml.mat4
-local vec3 = ml.vec3
-local quat = ml.quat
 
 local Model = class('Model')
 
-Model.mesh_format = {
+Model.vertexformat_default = {
 	{"VertexPosition", "float", 3},
 	{"aNormal", "float", 3},
 	{"VertexTexCoord", "float", 2},
@@ -27,8 +23,12 @@ end
 function Model.create_mesh_from_primitive(primitive, mode)
 	local count = primitive.count or #primitive.vertices
 	assert(count > 0)
+	local vertexformat = primitive.vertexformat or Model.vertexformat_default
 	mode = mode or 'triangles'
-	local mesh = love.graphics.newMesh(Model.mesh_format, primitive.vertices, mode, 'dynamic')
+	for i, v in ipairs(vertexformat) do
+		print(v[1], v[2], v[3])
+	end 
+	local mesh = love.graphics.newMesh(vertexformat, primitive.vertices, mode, 'dynamic')
 
 	if primitive.indices then
 		mesh:setVertexMap(primitive.indices, primitive.indices_type_size <= 2 and 'uint16' or 'uint32')
