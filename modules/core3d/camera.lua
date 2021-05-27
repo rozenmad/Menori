@@ -6,11 +6,9 @@
 -------------------------------------------------------------------------------
 --]]
 
---- PerspectiveCamera for 3D scenes.
--- @module PerspectiveCamera
-local class 			= require 'menori.modules.libs.class'
-local ml 				= require 'menori.modules.ml'
-local SceneDispatcher 		= require 'menori.modules.scenedispatcher'
+local class       = require 'menori.modules.libs.class'
+local ml          = require 'menori.modules.ml'
+local application = require 'menori.modules.application'
 
 local mat4 = ml.mat4
 local vec3 = ml.vec3
@@ -29,9 +27,9 @@ function PerspectiveCamera:constructor(fov, aspect, nclip, fclip)
 	self.m_inv_projection = self.m_projection:clone():inverse()
 	self.m_view = mat4()
 
-	self.center 	= vec3( 0, 0, 0 )
-	self.eye 		= vec3( 0, 0, 1 )
-	self.up 		= vec3( 0,-1, 0 )
+	self.center = vec3( 0, 0, 0 )
+	self.eye 	= vec3( 0, 0, 1 )
+	self.up 	= vec3( 0,-1, 0 )
 
 	self.swap_look_at = true
 end
@@ -47,7 +45,7 @@ function PerspectiveCamera:update_view_matrix()
 end
 
 function PerspectiveCamera:get_corner_normals(viewport)
-	viewport = viewport or {0.0, 0.0, SceneDispatcher.w, SceneDispatcher.h}
+	viewport = viewport or {0.0, 0.0, application.w, application.h}
 
 	local temp_view = self.m_view:clone()
 	temp_view[12] = 0
@@ -64,7 +62,7 @@ function PerspectiveCamera:get_corner_normals(viewport)
 end
 
 function PerspectiveCamera:get_unproject_point(x, y, viewport)
-	viewport = viewport or {0.0, 0.0, SceneDispatcher.w, SceneDispatcher.h}
+	viewport = viewport or {0.0, 0.0, application.w, application.h}
 
 	local temp_view = self.m_view:clone()
 	temp_view[12] = 0
@@ -95,18 +93,16 @@ function PerspectiveCamera:set_direction(direction, distance)
 	self.center = self.eye + direction * distance
 end
 
-function PerspectiveCamera:rotation(hangle, vangle)
+function PerspectiveCamera:rotation(y, p, r)
 	local v = vec3(1, 0, 0)
 
-	local r = quat.from_angle_axis(math.rad(hangle), 0, 1, 0)
-	local p = quat.from_angle_axis(math.rad(vangle), 0, 0, 1)
-	local euler = r * p
+	local _y = quat.from_angle_axis(math.rad(y), 0, 1, 0)
+	local _p = quat.from_angle_axis(math.rad(p), 0, 0, 1)
+	local _r = quat.from_angle_axis(math.rad(r), 1, 0, 0)
+	local euler = _y * _p * _r
 
 	local v = euler:mul_vec3(v)
 	self.eye = self.center + vec3(v.x, v.y, v.z)
-
-	--self.eye.z = self.center.z + (math.sin(angle)*v.x + math.cos(angle)*v.z)
-	--self.eye.x = self.center.x + (math.cos(angle)*v.x - math.sin(angle)*v.z)
 end
 
 function PerspectiveCamera:get_direction()

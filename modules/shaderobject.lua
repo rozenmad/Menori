@@ -2,23 +2,19 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
+
+--[[--
+Description.
+]]
+-- @module menori.ShaderObject
 
 local class = require 'menori.modules.libs.class'
 
 local shaderobject = class('ShaderObject')
 local temp
-shaderobject.chache_list = {}
-
-function shaderobject.registry(shader, name)
-	shaderobject.chache_list[name] = shader
-end
-
-function shaderobject.find(name)
-	return shaderobject.chache_list[name]
-end
 
 function shaderobject:constructor(...)
 	self.shader = love.graphics.newShader(...)

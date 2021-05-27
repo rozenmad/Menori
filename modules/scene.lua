@@ -2,13 +2,15 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
 
---- Base class of Scenes.
---- Inherit this class for your scenes.
--- @module Scene
+--[[--
+Base class of Scenes. Inherit this class for your scenes.
+]]
+-- @module menori.Scene
+
 local class 		= require('menori.modules.libs.class')
 
 local lovg = love.graphics
@@ -36,7 +38,7 @@ function scene:current_render_time()
 	return self.render_time
 end
 
---- Recursively calls render on all nodes.
+--- Recursively calls rendering of all nodes.
 function scene:render_nodes(node, environment, renderstates, filter)
 	renderstates = renderstates or temp_renderstate
 	self.render_time = love.timer.getTime()
@@ -101,7 +103,7 @@ function scene:_recursive_render_nodes(parent_node, transform_flag)
 	end
 end
 
---- Recursively calls update on all nodes.
+--- Recursively calls updating of all nodes.
 function scene:update_nodes(node, environment)
 	temp_environment = environment
 	self:_recursive_update_nodes(node)

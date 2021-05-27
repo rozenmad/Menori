@@ -2,34 +2,37 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
 
---- Sprite loader for slices or images.
--- @module SpriteLoader
-local JSON = require 'libs.json'
+--[[--
+Description.
+]]
+-- @module menori.SpriteLoader
 
-local modules 		= (...):gsub('%.[^%.]+$', '') .. "."
-local ImageLoader 	= require(modules .. 'imageloader')
-local Sprite 		= require(modules .. 'sprite')
+local json = require 'libs.json'
+
+local modules     = (...):gsub('%.[^%.]+$', '') .. "."
+local ImageLoader = require(modules .. 'imageloader')
+local Sprite      = require(modules .. 'sprite')
 
 local spriteloader = {}
 local list = setmetatable({}, {__mode = 'v'})
 
-local function load_slice(path, name)
+local function load_aseprite_sprite_sheet(path, name)
 	local filename = path .. name
-	local data = JSON.decode(love.filesystem.read(filename .. '.json'))
+	local data = json.decode(love.filesystem.read(filename .. '.json'))
 	local meta = data.meta
 
-	local image = ImageLoader.find(path .. meta.image)
+	local image = ImageLoader.load(path .. meta.image)
 
 	local iw, ih = image:getDimensions()
 
 	local frames
-	if #data.frames <= 0 then -- if slices frames is hash type
+	if #data.frames <= 0 then -- if hash type
 		frames = {}
-		for k, v in pairs(data.frames) do
+		for _, v in pairs(data.frames) do
 			frames[#frames + 1] = v
 		end
 	else
@@ -61,13 +64,14 @@ function spriteloader.from_image(image)
 	return Sprite:new({love.graphics.newQuad(0, 0, w, h, w, h)}, image)
 end
 
---- Load sprite from Aseprite array slices using sprite cache list.
-function spriteloader.load_slice(path, name)
-	if not list[name] then list[name] = load_slice(path, name) end
+--- Load sprite from Aseprite Sprite Sheet using sprite cache list.
+function spriteloader.load_sprite_sheet(path, name)
+	if not list[name] then list[name] = load_aseprite_sprite_sheet(path, name) end
 	return list[name]
 end
 
-function spriteloader.find_slice(name)
+--- Find Aseprite Sprite Sheet in cache list.
+function spriteloader.find_sprite_sheet(name)
 	return list[name]
 end
 

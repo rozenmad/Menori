@@ -32,8 +32,8 @@ function Model.create_mesh_from_primitive(primitive, mode)
 	if primitive.indices then
 		mesh:setVertexMap(primitive.indices, primitive.indices_type_size <= 2 and 'uint16' or 'uint32')
 	end
-	if primitive.material and primitive.material.image_data then
-		mesh:setTexture(primitive.material.image_data)
+	if primitive.material and primitive.material.base_color_texture then
+		mesh:setTexture(primitive.material.base_color_texture)
 	end
 	return mesh
 end
@@ -56,7 +56,10 @@ end
 function Model:constructor(mesh)
 	self.primitives = {}
 	for i, p in ipairs(mesh.primitives) do
-		self.primitives[i] = Model.create_mesh_from_primitive(p)
+		self.primitives[i] = {
+			mesh = Model.create_mesh_from_primitive(p),
+			material = p.material,
+		}
 	end
 end
 

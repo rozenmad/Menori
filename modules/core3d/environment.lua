@@ -7,7 +7,6 @@
 --]]
 
 --- An Environment contains the uniform values specific for a location. For example, the lights are part of the Environment.
--- @module Environment
 local class = require 'menori.modules.libs.class'
 local ml 	= require 'menori.modules.ml'
 

@@ -2,14 +2,15 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
 
---- Base class of Node.
---- Mixin this class to your game object.
---- Transform class included (see transform).
--- @module Node
+--[[--
+Description
+]]
+-- @module menori.Node
+
 local class		= require 'menori.modules.libs.class'
 local ml 		= require 'menori.modules.ml'
 local mat4		= ml.mat4
@@ -17,7 +18,7 @@ local mat4		= ml.mat4
 local node = class('Node')
 node.layer = 0
 
---- Constructor for mixin.
+--- Constructor.
 function node:constructor()
 	self.childs = {}
 	self.parent = nil
@@ -67,7 +68,8 @@ function node:remove_childs()
 end
 
 --- Attach child to this node.
--- @treturn Node,...
+-- @param node
+-- @return Node
 function node:attach(node)
 	--[[for i, node in ipairs({...}) do
 		self.childs[#self.childs + 1] = node
@@ -88,10 +90,10 @@ function node:detach(child)
 	end
 end
 
-function node:map_recursive(cb)
+function node:map_recursive(callback)
 	for i, v in ipairs(self.childs) do
-		cb(v, i)
-		v:map_recursive(cb)
+		callback(v, i)
+		v:map_recursive(callback)
 	end
 end
 
@@ -101,11 +103,14 @@ function node:detach_from_parent()
 	self.detach_flag = true
 end
 
+-- The number of children attached to this node.
 function node:childs_count()
 	return #self.childs
 end
 
---- Print all childs of this node.
+--- Recursively print all the children attached to this node.
+-- @param node (nil) by default
+-- @param tabs (nil) by default
 function node:debug_print(node, tabs)
 	node = node or self
 	tabs = tabs or ''

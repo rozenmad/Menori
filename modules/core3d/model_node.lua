@@ -39,7 +39,9 @@ function ModelNode:render(scene, environment, shader)
 
 	shader:send_matrix('m_model', self.world_matrix)
 	for _, v in ipairs(self.model.primitives) do
-		love.graphics.draw(v)
+            --love.graphics.setColor(v.material.base_color_factor)
+		love.graphics.draw(v.mesh)
+            --love.graphics.setColor(1, 1, 1, 1)
 	end
 	shader:detach()
 end

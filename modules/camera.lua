@@ -1,16 +1,20 @@
+
 --[[
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
 
---- Camera for 2D scenes.
--- @module Camera
-local class				= require 'menori.modules.libs.class'
-local ml 				= require 'menori.modules.ml'
-local scenedispatcher 		= require 'menori.modules.scenedispatcher'
+--[[--
+Description.
+]]
+-- @module menori.Camera
+
+local class       = require 'menori.modules.libs.class'
+local ml          = require 'menori.modules.ml'
+local application = require 'menori.modules.application'
 
 local mat4 = ml.mat4
 local vec3 = ml.vec3
@@ -32,12 +36,13 @@ function camera:constructor()
 	self._camera_2d_mode = true
 end
 
+--- Set Center
 function camera:set_center(nx, ny)
 	nx = nx or 0.5
 	ny = ny or 0.5
 	self._update = false
-	self.ox = math.floor(scenedispatcher.w * nx)
-	self.oy = math.floor(scenedispatcher.h * ny)
+	self.ox = math.floor(application.w * nx)
+	self.oy = math.floor(application.h * ny)
 end
 
 function camera:_apply_transform()
@@ -58,7 +63,7 @@ end
 
 function camera:get_viewport()
 	local x, y = self:get_position()
-	return x, y, scenedispatcher.w, scenedispatcher.h
+	return x, y, application.w, application.h
 end
 
 function camera:move(dx, dy)

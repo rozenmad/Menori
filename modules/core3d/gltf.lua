@@ -118,7 +118,7 @@ local function get_indices_content(v)
 	return temp_data, element_size
 end
 
-local function load_mesh(mesh)
+local function init_mesh(mesh)
 	local primitives = {}
 	for j, primitive in ipairs(mesh.primitives) do
 		local indices, indices_type_size
@@ -194,6 +194,25 @@ local function get_image_by_index(index)
 	return images[data.textures[index + 1].source + 1]
 end
 
+local function init_material(v)
+	local material = {
+		base_color_factor = {1, 1, 1, 1}
+	}
+	material.name = v.name
+	if v.pbrMetallicRoughness then
+		local pbr = v.pbrMetallicRoughness
+		material.base_color_factor = pbr.baseColorFactor
+
+		local baseColorTexture = pbr.baseColorTexture
+		if baseColorTexture then
+			local image = get_image_by_index(baseColorTexture.index)
+			material.base_color_texture = image.data
+			material.base_color_texture_coord = baseColorTexture.texCoord
+		end
+	end
+	return material
+end
+
 local function load(path, filename)
 	data = json.decode(love.filesystem.read(path .. filename .. '.gltf'))
 
@@ -206,12 +225,7 @@ local function load(path, filename)
 	if data.images then
 		for i, v in ipairs(data.images) do
 			local image_filename = path .. v.uri
-			local image
-			if ImageLoader.has(filename) then
-				image = ImageLoader.find(image_filename)
-			else
-				image = ImageLoader.load(image_filename, false)
-			end
+			local image = ImageLoader.load(image_filename)
 			images[i] = {
 				data = image, filename = image_filename
 			}
@@ -220,32 +234,12 @@ local function load(path, filename)
 
 	materials = {}
 	for i, v in ipairs(data.materials or {}) do
-		local material = {}
-		local baseColorTexture = v.pbrMetallicRoughness and v.pbrMetallicRoughness.baseColorTexture
-		if baseColorTexture then
-			local image = get_image_by_index(v.pbrMetallicRoughness.baseColorTexture.index)
-			material.image_data = image.data
-			material.image_name = image.name
-		end
-		if v.emissiveTexture then
-			local image = get_image_by_index(v.emissiveTexture.index)
-			material.image_data = image.data
-			material.image_name = image.name
-		end
-		if v.extensions then
-			if v.extensions.KHR_materials_pbrSpecularGlossiness then
-				local diffuse_t = v.extensions.KHR_materials_pbrSpecularGlossiness.diffuseTexture
-				local image = get_image_by_index(diffuse_t.index)
-				material.image_data = image.data
-				material.image_name = image.name
-			end
-		end
-		materials[i] = material
+		materials[i] = init_material(v)
 	end
 
 	meshes = {}
 	for i, v in ipairs(data.meshes) do
-		meshes[i] = load_mesh(v)
+		meshes[i] = init_mesh(v)
 	end
 
 	local nodes = data.nodes
