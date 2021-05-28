@@ -2,11 +2,15 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
 
---- An Environment contains the uniform values specific for a location. For example, the lights are part of the Environment.
+--[[--
+An environment is a class that sends information about the current settings of the environment (such as ambient color, fog, light sources, camera transformation matrices) etc to the shader.
+]]
+-- @module menori.Environment
+
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
 local ml 	= require (modules .. 'ml')
@@ -58,6 +62,7 @@ function point_light:to_uniforms(shader, light_index_str)
 end
 
 --- Constructor
+-- @param camera Сamera object that will be associated with this environment
 function Environment:constructor(camera)
 	self.camera = camera
 
@@ -72,6 +77,9 @@ function Environment:constructor(camera)
 	self.shader = Environment.default_shader
 end
 
+--- Set optional uniform
+-- @tparam string name
+-- @tparam any value
 function Environment:set_optional_uniform(name, value)
 	self.uniform_table[name] = value
 end
@@ -84,15 +92,24 @@ function Environment:add_point_light(...)
 	self.lights[#self.lights + 1] = point_light(...)
 end
 
+--- Add light source
+-- @tparam string name
+-- @tparam any value
 function Environment:add_light(light)
 	self.lights[#self.lights + 1] = light
 end
 
 --- Set fog color
+-- @tparam number r
+-- @tparam number g
+-- @tparam number b
+-- @tparam number a
 function Environment:set_fog_color(r, g, b, a)
 	self.uniform_table.fog_color = {r, g, b, a}
 end
 
+--- Sends all the environment uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.
+-- @param shader Shader object
 function Environment:send_uniforms_to(shader)
 	local camera = self.camera
 	shader:send_matrix("m_view", camera.m_view)
@@ -105,6 +122,8 @@ function Environment:send_uniforms_to(shader)
 	self:send_light_sources_to(shader)
 end
 
+--- Sends light sources uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.
+-- @param shader Shader object
 function Environment:send_light_sources_to(shader)
 	shader:send('light_count', #self.lights)
 	for i = 1, #self.lights do

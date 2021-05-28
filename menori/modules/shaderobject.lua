@@ -7,7 +7,7 @@
 --]]
 
 --[[--
-Description.
+LOVE Shader object wrapper.
 ]]
 -- @module menori.ShaderObject
 

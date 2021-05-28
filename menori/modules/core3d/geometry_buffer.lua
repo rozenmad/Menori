@@ -5,6 +5,7 @@
 	2020
 -------------------------------------------------------------------------------
 --]]
+
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
 local ffi = require 'ffi'

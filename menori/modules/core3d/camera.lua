@@ -2,9 +2,14 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
+
+--[[--
+Perspective camera class.
+]]
+-- @module menori.PerspectiveCamera
 
 local modules = (...):match('(.*%menori.modules.)')
 local class       = require (modules .. 'libs.class')
@@ -35,6 +40,7 @@ function PerspectiveCamera:constructor(fov, aspect, nclip, fclip)
 	self.swap_look_at = false
 end
 
+-- Updating the view matrix.
 function PerspectiveCamera:update_view_matrix()
 	self.m_view:identity()
 	if self.swap_look_at then
@@ -62,7 +68,12 @@ function PerspectiveCamera:get_corner_normals(viewport)
 	}
 end
 
-function PerspectiveCamera:get_unproject_point(x, y, viewport)
+--- Returns a ray going from camera through a screen point.
+-- @tparam number x Screen position x
+-- @tparam number y Screen position y
+-- @tparam table viewport (Optional) Viewport rectangle (x, y, w, h)
+-- @return vec3
+function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
 	viewport = viewport or {0.0, 0.0, application.w, application.h}
 
 	local temp_view = self.m_view:clone()
@@ -74,27 +85,40 @@ function PerspectiveCamera:get_unproject_point(x, y, viewport)
 	return vec3(mat4.unproject(vec3(x, y, 1), inverse_vp, viewport))
 end
 
+--- Set camera position.
+-- @param position vec3 object
 function PerspectiveCamera:set_position(position)
 	local direction = self:get_direction()
 	self.eye = position + direction
 	self.center = position
 end
 
+--- Get camera position.
+-- @return vec3
 function PerspectiveCamera:get_position()
 	return self.center
 end
 
-function PerspectiveCamera:move(direction)
-	self.eye = self.eye + direction
-	self.center = self.center + direction
+--- Move camera.
+-- @param delta vec3 Delta
+function PerspectiveCamera:move(delta)
+	self.eye = self.eye + delta
+	self.center = self.center + delta
 end
 
+--- Set camera direction.
+-- @param direction vec3 Direction
+-- @tparam number distance (Optional)
 function PerspectiveCamera:set_direction(direction, distance)
 	distance = distance or 1
 	self.center = self.eye + direction * distance
 end
 
-function PerspectiveCamera:rotation(y, p, r)
+--- Rotate camera.
+-- @tparam number y Yaw Angle in radians
+-- @tparam number p Pitch Angle in radians
+-- @tparam number r Roll Angle in radians
+function PerspectiveCamera:rotate(y, p, r)
 	local v = vec3(1, 0, 0)
 
 	local _y = quat.from_angle_axis(math.rad(y), 0, 1, 0)
@@ -106,6 +130,8 @@ function PerspectiveCamera:rotation(y, p, r)
 	self.eye = self.center + vec3(v.x, v.y, v.z)
 end
 
+--- Get direction.
+-- @return vec3
 function PerspectiveCamera:get_direction()
 	return (self.center - self.eye):normalize()
 end

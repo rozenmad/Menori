@@ -2,9 +2,14 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
+
+--[[--
+Tree structure that is used when drawing scenes imported from the *gltf format.
+]]
+-- @module menori.ModelNodeTree
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -34,15 +39,17 @@ local function create_transform_matrix(node)
       return m
 end
 
+--- Constructor
+-- @tparam table nodes List of nodes of the model loaded from the *gltf format
+-- @tparam table scenes List of scenes of the model loaded from the *gltf format
 function ModelNodeTree:constructor(nodes, scenes)
       ModelNodeTree.super.constructor(self)
 
       for _, v in ipairs(nodes) do
             local node
             if v.primitives then
-                  node = ModelNode(Model(v))
                   local m = create_transform_matrix(v)
-                  node.local_matrix:copy(m)
+                  node = ModelNode(Model(v.primitives), m)
             else
                   node = Node()
                   local m = create_transform_matrix(v)
@@ -77,6 +84,8 @@ function ModelNodeTree:constructor(nodes, scenes)
       end
 end
 
+--- Set scene by name
+-- @tparam string name Scene name
 function ModelNodeTree:set_scene_by_name(name)
       self:remove_childs()
       for _, v in ipairs(self.scenes) do

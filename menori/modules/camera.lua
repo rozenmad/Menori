@@ -1,4 +1,3 @@
-
 --[[
 -------------------------------------------------------------------------------
 	Menori
@@ -8,10 +7,9 @@
 --]]
 
 --[[--
-Description.
+Camera for 2D scenes.
 ]]
 -- @module menori.Camera
-
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -39,8 +37,10 @@ function camera:constructor()
 	self._camera_2d_mode = true
 end
 
---- Set Center
-function camera:set_center(nx, ny)
+--- Set camera pivot.
+-- @tparam number nx Normalized x
+-- @tparam number ny Normalized y
+function camera:set_pivot(nx, ny)
 	nx = nx or 0.5
 	ny = ny or 0.5
 	self._update = false
@@ -64,22 +64,35 @@ function camera:_apply_transform()
 	love.graphics.applyTransform(self.matrix:to_temp_transform_object())
 end
 
+--- Get viewport.
+-- @treturn number X
+-- @treturn number Y
+-- @treturn number W
+-- @treturn number H
 function camera:get_viewport()
 	local x, y = self:get_position()
 	return x, y, application.w, application.h
 end
 
+--- Move camera.
+-- @tparam number dx Delta x
+-- @tparam number dy Delta y
 function camera:move(dx, dy)
 	self._update = true
 	self.x = self.x + (dx or 0)
 	self.y = self.y + (dy or 0)
 end
 
+--- Rotate camera.
+-- @tparam number angle Angle in radians
 function camera:rotate(angle)
 	self._update = true
 	self.rotation = angle
 end
 
+--- Scale camera.
+-- @tparam number sx Scale x
+-- @tparam number sy Scale y
 function camera:scale(sx, sy)
 	self._update = true
 	sx = sx or 1
@@ -87,16 +100,23 @@ function camera:scale(sx, sy)
 	self.sy = sy or sx
 end
 
+--- Set camera position.
+-- @tparam number x x
+-- @tparam number y y
 function camera:set_position(x, y)
 	self._update = true
 	self.x = x or self.x
 	self.y = y or self.y
 end
 
+--- Get camera position.
+-- @treturn number self.x - self.ox
+-- @treturn number self.y - self.oy
 function camera:get_position()
 	return self.x - self.ox, self.y - self.oy
 end
 
+--- Deprecated
 function camera:set_position_inside_bound(x, y, w, h)
 	local x1 = x - self.ox
 	local x2 = x + self.ox

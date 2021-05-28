@@ -7,7 +7,8 @@
 --]]
 
 --[[--
-Description
+Node is the base class of all display objects. Node object can be assigned as a child of another node, resulting in a tree arrangement.
+You need to inherit from the Node class to create your own display object.
 ]]
 -- @module menori.Node
 
@@ -16,6 +17,16 @@ local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
 local ml    = require (modules .. 'ml')
 local mat4  = ml.mat4
+
+--- Class members
+-- @table Node
+-- @field children Childen of this node
+-- @field parent Parent of this node
+-- @field detach_flag Flag that is used to detach this node from its parent during the next scene update
+-- @field update_flag Flag that sets whether the node is updated during the scene update pass
+-- @field render_flag Flag that sets whether the node is rendered during the scene render pass
+-- @field local_matrix Local transformation matrix
+-- @field world_matrix (read-only) World transformation matrix based on world (parent) factors.
 
 local node = class('Node')
 node.layer = 0
@@ -33,14 +44,16 @@ function node:constructor()
 	self.world_matrix = mat4()
 end
 
-function node:update_transform()
-	self:update_local_transform()
+--- Update transformation matrix for current node and its children.
+function node:recursive_update_transform()
+	self:update_transform()
 	for _, v in ipairs(self.children) do
-		v:update_local_transform()
+		v:update_transform()
 	end
 end
 
-function node:update_local_transform()
+--- Update transformation matrix only for current node.
+function node:update_transform()
 	local local_matrix = self.local_matrix
 	local world_matrix = self.world_matrix
 
@@ -55,7 +68,8 @@ function node:update_local_transform()
 end
 
 --- Get child node by index.
--- @treturn Node
+-- @tparam numder index Index
+-- @return Node
 function node:get_child_by_index(index)
 	assert(index <= #self.children and index > 0, 'child index out of range')
 	return self.children[index]
@@ -69,8 +83,8 @@ function node:remove_children()
 	end
 end
 
---- Attach child to this node.
--- @param node
+--- Attach child node to this node.
+-- @param node Child node
 -- @return Node
 function node:attach(node)
 	--[[for i, node in ipairs({...}) do
@@ -83,7 +97,8 @@ function node:attach(node)
 	return node
 end
 
---- Detach child from this node.
+--- Detach child node from this node.
+-- @param node Child node
 function node:detach(child)
 	for i, v in ipairs(self.children) do
 		if v == child then
@@ -92,6 +107,8 @@ function node:detach(child)
 	end
 end
 
+--- Recursively traverse all child nodes.
+-- @tparam function callback Function that is called for every child node with params (child, index)
 function node:map_recursive(callback)
 	for i, v in ipairs(self.children) do
 		callback(v, i)
@@ -99,13 +116,14 @@ function node:map_recursive(callback)
 	end
 end
 
---- Detach this node from parent.
+--- Detach this node from the parent node.
 function node:detach_from_parent()
 	node.parent = nil
 	self.detach_flag = true
 end
 
 -- The number of children attached to this node.
+-- @treturn number Number of children
 function node:children_count()
 	return #self.children
 end
@@ -113,6 +131,7 @@ end
 --- Recursively print all the children attached to this node.
 -- @param node (nil) by default
 -- @param tabs (nil) by default
+-- @return Node
 function node:debug_print(node, tabs)
 	node = node or self
 	tabs = tabs or ''

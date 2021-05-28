@@ -7,7 +7,8 @@
 --]]
 
 --[[--
-Base class of Scenes. Inherit this class for your scenes.
+Иase class of scenes. It contains methods for recursively drawing and updating all nodes of the scene.
+You need to inherit from the Scene class to create your own scene object.
 ]]
 -- @module menori.Scene
 
@@ -40,7 +41,12 @@ function scene:current_render_time()
 	return self.render_time
 end
 
---- Recursively calls rendering of all nodes.
+--- Recursively call render function for every node.
+-- @param node Node to render
+-- @param environment Environment
+-- @tparam table renderstates A table specifying the active Canvas(es), their mipmap levels and active layers if applicable, and whether to use a stencil and/or depth buffer. Also it may contain table of color for every render target.
+-- @param filter (Optional)
+-- @treturn number Count
 function scene:render_nodes(node, environment, renderstates, filter)
 	renderstates = renderstates or temp_renderstate
 	self.render_time = love.timer.getTime()
@@ -90,7 +96,7 @@ end
 
 function scene:_recursive_render_nodes(parent_node, transform_flag)
 	if parent_node.local_matrix:is_changed() or transform_flag then
-		parent_node:update_local_transform()
+		parent_node:update_transform()
 		transform_flag = true
 	end
 	if parent_node.render and parent_node.render_flag then
@@ -105,7 +111,9 @@ function scene:_recursive_render_nodes(parent_node, transform_flag)
 	end
 end
 
---- Recursively calls updating of all nodes.
+--- Recursively call update function for every node.
+-- @param node Node to render
+-- @param environment Environment
 function scene:update_nodes(node, environment)
 	temp_environment = environment
 	self:_recursive_update_nodes(node)

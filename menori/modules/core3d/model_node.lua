@@ -1,3 +1,16 @@
+--[[
+-------------------------------------------------------------------------------
+	Menori
+	@author rozenmad
+	2021
+-------------------------------------------------------------------------------
+--]]
+
+--[[--
+Сlass for drawing models.
+]]
+-- @module menori.ModelNode
+
 local modules = (...):match('(.*%menori.modules.)')
 
 local Node = require (modules .. 'node')
@@ -25,7 +38,11 @@ ModelNode.default_shader = ShaderObject([[
 #endif
 ]])
 
-function ModelNode:constructor(model, shader, matrix)
+--- Constructor
+-- @param model Model objects
+-- @param matrix (Optional) Matrix transformations
+-- @param shader (Optional) ShaderObject which will be used for drawing
+function ModelNode:constructor(model, matrix, shader)
 	ModelNode.super.constructor(self)
       self.shader = shader or ModelNode.default_shader
       if matrix then
@@ -34,6 +51,10 @@ function ModelNode:constructor(model, shader, matrix)
 	self.model = model
 end
 
+--- Render function.
+-- @param scene Scene that draws this object
+-- @param environment Environment that is used when drawing the current object
+-- @param shader ShaderObject that can replace the shader that is used for the current object
 function ModelNode:render(scene, environment, shader)
 	shader = shader or self.shader
 	shader:attach()

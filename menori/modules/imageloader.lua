@@ -24,21 +24,29 @@ local function load_image(filename, opt)
 	return image
 end
 
---- Load image in cache list or find it.
+--- Load image in a cache list or find it.
+-- @tparam string filename Filename
+-- @tparam table opt Flags (optional)
 -- @return [Image](https://love2d.org/wiki/Image)
 function imageloader.load(filename, opt)
 	if not list[filename] then list[filename] = load_image(filename, opt) end
 	return list[filename]
 end
 
---- Find image in cache list.
+--- Find image in a cache list.
+-- @tparam string filename Filename
 -- @return [Image](https://love2d.org/wiki/Image)
 function imageloader.find(filename)
 	return list[filename]
 end
 
 --- Create a tileset from an image.
--- @return table List of [Quad](https://love2d.org/wiki/Quad)
+-- @param image [Image](https://love2d.org/wiki/Image)
+-- @tparam number offsetx Offset by X from the beginning of the image
+-- @tparam number offsety Offset by Y from the beginning of the image
+-- @tparam number w Width of one tile
+-- @tparam number h Height of one tile
+-- @treturn table List of [Quad](https://love2d.org/wiki/Quad) objects
 function imageloader.create_tileset_from_image(image, offsetx, offsety, w, h)
 	local image_w, image_h = image:getDimensions()
 	local quads = {}

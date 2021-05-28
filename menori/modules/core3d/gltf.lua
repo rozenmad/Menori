@@ -2,9 +2,14 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
+
+--[[--
+Module for importing models from the *gltf format.
+]]
+-- @module menori.glTFLoader
 
 local modules = (...):match('(.*%menori.modules.)')
 local ImageLoader = require (modules .. 'imageloader')
@@ -215,6 +220,10 @@ local function init_material(v)
 	return material
 end
 
+--- Load model by filename
+-- @function load
+-- @tparam string path Path to the directory where the file is located
+-- @tparam string filename
 local function load(path, filename)
 	data = json.decode(love.filesystem.read(path .. filename .. '.gltf'))
 

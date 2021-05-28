@@ -7,7 +7,7 @@
 --]]
 
 --[[--
-Description.
+The main class for managing scenes and the viewport.
 ]]
 -- @module menori.Application
 
@@ -34,6 +34,9 @@ function application:constructor()
 end
 
 --- Resize viewport.
+-- @tparam number w New viewport width
+-- @tparam number h New viewport height
+-- @tparam table opt (Optional)
 function application:resize_viewport(w, h, opt)
 	opt = opt or {}
 	self.resizable = (w == nil or h == nil)
@@ -49,6 +52,8 @@ function application:resize_viewport(w, h, opt)
 end
 
 --- Get viewport dimensions.
+-- @treturn number Viewport width
+-- @treturn number Viewport height
 function application:get_dimensions()
 	return self.w, self.h
 end
@@ -66,7 +71,9 @@ function application:_update_viewport_position()
 	oy = (h - self.h * canvas_scale) / 2
 end
 
---- Change scene with transition effect.
+--- Change scene with a transition effect.
+-- @param effect Effect
+-- @tparam string name
 function application:switch_scene(effect, name)
 	self.next_scene = list[name]
 	assert(effect)
@@ -74,17 +81,22 @@ function application:switch_scene(effect, name)
 	self.effect = effect
 end
 
---- Add scene to scene list.
+--- Add scene to the scene list.
+-- @tparam string name Scene name
+-- @param scene_object Scene object
 function application:add_scene(name, scene_object)
 	list[name] = scene_object
 end
 
---- Get scene from scene list by name.
+--- Get scene from the scene list by the name.
+-- @tparam string name Scene name
+-- @return Scene object
 function application:get_scene(name)
 	return list[name]
 end
 
---- Set scene current by name.
+--- Set current scene by the name.
+-- @tparam string name Scene name
 function application:set_scene(name)
 	self:_change_scene(list[name])
 end
@@ -100,11 +112,13 @@ function application:_change_scene(next_scene)
 end
 
 --- Get current scene.
+-- @return Scene object
 function application:get_current_scene()
 	return current_scene
 end
 
 --- Application update function.
+-- @tparam number dt Delta timing
 function application:update(dt)
 	local update_count = 0
 	accumulator = accumulator + dt
@@ -121,6 +135,7 @@ function application:update(dt)
 end
 
 --- Application render function.
+-- @tparam number dt Delta timing
 function application:render(dt)
 	love.graphics.setCanvas({ self.canvas, depth = true, stencil = true })
 	lovg.clear()
