@@ -11,7 +11,7 @@ Description.
 ]]
 -- @module menori.SpriteLoader
 
-local json = require 'libs.json'
+local json = require 'libs.rxijson.json'
 
 local modules     = (...):gsub('%.[^%.]+$', '') .. "."
 local ImageLoader = require(modules .. 'imageloader')

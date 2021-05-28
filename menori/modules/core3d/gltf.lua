@@ -9,7 +9,7 @@
 local modules = (...):match('(.*%menori.modules.)')
 local ImageLoader = require (modules .. 'imageloader')
 
-local json = require 'libs.json'
+local json = require 'libs.rxijson.json'
 local ffi = require 'ffi'
 
 local datatypes = {
