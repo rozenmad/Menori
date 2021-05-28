@@ -7,8 +7,9 @@
 --]]
 
 --- An Environment contains the uniform values specific for a location. For example, the lights are part of the Environment.
-local class = require 'menori.modules.libs.class'
-local ml 	= require 'menori.modules.ml'
+local modules = (...):match('(.*%menori.modules.)')
+local class = require (modules .. 'libs.class')
+local ml 	= require (modules .. 'ml')
 
 local vec3 = ml.vec3
 

@@ -5,8 +5,8 @@
 	2020
 -------------------------------------------------------------------------------
 --]]
-
-local class = require 'menori.modules.libs.class'
+local modules = (...):match('(.*%menori.modules.)')
+local class = require (modules .. 'libs.class')
 local ffi = require 'ffi'
 
 local geometry_buffer = class('GeometryBuffer')

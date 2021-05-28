@@ -6,9 +6,12 @@
 -------------------------------------------------------------------------------
 --]]
 
-local class = require 'menori.modules.libs.class'
-local geometry_buffer = require 'menori.modules.core3d.geometry_buffer'
-local model = require 'menori.modules.core3d.model'
+local modules = (...):match('(.*%menori.modules.)')
+
+local class = require (modules .. 'libs.class')
+local geometry_buffer = require (modules .. 'core3d.geometry_buffer')
+local model = require (modules .. 'core3d.model')
+
 local ffi = require 'ffi'
 
 local instanced_mesh = class('InstancedMesh')

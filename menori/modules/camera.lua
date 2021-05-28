@@ -12,9 +12,12 @@ Description.
 ]]
 -- @module menori.Camera
 
-local class       = require 'menori.modules.libs.class'
-local ml          = require 'menori.modules.ml'
-local application = require 'menori.modules.application'
+
+local modules = (...):match('(.*%menori.modules.)')
+
+local class       = require (modules .. 'libs.class')
+local ml          = require (modules .. 'ml')
+local application = require (modules .. 'application')
 
 local mat4 = ml.mat4
 local vec3 = ml.vec3

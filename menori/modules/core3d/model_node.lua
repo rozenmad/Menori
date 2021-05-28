@@ -1,5 +1,7 @@
-local Node = require 'menori.modules.node'
-local ShaderObject = require 'menori.modules.shaderobject'
+local modules = (...):match('(.*%menori.modules.)')
+
+local Node = require (modules .. 'node')
+local ShaderObject = require (modules .. 'shaderobject')
 
 local ModelNode = Node:extend('ModelNode')
 

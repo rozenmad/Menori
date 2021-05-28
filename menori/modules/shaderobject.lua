@@ -11,7 +11,9 @@ Description.
 ]]
 -- @module menori.ShaderObject
 
-local class = require 'menori.modules.libs.class'
+local modules = (...):match('(.*%menori.modules.)')
+
+local class = require (modules .. 'libs.class')
 
 local shaderobject = class('ShaderObject')
 local temp

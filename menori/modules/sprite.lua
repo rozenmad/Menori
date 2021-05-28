@@ -11,7 +11,9 @@ Description.
 ]]
 -- @module menori.Sprite
 
-local class = require 'menori.modules.libs.class'
+local modules = (...):match('(.*%menori.modules.)')
+
+local class = require (modules .. 'libs.class')
 
 local sprite = class('Sprite')
 
@@ -93,10 +95,10 @@ function sprite:update(dt)
 end
 
 --- Sprite draw function.
-function sprite:draw(x, y, ...)
-	x = (x or 0) - self.ox
-	y = (y or 0) - self.oy
-	love.graphics.draw(self.image, self.quads[self.index], x, y, ...)
+function sprite:draw(x, y, angle, sx, sy, ox, oy)
+	ox = (ox or 0) + self.ox
+	oy = (oy or 0) + self.oy
+	love.graphics.draw(self.image, self.quads[self.index], x, y, angle, sx, sy, ox, oy)
 end
 
 return sprite

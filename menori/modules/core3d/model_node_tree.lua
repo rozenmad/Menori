@@ -6,11 +6,13 @@
 -------------------------------------------------------------------------------
 --]]
 
-local Node = require 'menori.modules.node'
-local ModelNode = require 'menori.modules.core3d.model_node'
-local Model = require 'menori.modules.core3d.model'
+local modules = (...):match('(.*%menori.modules.)')
 
-local ml = require 'menori.modules.ml'
+local Node = require (modules .. '.node')
+local ModelNode = require (modules .. 'core3d.model_node')
+local Model = require (modules .. 'core3d.model')
+
+local ml = require (modules .. 'ml')
 local mat4 = ml.mat4
 local vec3 = ml.vec3
 local quat = ml.quat

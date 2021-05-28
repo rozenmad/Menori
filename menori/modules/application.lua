@@ -2,11 +2,17 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2020
+	2021
 -------------------------------------------------------------------------------
 --]]
 
-local class = require 'menori.modules.libs.class'
+--[[--
+Description.
+]]
+-- @module menori.Application
+
+local modules = (...):match('(.*%menori.modules.)')
+local class = require (modules .. 'libs.class')
 
 local list = {}
 local current_scene
@@ -16,18 +22,21 @@ local ox = 0
 local oy = 0
 local canvas_scale = 1
 
-local scenedispatcher = class('SceneDispatcher')
+local application = class('Application')
 
 local lovg = love.graphics
 local default_effect = nil
 
-function scenedispatcher:constructor()
+--- Constructor.
+function application:constructor()
 	self.next_scene = nil
 	self.effect = default_effect
 end
 
-function scenedispatcher:resize_viewport(w, h, opt)
-	self.resizable = w == nil or h == nil
+--- Resize viewport.
+function application:resize_viewport(w, h, opt)
+	opt = opt or {}
+	self.resizable = (w == nil or h == nil)
 	if self.resizable then
 		w, h = love.graphics.getDimensions()
 	end
@@ -36,14 +45,15 @@ function scenedispatcher:resize_viewport(w, h, opt)
 	local filter = opt.canvas_filter or 'nearest'
 	self.canvas = lovg.newCanvas(self.w, self.h, { format = 'normal', msaa = 0 })
 	self.canvas:setFilter(filter, filter)
-	self:update_viewport_position()
+	self:_update_viewport_position()
 end
 
-function scenedispatcher:getDimensions()
+--- Get viewport dimensions.
+function application:get_dimensions()
 	return self.w, self.h
 end
 
-function scenedispatcher:update_viewport_position()
+function application:_update_viewport_position()
 	local w, h = love.graphics.getDimensions()
 	local dpi = love.window.getDPIScale()
 	w = math.floor(w / dpi)
@@ -56,26 +66,30 @@ function scenedispatcher:update_viewport_position()
 	oy = (h - self.h * canvas_scale) / 2
 end
 
-function scenedispatcher:switch(effect, name)
+--- Change scene with transition effect.
+function application:switch_scene(effect, name)
 	self.next_scene = list[name]
 	assert(effect)
 	assert(self.next_scene)
 	self.effect = effect
 end
 
-function scenedispatcher:add(name, scene_object)
+--- Add scene to scene list.
+function application:add_scene(name, scene_object)
 	list[name] = scene_object
 end
 
-function scenedispatcher:get(name)
+--- Get scene from scene list by name.
+function application:get_scene(name)
 	return list[name]
 end
 
-function scenedispatcher:set(name)
+--- Set scene current by name.
+function application:set_scene(name)
 	self:_change_scene(list[name])
 end
 
-function scenedispatcher:_change_scene(next_scene)
+function application:_change_scene(next_scene)
 	assert(next_scene)
 	local a = current_scene
 	local b = next_scene
@@ -85,11 +99,13 @@ function scenedispatcher:_change_scene(next_scene)
 	current_scene = b
 end
 
-function scenedispatcher:get_current()
+--- Get current scene.
+function application:get_current_scene()
 	return current_scene
 end
 
-function scenedispatcher:update(dt)
+--- Application update function.
+function application:update(dt)
 	local update_count = 0
 	accumulator = accumulator + dt
 	while accumulator >= tick_period do
@@ -104,7 +120,8 @@ function scenedispatcher:update(dt)
 	end
 end
 
-function scenedispatcher:render(dt)
+--- Application render function.
+function application:render(dt)
 	love.graphics.setCanvas({ self.canvas, depth = true, stencil = true })
 	lovg.clear()
 	lovg.push()
@@ -121,15 +138,14 @@ function scenedispatcher:render(dt)
 	love.graphics.setCanvas()
 	lovg.setShader()
 	lovg.pop()
-end
 
-function scenedispatcher:present()
 	lovg.draw(self.canvas, ox, oy, 0, canvas_scale, canvas_scale)
 end
 
-local instance = scenedispatcher()
+local instance = application()
 
-function scenedispatcher.resize(w, h)
+--- Resize callback.
+function application.resize(w, h)
 	if instance.resizable then
 		instance:resize_viewport()
 	else
@@ -140,7 +156,8 @@ function scenedispatcher.resize(w, h)
 	end
 end
 
-function scenedispatcher.mousemoved(x, y, dx, dy, istouch)
+--- Mousemoved callback.
+function application.mousemoved(x, y, dx, dy, istouch)
 	for _, v in pairs(list) do
 		if v.mousemoved then v:mousemoved(x, y, dx, dy, istouch) end
 	end

@@ -6,7 +6,9 @@
 -------------------------------------------------------------------------------
 --]]
 
-local class = require 'menori.modules.libs.class'
+local modules = (...):match('(.*%menori.modules.)')
+
+local class = require (modules .. 'libs.class')
 
 local Model = class('Model')
 

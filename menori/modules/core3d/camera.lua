@@ -6,9 +6,10 @@
 -------------------------------------------------------------------------------
 --]]
 
-local class       = require 'menori.modules.libs.class'
-local ml          = require 'menori.modules.ml'
-local application = require 'menori.modules.application'
+local modules = (...):match('(.*%menori.modules.)')
+local class       = require (modules .. 'libs.class')
+local ml          = require (modules .. 'ml')
+local application = require (modules .. 'application')
 
 local mat4 = ml.mat4
 local vec3 = ml.vec3
@@ -31,7 +32,7 @@ function PerspectiveCamera:constructor(fov, aspect, nclip, fclip)
 	self.eye 	= vec3( 0, 0, 1 )
 	self.up 	= vec3( 0,-1, 0 )
 
-	self.swap_look_at = true
+	self.swap_look_at = false
 end
 
 function PerspectiveCamera:update_view_matrix()

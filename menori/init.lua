@@ -7,7 +7,7 @@
 -------------------------------------------------------------------------------
 --]]
 
-local modules = 'menori.modules.'
+local modules = (...) and (...):gsub('%.init$', '') .. ".modules." or ""
 
 local menori = {
 	PerspectiveCamera = require(modules .. 'core3d.camera'),

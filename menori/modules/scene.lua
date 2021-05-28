@@ -11,12 +11,14 @@ Base class of Scenes. Inherit this class for your scenes.
 ]]
 -- @module menori.Scene
 
-local class 		= require('menori.modules.libs.class')
+local modules = (...):match('(.*%menori.modules.)')
+
+local class = require (modules .. 'libs.class')
 
 local lovg = love.graphics
 local temp_environment
 
-local temp_renderstate = { clear = true }
+local temp_renderstate = { clear = false }
 
 local function node_sort(a, b)
 	return a.layer < b.layer
@@ -95,9 +97,9 @@ function scene:_recursive_render_nodes(parent_node, transform_flag)
 		table.insert(self.list_drawable_nodes, parent_node)
 	end
 	local i = 1
-	local childs = parent_node.childs
-	while i <= #childs do
-		local node = childs[i]
+	local children = parent_node.children
+	while i <= #children do
+		local node = children[i]
 		self:_recursive_render_nodes(node, transform_flag)
 		i = i + 1
 	end
@@ -116,11 +118,11 @@ function scene:_recursive_update_nodes(parent_node)
 		end
 
 		local i = 1
-		local childs = parent_node.childs
-		while i <= #childs do
-			local node = childs[i]
+		local children = parent_node.children
+		while i <= #children do
+			local node = children[i]
 			if node.detach_flag then
-				table.remove(childs, i)
+				table.remove(children, i)
 			else
 				self:_recursive_update_nodes(node)
 				i = i + 1

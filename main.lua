@@ -1,0 +1,135 @@
+local menori = require 'menori'
+local application = menori.Application
+
+local ml = menori.ml
+local vec3 = ml.vec3
+local quat = ml.quat
+
+-- Creating a node for drawing an object.
+local SpriteNode = menori.Node:extend('SpriteNode')
+
+function SpriteNode:constructor(x, y, sx, sy, speed)
+	-- Calling the parent's constructor.
+	SpriteNode.super.constructor(self)
+
+	local love_logo = menori.ImageLoader.load('example_assets/love_logo.png')
+	-- Creating a sprite object from an image.
+	self.sprite = menori.SpriteLoader.from_image(love_logo)
+	self.sprite:set_pivot(0.5, 0.5)
+
+	self.x = x
+	self.y = y
+	self.sx = sx
+	self.sy = sy
+	self.angle = 0
+	self.speed = speed
+end
+
+function SpriteNode:render()
+	love.graphics.push()
+	-- Node contains two matrices.
+	-- Local matrix is transformations of the current node.
+	-- World matrix is the sum of transformations of the parent nodes.
+	-- to_temp_transform_object converts a matrix to LOVE Transform object.
+	love.graphics.replaceTransform(self.world_matrix:to_temp_transform_object())
+
+	-- Draw a sprite.
+	self.sprite:draw()
+	-- we can also pass transformations to this function
+	-- like this:
+	-- self.sprite:draw(0, 0, 0, 1, 1)
+
+	love.graphics.pop()
+end
+function SpriteNode:update()
+	self.angle = self.angle + self.speed
+
+	self.local_matrix:identity()
+	self.local_matrix:translate(self.x, self.y, 0)
+	self.local_matrix:rotate(math.rad(self.angle), vec3.unit_z)
+	self.local_matrix:scale(self.sx, self.sy, 1)
+end
+
+-- Inherit from the scene class and create new scene.
+local NewScene = menori.Scene:extend('NewScene')
+
+function NewScene:constructor()
+	-- Calling the parent's constructor.
+	NewScene.super.constructor(self)
+
+	-- Initializing the perspective camera and environment.
+	local aspect = menori.Application.w/menori.Application.h
+	self.camera_3d = menori.PerspectiveCamera(35, aspect, 0.5, 1024)
+	self.environment_3d = menori.Environment(self.camera_3d)
+
+	self.camera_2d = menori.Camera()
+	self.environment_2d = menori.Environment(self.camera_2d)
+
+	-- Creating and attaching nodes to each other.
+	local sprite_node = SpriteNode(100, 100, 1, 1, 1)
+	local child1 = sprite_node:attach(SpriteNode(150, 50, 0.5, 0.5, 3))
+	local child2 = child1:attach(SpriteNode(200, 0, 0.5, 0.5, -6))
+
+	-- Load the scene from gltf format, get a table of nodes and scenes contained in the file.
+	local nodes, scenes = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
+
+	local model_node_tree = menori.ModelNodeTree(nodes, scenes)
+
+	-- Create a root node and add the loaded scene to it.
+	self.root_node_3d = menori.Node()
+	self.root_node_3d:attach(model_node_tree)
+
+	self.root_node_2d = menori.Node()
+	self.root_node_2d:attach(sprite_node)
+
+	-- Camera rotation angle.
+	self.angle = 0
+end
+
+-- Turn on the depth buffer, clear the canvases and set the color.
+local renderstates = {
+	depth = true
+}
+
+function NewScene:render()
+	love.graphics.clear(0.3, 0.25, 0.2)
+	love.graphics.setDepthMode('less', true)
+	-- Recursively draw all nodes in root_node.
+	self:render_nodes(self.root_node_3d, self.environment_3d, renderstates)
+
+	love.graphics.setDepthMode()
+
+	self:render_nodes(self.root_node_2d, self.environment_2d, renderstates)
+end
+
+function NewScene:update_camera()
+	-- Rotating the camera around the model.
+	self.angle = self.angle + 0.2
+	local q = quat.from_angle_axis(math.rad(self.angle), vec3.unit_y)
+	local v = vec3(0, 5, 10)
+	self.camera_3d.eye = q * v
+	self.camera_3d:update_view_matrix()
+end
+
+function NewScene:update()
+	self:update_camera()
+	-- Recursively update all nodes in root_node.
+	self:update_nodes(self.root_node_3d, self.environment_3d)
+	self:update_nodes(self.root_node_2d, self.environment_2d)
+end
+
+function love.load()
+	local w, h = 960, 480
+	application:resize_viewport(w, h)
+
+	application:add_scene('new_scene', NewScene())
+	application:set_scene('new_scene')
+end
+
+function love.draw()
+	application:render()
+end
+
+function love.update(dt)
+	application:update(dt)
+end
