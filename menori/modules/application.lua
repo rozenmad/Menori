@@ -59,10 +59,11 @@ function application:get_dimensions()
 end
 
 function application:_update_viewport_position()
-	local w, h = love.graphics.getDimensions()
 	local dpi = love.window.getDPIScale()
-	w = math.floor(w / dpi)
-	h = math.floor(h / dpi)
+	local window_w, window_h = love.window.getMode()
+
+	local w = math.floor(window_w / dpi)
+	local h = math.floor(window_h / dpi)
 	local sx = w / self.w
 	local sy = h / self.h
 	canvas_scale = math.min(sx, sy)

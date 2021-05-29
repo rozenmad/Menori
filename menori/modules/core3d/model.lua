@@ -21,8 +21,8 @@ local default_template = {1, 2, 3, 2, 4, 3}
 
 Model.vertexformat_default = {
 	{"VertexPosition", "float", 3},
-	{"VertexNormal", "float", 3},
 	{"VertexTexCoord", "float", 2},
+	{"VertexNormal", "float", 3},
 }
 
 --- Сreates a primitive data structure.
@@ -46,7 +46,9 @@ function Model.create_primitive(vertices, indices, count, image, vertexformat, c
 		},
 		count = count,
 	}
-	return primitive
+	return {
+		primitive
+	}
 end
 
 --- Сreate mesh from primitive.
@@ -61,7 +63,11 @@ function Model.create_mesh_from_primitive(primitive)
 	local mesh = love.graphics.newMesh(vertexformat, primitive.vertices, mode, 'dynamic')
 
 	if primitive.indices then
-		mesh:setVertexMap(primitive.indices, primitive.indices_type_size <= 2 and 'uint16' or 'uint32')
+		local idatatype
+		if primitive.indices_type_size then
+			idatatype = primitive.indices_type_size <= 2 and 'uint16' or 'uint32'
+		end
+		mesh:setVertexMap(primitive.indices, idatatype)
 	end
 	if primitive.material and primitive.material.base_color_texture then
 		mesh:setTexture(primitive.material.base_color_texture)

@@ -5,14 +5,14 @@ local ml = menori.ml
 local vec3 = ml.vec3
 local quat = ml.quat
 
+local love_logo = menori.ImageLoader.load('example_assets/love_logo.png')
+
 -- Creating a node for drawing an object.
 local SpriteNode = menori.Node:extend('SpriteNode')
 
 function SpriteNode:constructor(x, y, sx, sy, speed)
 	-- Calling the parent's constructor.
 	SpriteNode.super.constructor(self)
-
-	local love_logo = menori.ImageLoader.load('example_assets/love_logo.png')
 	-- Creating a sprite object from an image.
 	self.sprite = menori.SpriteLoader.from_image(love_logo)
 	self.sprite:set_pivot(0.5, 0.5)
@@ -57,6 +57,32 @@ function NewScene:constructor()
 	-- Calling the parent's constructor.
 	NewScene.super.constructor(self)
 
+	-- An example of creating a primitive.
+	local vx = 1
+	local vz = 1
+
+	local vertices = {
+		{-vx, 0,-vz, 0, 0, 0, 1, 0 },
+		{-vx, 0, vz, 0, 1, 0, 1, 0 },
+		{ vx, 0,-vz, 1, 0, 0, 1, 0 },
+		{ vx, 0, vz, 1, 1, 0, 1, 0 }
+	}
+	local indices = menori.Model.generate_indices(#vertices)
+
+	-- default mesh format POS3|TEX2|NOR3
+	local primitive = menori.Model.create_primitive(
+		vertices, indices, #vertices, love_logo
+	)
+
+	-- Create a model instance from a primitive
+	local model_instance = menori.Model(primitive)
+
+	-- Now you can use an model instance for every new node.
+	local quadmesh1 = menori.ModelNode(model_instance)
+	local quadmesh2 = menori.ModelNode(model_instance)
+	quadmesh1.local_matrix:translate(5, 0.1,-2)
+	quadmesh2.local_matrix:translate(2, 0.1, 2)
+
 	-- Initializing the perspective camera and environment.
 	local aspect = menori.Application.w/menori.Application.h
 	self.camera_3d = menori.PerspectiveCamera(35, aspect, 0.5, 1024)
@@ -78,6 +104,8 @@ function NewScene:constructor()
 	-- Create a root node and add the loaded scene to it.
 	self.root_node_3d = menori.Node()
 	self.root_node_3d:attach(model_node_tree)
+	self.root_node_3d:attach(quadmesh1)
+	self.root_node_3d:attach(quadmesh2)
 
 	self.root_node_2d = menori.Node()
 	self.root_node_2d:attach(sprite_node)
