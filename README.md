@@ -1,8 +1,10 @@
 # Menori
 
-LÖVE library for simple 3D and 2D rendering based on scene graph.
+LÖVE library for simple 3D and 2D rendering based on scene graph. Loading of 3D models in .gltf (JSON) format is also supported.
 
 ![preview_exaple](preview.png)
+
+[Documentation](https://rozenmad.github.io)
 
 You can generate documentation using `ldoc -c menori/docs/config.ld -o index .`
 
