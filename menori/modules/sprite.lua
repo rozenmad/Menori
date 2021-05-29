@@ -18,7 +18,7 @@ local class = require (modules .. 'libs.class')
 local sprite = class('Sprite')
 
 --- Constructor
--- @tparam table quads List of [Quad](https://love2d.org/wiki/Quad) objects
+-- @param quads table of [Quad](https://love2d.org/wiki/Quad) objects
 -- @param image [Image](https://love2d.org/wiki/Image)
 function sprite:constructor(quads, image)
 	self.quads = quads
@@ -33,7 +33,7 @@ function sprite:constructor(quads, image)
 end
 
 --- Clone (shallow copy).
--- @return New sprite
+-- @return Sprite object
 function sprite:clone()
 	return sprite:new(self.quads, self.image)
 end
@@ -54,15 +54,15 @@ function sprite:get_frame_index()
 end
 
 --- Set frame by index.
--- @tparam number index Frame index
+-- @tparam number index frame index
 function sprite:set_frame_index(index)
 	assert(index <= #self.quads, string.format('Sprite frame is out of range - %i, max - %i', index, #self.quads))
 	self.index = index
 end
 
 --- Set sprite pivot.
--- @tparam number px Pivot x
--- @tparam number py Pivot y
+-- @tparam number px
+-- @tparam number py
 function sprite:set_pivot(px, py)
 	local x, y, w, h = self:get_frame_viewport()
 	self.ox = px * w
@@ -70,17 +70,17 @@ function sprite:set_pivot(px, py)
 end
 
 --- Get frame count.
--- @treturn number Count
+-- @treturn number
 function sprite:get_frame_count()
 	return #self.quads
 end
 
 --- Get frame uv position [0 - 1]
--- @tparam number i Index
--- @treturn number x1 UV position
--- @treturn number x2 UV position
--- @treturn number y1 UV position
--- @treturn number y2 UV position
+-- @tparam number i frame index
+-- @treturn number x1
+-- @treturn number x2
+-- @treturn number y1
+-- @treturn number y2
 function sprite:get_frame_uv(i)
 	local quad = self.quads[i]
 	local image_w, image_h = quad:getTextureDimensions()
@@ -89,8 +89,8 @@ function sprite:get_frame_uv(i)
 end
 
 --- Reset animation.
--- @tparam number duration duration
--- @return Self
+-- @tparam number duration
+-- @return self
 function sprite:reset(duration)
 	self.duration = duration / self:get_frame_count()
 	self.stop = false
@@ -99,7 +99,7 @@ function sprite:reset(duration)
 end
 
 --- Sprite update function.
--- @tparam number dt Delta timing
+-- @tparam number dt
 function sprite:update(dt)
 	if self.stop then return end
 

@@ -38,8 +38,8 @@ function camera:constructor()
 end
 
 --- Set camera pivot.
--- @tparam number nx Normalized x
--- @tparam number ny Normalized y
+-- @tparam number nx normalized x
+-- @tparam number ny normalized y
 function camera:set_pivot(nx, ny)
 	nx = nx or 0.5
 	ny = ny or 0.5
@@ -65,18 +65,18 @@ function camera:_apply_transform()
 end
 
 --- Get viewport.
--- @treturn number X
--- @treturn number Y
--- @treturn number W
--- @treturn number H
+-- @treturn number x
+-- @treturn number y
+-- @treturn number w
+-- @treturn number h
 function camera:get_viewport()
 	local x, y = self:get_position()
 	return x, y, application.w, application.h
 end
 
 --- Move camera.
--- @tparam number dx Delta x
--- @tparam number dy Delta y
+-- @tparam number dx delta x
+-- @tparam number dy delta y
 function camera:move(dx, dy)
 	self._update = true
 	self.x = self.x + (dx or 0)
@@ -84,15 +84,15 @@ function camera:move(dx, dy)
 end
 
 --- Rotate camera.
--- @tparam number angle Angle in radians
+-- @tparam number angle in radians
 function camera:rotate(angle)
 	self._update = true
 	self.rotation = angle
 end
 
 --- Scale camera.
--- @tparam number sx Scale x
--- @tparam number sy Scale y
+-- @tparam number sx scale factor x
+-- @tparam number sy scale factor y
 function camera:scale(sx, sy)
 	self._update = true
 	sx = sx or 1
@@ -101,8 +101,8 @@ function camera:scale(sx, sy)
 end
 
 --- Set camera position.
--- @tparam number x x
--- @tparam number y y
+-- @tparam number x
+-- @tparam number y
 function camera:set_position(x, y)
 	self._update = true
 	self.x = x or self.x

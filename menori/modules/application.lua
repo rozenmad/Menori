@@ -34,8 +34,8 @@ function application:constructor()
 end
 
 --- Resize viewport.
--- @tparam number w New viewport width
--- @tparam number h New viewport height
+-- @tparam number w
+-- @tparam number h
 -- @tparam table opt (Optional)
 function application:resize_viewport(w, h, opt)
 	opt = opt or {}
@@ -52,8 +52,8 @@ function application:resize_viewport(w, h, opt)
 end
 
 --- Get viewport dimensions.
--- @treturn number Viewport width
--- @treturn number Viewport height
+-- @treturn number w
+-- @treturn number h
 function application:get_dimensions()
 	return self.w, self.h
 end
@@ -72,7 +72,6 @@ function application:_update_viewport_position()
 end
 
 --- Change scene with a transition effect.
--- @param effect Effect
 -- @tparam string name
 function application:switch_scene(effect, name)
 	self.next_scene = list[name]
@@ -82,21 +81,20 @@ function application:switch_scene(effect, name)
 end
 
 --- Add scene to the scene list.
--- @tparam string name Scene name
--- @param scene_object Scene object
+-- @tparam string name
 function application:add_scene(name, scene_object)
 	list[name] = scene_object
 end
 
 --- Get scene from the scene list by the name.
--- @tparam string name Scene name
+-- @tparam string name
 -- @return Scene object
 function application:get_scene(name)
 	return list[name]
 end
 
 --- Set current scene by the name.
--- @tparam string name Scene name
+-- @tparam string name
 function application:set_scene(name)
 	self:_change_scene(list[name])
 end
@@ -118,7 +116,7 @@ function application:get_current_scene()
 end
 
 --- Application update function.
--- @tparam number dt Delta timing
+-- @tparam number dt
 function application:update(dt)
 	local update_count = 0
 	accumulator = accumulator + dt
@@ -135,7 +133,7 @@ function application:update(dt)
 end
 
 --- Application render function.
--- @tparam number dt Delta timing
+-- @tparam number dt
 function application:render(dt)
 	love.graphics.setCanvas({ self.canvas, depth = true, stencil = true })
 	lovg.clear()

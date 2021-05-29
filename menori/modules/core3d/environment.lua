@@ -62,39 +62,29 @@ function point_light:to_uniforms(shader, light_index_str)
 end
 
 --- Constructor
--- @param camera Сamera object that will be associated with this environment
+-- @tparam Сamera camera camera that will be associated with this environment
 function Environment:constructor(camera)
 	self.camera = camera
 
 	self.uniform_table = {
-		fog_color = {love.math.colorFromBytes(0, 0, 0, 255)},
+		fog_color = {0, 0, 0, 1},
 		fog_density = 0.05,
 		fog_indent = 0.0,
-		ambient_color = {1.0, 1.0, 1.0}
+		ambient_color = {1, 1, 1},
 	}
 
 	self.lights = {}
-	self.shader = Environment.default_shader
 end
 
---- Set optional uniform
+--- Set optional uniform.
 -- @tparam string name
 -- @tparam any value
 function Environment:set_optional_uniform(name, value)
 	self.uniform_table[name] = value
 end
 
-function Environment:add_direction_light(...)
-	self.lights[#self.lights + 1] = directional_light(...)
-end
-
-function Environment:add_point_light(...)
-	self.lights[#self.lights + 1] = point_light(...)
-end
-
---- Add light source
--- @tparam string name
--- @tparam any value
+--- Add light source.
+-- @tparam LightObject light
 function Environment:add_light(light)
 	self.lights[#self.lights + 1] = light
 end
@@ -109,7 +99,7 @@ function Environment:set_fog_color(r, g, b, a)
 end
 
 --- Sends all the environment uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.
--- @param shader Shader object
+-- @tparam ShaderObject shader
 function Environment:send_uniforms_to(shader)
 	local camera = self.camera
 	shader:send_matrix("m_view", camera.m_view)
@@ -123,7 +113,7 @@ function Environment:send_uniforms_to(shader)
 end
 
 --- Sends light sources uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.
--- @param shader Shader object
+-- @tparam ShaderObject shader
 function Environment:send_light_sources_to(shader)
 	shader:send('light_count', #self.lights)
 	for i = 1, #self.lights do

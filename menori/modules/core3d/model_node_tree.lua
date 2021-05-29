@@ -39,9 +39,9 @@ local function create_transform_matrix(node)
       return m
 end
 
---- Constructor
--- @tparam table nodes List of nodes of the model loaded from the *gltf format
--- @tparam table scenes List of scenes of the model loaded from the *gltf format
+--- Constructor. Takes as arguments a list of nodes and scenes loaded with glTFLoader.
+-- @tparam table nodes
+-- @tparam table scenes
 function ModelNodeTree:constructor(nodes, scenes)
       ModelNodeTree.super.constructor(self)
 
@@ -84,8 +84,8 @@ function ModelNodeTree:constructor(nodes, scenes)
       end
 end
 
---- Set scene by name
--- @tparam string name Scene name
+--- Set scene by name.
+-- @tparam string name
 function ModelNodeTree:set_scene_by_name(name)
       self:remove_childs()
       for _, v in ipairs(self.scenes) do

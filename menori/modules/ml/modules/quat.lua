@@ -258,6 +258,13 @@ end
 
 -- quat --
 
+function quat.from_euler_angles(y, p, r)
+	local _y = quat.from_angle_axis(y, 0, 1, 0)
+	local _p = quat.from_angle_axis(p, 0, 0, 1)
+	local _r = quat.from_angle_axis(r, 1, 0, 0)
+	return _y * _p * _r
+end
+
 function quat.from_angle_axis(angle, axis, a3, a4)
 	if axis and a3 and a4 then
 		local x, y, z = axis, a3, a4

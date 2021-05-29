@@ -68,27 +68,27 @@ end
 
 --- Create sprite from tileset image.
 -- @param image [Image](https://love2d.org/wiki/Image)
--- @tparam number offsetx Offset by X from the beginning of the image
--- @tparam number offsety Offset by Y from the beginning of the image
--- @tparam number w Width of one tile
--- @tparam number h Height of one tile
--- @return New sprite
+-- @tparam number offsetx
+-- @tparam number offsety
+-- @tparam number w
+-- @tparam number h
+-- @return Sprite object
 function spriteloader.from_tileset_image(image, offsetx, offsety, w, h)
 	return Sprite:new(ImageLoader.create_tileset_from_image(offsetx, offsety, w, h), image)
 end
 
 --- Load sprite from Aseprite Sprite Sheet using sprite cache list.
--- @tparam string path Filepath
--- @tparam string name Filename
--- @return Sprite
+-- @tparam string path
+-- @tparam string name
+-- @return Sprite object
 function spriteloader.load_sprite_sheet(path, name)
 	if not list[name] then list[name] = load_aseprite_sprite_sheet(path, name) end
 	return list[name]
 end
 
 --- Find Aseprite Sprite Sheet in cache list.
--- @tparam string name Name
--- @return Sprite
+-- @tparam string name
+-- @return Sprite object
 function spriteloader.find_sprite_sheet(name)
 	return list[name]
 end

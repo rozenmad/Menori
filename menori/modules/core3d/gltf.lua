@@ -222,7 +222,7 @@ end
 
 --- Load model by filename
 -- @function load
--- @tparam string path Path to the directory where the file is located
+-- @tparam string path path to the directory where the file is located
 -- @tparam string filename
 local function load(path, filename)
 	data = json.decode(love.filesystem.read(path .. filename .. '.gltf'))
