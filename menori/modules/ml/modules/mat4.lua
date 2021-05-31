@@ -121,7 +121,7 @@ function mat4_mt:to_temp_transform_object()
 	return temp_transform
 end
 
-function mat4_mt:to_temp_table()
+function mat4_mt:to_table()
 	local t = {}
 	local e = self.e
 	t[ 1] = e[0]

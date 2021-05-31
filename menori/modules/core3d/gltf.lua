@@ -17,6 +17,28 @@ local ImageLoader = require (modules .. 'imageloader')
 local json = require 'libs.rxijson.json'
 local ffi = require 'ffi'
 
+local buffers, images, materials, meshes
+local data
+
+local type_constants = {
+	['SCALAR'] = 1,
+	['VEC2'] = 2,
+	['VEC3'] = 3,
+	['VEC4'] = 4,
+	['MAT2'] = 4,
+	['MAT3'] = 9,
+	['MAT4'] = 16,
+}
+
+local component_type_constants = {
+	[5120] = 1,
+	[5121] = 1,
+	[5122] = 2,
+	[5123] = 2,
+	[5125] = 4,
+	[5126] = 4,
+}
+
 local datatypes = {
 	'byte',
 	'unorm16',
@@ -27,43 +49,25 @@ local datatypes = {
 local attribute_aliases = {
 	['POSITION'] = 'VertexPosition',
 	['TEXCOORD'] = 'VertexTexCoord',
-	['JOINTS'] = 'VertexJoints',
-	['NORMAL'] = 'VertexNormal',
-	['COLOR'] = 'VertexColor',
-	['WEIGHTS'] = 'VertexWeights',
-	['TANGENT'] = 'VertexTangent',
+	['JOINTS']   = 'VertexJoints',
+	['NORMAL']   = 'VertexNormal',
+	['COLOR']    = 'VertexColor',
+	['WEIGHTS']  = 'VertexWeights',
+	['TANGENT']  = 'VertexTangent',
 }
 
-local gl_component_size = {
-	[5120] = 1,
-	[5121] = 1,
-	[5122] = 2,
-	[5123] = 2,
-	[5125] = 4,
-	[5126] = 4,
-}
-
-local gl_type = {
-	['SCALAR'] = 1,
-	['VEC2'] = 2,
-	['VEC3'] = 3,
-	['VEC4'] = 4,
-	['MAT2'] = 4,
-	['MAT3'] = 9,
-	['MAT4'] = 16,
-}
-
-local buffers, images, materials, meshes
-local data
-
-local nodes_mt = {}
-nodes_mt.__index = nodes_mt
-function nodes_mt.find_by_name(nodes, name)
-	for i, v in ipairs(nodes) do
-		if v.name == name then
-			return v
-		end
+local function get_primitive_modes_constants(mode)
+	if mode == 0 then
+		return 'points'
+	elseif mode == 1 then
+	elseif mode == 2 then
+	elseif mode == 3 then
+	elseif mode == 5 then
+		return 'strip'
+	elseif mode == 6 then
+		return 'fan'
 	end
+	return 'triangles'
 end
 
 local function unpack_type(component_type)
@@ -82,6 +86,16 @@ local function unpack_type(component_type)
 	end
 end
 
+local nodes_mt = {}
+nodes_mt.__index = nodes_mt
+function nodes_mt.find_by_name(nodes, name)
+	for i, v in ipairs(nodes) do
+		if v.name == name then
+			return v
+		end
+	end
+end
+
 local function get_buffer(accessor_index)
 	local accessor = data.accessors[accessor_index + 1]
 	local buffer_view = data.bufferViews[accessor.bufferView + 1]
@@ -91,10 +105,10 @@ local function get_buffer(accessor_index)
 	local offset = buffer_view.byteOffset or 0
 	local length = buffer_view.byteLength
 
-	local component_size = gl_component_size[accessor.componentType]
+	local component_size = component_type_constants[accessor.componentType]
 	local component_type = unpack_type(accessor.componentType)
 
-	local type_elements_count = gl_type[accessor.type]
+	local type_elements_count = type_constants[accessor.type]
 	return {
 		data = data,
 		offset = offset + (accessor.byteOffset or 0),
@@ -186,6 +200,7 @@ local function init_mesh(mesh)
 			material = {}
 		end
 		primitives[j] = {
+			mode = get_primitive_modes_constants(primitive.mode),
 			vertexformat = vertexformat,
 			vertices = temp_data,
 			indices = indices,

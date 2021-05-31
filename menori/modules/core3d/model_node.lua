@@ -14,18 +14,19 @@
 local modules = (...):match('(.*%menori.modules.)')
 
 local Node = require (modules .. 'node')
-local ShaderObject = require (modules .. 'shaderobject')
 
 local ModelNode = Node:extend('ModelNode')
 
-ModelNode.default_shader = ShaderObject([[
+ModelNode.default_shader = love.graphics.newShader([[
 #ifdef VERTEX
       uniform mat4 m_model;
       uniform mat4 m_view;
       uniform mat4 m_projection;
 
+      // love2d use row major matrices by default, we have column major and need transpose it.
+      // 11.3 love has bug with matrix layout in shader:send().
       vec4 position(mat4 transform_projection, vec4 vertex_position) {
-            return m_projection * m_view * m_model * vertex_position;
+            return vertex_position * m_model * m_view * m_projection;
       }
 #endif
 #ifdef PIXEL
@@ -57,16 +58,17 @@ end
 -- @param shader ShaderObject that can replace the shader that is used for the current object
 function ModelNode:render(scene, environment, shader)
 	shader = shader or self.shader
-	shader:attach()
+	love.graphics.setShader(shader)
 	environment:send_uniforms_to(shader)
 
-	shader:send_matrix('m_model', self.world_matrix)
+	shader:send('m_model', self.world_matrix.data)
 	for _, v in ipairs(self.model.primitives) do
-            --love.graphics.setColor(v.material.base_color_factor)
+            local r, g, b, a = love.graphics.getColor()
+            love.graphics.setColor(v.material.base_color_factor)
 		love.graphics.draw(v.mesh)
-            --love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.setColor(r, g, b, a)
 	end
-	shader:detach()
+	love.graphics.setShader()
 end
 
 return ModelNode
