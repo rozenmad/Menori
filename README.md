@@ -2,7 +2,7 @@
 
 LÖVE library for simple 3D and 2D rendering based on scene graph. Loading of 3D models in .gltf (JSON) format is also supported.
 
-![preview_exaple](preview.png)
+![preview_example](preview.png)
 
 [Documentation](https://rozenmad.github.io)
 
@@ -72,6 +72,8 @@ function love.update(dt)
 	application:update(dt)
 end
 ```
+
+See ```main.lua``` for a more complete example.
 
 # License
 MIT

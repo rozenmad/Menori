@@ -45,8 +45,8 @@ function application:resize_viewport(w, h, opt)
 	end
 	self.w = w
 	self.h = h
-	local filter = opt.canvas_filter or 'nearest'
-	self.canvas = lovg.newCanvas(self.w, self.h, { format = 'normal', msaa = 0 })
+	local filter = opt.filter or 'nearest'
+	self.canvas = lovg.newCanvas(self.w, self.h, { format = 'normal', msaa = opt.msaa })
 	self.canvas:setFilter(filter, filter)
 	self:_update_viewport_position()
 end

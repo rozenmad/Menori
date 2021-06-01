@@ -42,14 +42,14 @@ end
 --- Constructor. Takes as arguments a list of nodes and scenes loaded with glTFLoader.
 -- @tparam table nodes
 -- @tparam table scenes
-function ModelNodeTree:constructor(nodes, scenes)
+function ModelNodeTree:constructor(nodes, scenes, shader)
       ModelNodeTree.super.constructor(self)
 
       for _, v in ipairs(nodes) do
             local node
             if v.primitives then
                   local m = create_transform_matrix(v)
-                  node = ModelNode(Model(v.primitives), m)
+                  node = ModelNode(Model(v.primitives), m, shader)
             else
                   node = Node()
                   local m = create_transform_matrix(v)

@@ -30,6 +30,7 @@ local menori = {
 	SpriteLoader      = require(modules .. 'spriteloader'),
 	Script            = require(modules .. 'script'),
 
+	utils             = require(modules .. 'libs.utils'),
 	class             = require(modules .. 'libs.class'),
 	ml                = require(modules .. 'ml'),
 }

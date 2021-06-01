@@ -43,6 +43,7 @@ end
 -- @tparam table renderstates (Optional)
 -- @tparam function filter (Optional)
 function scene:render_nodes(node, environment, renderstates, filter)
+	environment._shader_cache_object = nil
 	renderstates = renderstates or temp_renderstate
 	filter = filter or default_filter
 	self:_recursive_render_nodes(node, false)

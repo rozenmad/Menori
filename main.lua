@@ -50,12 +50,33 @@ function SpriteNode:update()
 	self.local_matrix:scale(self.sx, self.sy, 1)
 end
 
+local PointLight = menori.UniformList:extend('PointLight')
+PointLight.name = 'point_lights'
+function PointLight:constructor(x, y, z, r, g, b, sr, sg, sb)
+	PointLight.super.constructor(self)
+
+	self:set('position', {x, y, z})
+	self:set('constant', 1.0)
+	self:set('linear', 0.3)
+	self:set('quadratic', 0.032)
+	self:set('ambient', {r, g, b})
+	self:set('diffuse', {r, g, b})
+	self:set('specular', {r, g, b})
+end
+
+function PointLight:to_uniforms(shader, light_index_str)
+	self:send_to(shader, light_index_str)
+end
+
 -- Inherit from the scene class and create new scene.
 local NewScene = menori.Scene:extend('NewScene')
 
 function NewScene:constructor()
 	-- Calling the parent's constructor.
 	NewScene.super.constructor(self)
+
+	local shader_code = love.filesystem.read('example_assets/lighting.glsl')
+	local shader_lighting = love.graphics.newShader(menori.utils.shader_preprocess(shader_code))
 
 	-- An example of creating a primitive.
 	local vx = 1
@@ -78,8 +99,8 @@ function NewScene:constructor()
 	local model_instance = menori.Model(primitive)
 
 	-- Now you can use an model instance for every new node.
-	local quadmesh1 = menori.ModelNode(model_instance)
-	local quadmesh2 = menori.ModelNode(model_instance)
+	local quadmesh1 = menori.ModelNode(model_instance, nil, shader_lighting)
+	local quadmesh2 = menori.ModelNode(model_instance, nil, shader_lighting)
 	quadmesh1.local_matrix:translate(5, 0.1,-2)
 	quadmesh2.local_matrix:translate(2, 0.1, 2)
 
@@ -91,6 +112,9 @@ function NewScene:constructor()
 	self.camera_2d = menori.Camera()
 	self.environment_2d = menori.Environment(self.camera_2d)
 
+	self.environment_3d:add_light(PointLight(-2, 1,-1, 0.8, 0.2, 0.1))
+	self.environment_3d:add_light(PointLight( 2, 1,-1, 0.1, 0.6, 0.9))
+
 	-- Creating and attaching nodes to each other.
 	local sprite_node = SpriteNode(100, 100, 1, 1, 1)
 	local child1 = sprite_node:attach(SpriteNode(150, 50, 0.5, 0.5, 3))
@@ -99,7 +123,7 @@ function NewScene:constructor()
 	-- Load the scene from gltf format, get a table of nodes and scenes contained in the file.
 	local nodes, scenes = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
 
-	local model_node_tree = menori.ModelNodeTree(nodes, scenes)
+	local model_node_tree = menori.ModelNodeTree(nodes, scenes, shader_lighting)
 
 	-- Create a root node and add the loaded scene to it.
 	self.root_node_3d = menori.Node()
@@ -111,7 +135,7 @@ function NewScene:constructor()
 	self.root_node_2d:attach(sprite_node)
 
 	-- Camera rotation angle.
-	self.angle = 0
+	self.angle = -90
 end
 
 -- Turn on the depth buffer, clear the canvases and set the color.
@@ -120,7 +144,7 @@ local renderstates = {
 }
 
 function NewScene:render()
-	love.graphics.clear(0.3, 0.25, 0.2)
+	love.graphics.clear(0.15, 0.1, 0.1)
 	love.graphics.setDepthMode('less', true)
 	-- Recursively draw all nodes in root_node.
 	self:render_nodes(self.root_node_3d, self.environment_3d, renderstates)
@@ -133,10 +157,13 @@ end
 function NewScene:update_camera()
 	-- Rotating the camera around the model.
 	self.angle = self.angle + 0.2
-	local q = quat.from_angle_axis(math.rad(self.angle), vec3.unit_y)
-	local v = vec3(0, 5, 10)
+	local q = quat.from_euler_angles(math.rad(self.angle), math.rad(35), 0)
+	local v = vec3(14, 0, 0)
 	self.camera_3d.eye = q * v
 	self.camera_3d:update_view_matrix()
+
+	local uniform_list = self.environment_3d.uniform_list
+	uniform_list:set_vector('view_position', self.camera_3d.eye)
 end
 
 function NewScene:update()
@@ -148,7 +175,7 @@ end
 
 function love.load()
 	local w, h = 960, 480
-	application:resize_viewport(w, h)
+	application:resize_viewport(w*1.5, h*1.5, {filter = 'linear', msaa = 4})
 
 	application:add_scene('new_scene', NewScene())
 	application:set_scene('new_scene')

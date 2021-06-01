@@ -30,6 +30,8 @@ function Environment:constructor(camera)
 
 	self.uniform_list = UniformList()
 	self.lights = {}
+
+	self._shader_cache_object = nil
 end
 
 --- Add light source.
@@ -41,13 +43,17 @@ end
 --- Sends all the environment uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.
 -- @tparam Shader
 function Environment:send_uniforms_to(shader)
-	self.uniform_list:send_to(shader)
+	if self._shader_cache_object ~= shader then
+		self.uniform_list:send_to(shader)
 
-	local camera = self.camera
-	shader:send("m_view", camera.m_view.data)
-	shader:send("m_projection", camera.m_projection.data)
+		local camera = self.camera
+		shader:send("m_view", camera.m_view.data)
+		shader:send("m_projection", camera.m_projection.data)
 
-	self:send_light_sources_to(shader)
+		self:send_light_sources_to(shader)
+
+		self._shader_cache_object = shader
+	end
 end
 
 local function noexcept_send_uniform(shader, name, ...)
@@ -62,8 +68,7 @@ function Environment:send_light_sources_to(shader)
 	noexcept_send_uniform(shader, 'light_count', #self.lights)
 	for i = 1, #self.lights do
 		local light = self.lights[i]
-		local light_index_str =  "lights[" .. (i - 1) .. "]."
-		light:to_uniforms(shader, light_index_str)
+		light:to_uniforms(shader, light.name .. "[" .. (i - 1) .. "].")
 	end
 end
 

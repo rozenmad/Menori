@@ -63,19 +63,21 @@ function UniformList:remove(name)
 end
 
 --- Sends all uniform values from the list to the shader.
-function UniformList:send_to(shader)
+function UniformList:send_to(shader, concat_str)
+	concat_str = concat_str or ''
 	for k, v in pairs(self.list) do
-		if shader:hasUniform(k) then
+		local name = concat_str .. k
+		if shader:hasUniform(name) then
 			if v.type then
 				if v.type == 'matrix' then
-					shader:send(k, v.object.data)
+					shader:send(name, v.object.data)
 				elseif v.type == 'vector' then
-					shader:send(k, {v.object:unpack()})
+					shader:send(name, {v.object:unpack()})
 				elseif v.type == 'color' then
-					shader:sendColor(k, unpack(v.object))
+					shader:sendColor(name, unpack(v.object))
 				end
 			else
-				shader:send(k, unpack(v))
+				shader:send(name, unpack(v))
 			end
 		end
 	end
