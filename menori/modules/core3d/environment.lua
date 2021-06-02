@@ -36,7 +36,7 @@ end
 
 --- Add light source.
 -- @tparam strign uniform_name Name of uniform used in the shader
--- @tparam LightObject light
+-- @tparam UniformList light
 function Environment:add_light(uniform_name, light)
 	local t = self.lights[uniform_name] or {}
 	self.lights[uniform_name] = t

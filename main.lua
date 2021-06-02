@@ -51,8 +51,7 @@ function SpriteNode:update()
 end
 
 local PointLight = menori.UniformList:extend('PointLight')
-PointLight.name = 'point_lights'
-function PointLight:constructor(x, y, z, r, g, b, sr, sg, sb)
+function PointLight:constructor(x, y, z, r, g, b)
 	PointLight.super.constructor(self)
 
 	self:set('position', {x, y, z})
