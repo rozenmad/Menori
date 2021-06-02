@@ -36,7 +36,7 @@ struct PointLight {
 
 #define MAX_POINT_LIGHTS 6
 uniform PointLight point_lights[MAX_POINT_LIGHTS];
-uniform int light_count;
+uniform int point_lights_count;
 
 vec3 calculate_point_light(in PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
       vec3 light_direction = normalize(light.position - fragPos);
@@ -57,7 +57,7 @@ vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords) {
       vec3 view_direction = normalize(view_position - frag_position);
 
       vec3 result;
-      for(int i = 0; i < light_count; i++) {
+      for(int i = 0; i < point_lights_count; i++) {
             result += calculate_point_light(point_lights[i], normal, frag_position, view_direction);
       }
 

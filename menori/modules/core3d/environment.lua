@@ -35,13 +35,16 @@ function Environment:constructor(camera)
 end
 
 --- Add light source.
+-- @tparam strign uniform_name Name of uniform used in the shader
 -- @tparam LightObject light
-function Environment:add_light(light)
-	self.lights[#self.lights + 1] = light
+function Environment:add_light(uniform_name, light)
+	local t = self.lights[uniform_name] or {}
+	self.lights[uniform_name] = t
+	table.insert(t, light)
 end
 
 --- Sends all the environment uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.
--- @tparam Shader
+-- @tparam Shader shader
 function Environment:send_uniforms_to(shader)
 	if self._shader_cache_object ~= shader then
 		self.uniform_list:send_to(shader)
@@ -63,12 +66,13 @@ local function noexcept_send_uniform(shader, name, ...)
 end
 
 --- Sends light sources uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.
--- @tparam Shader
+-- @tparam Shader shader
 function Environment:send_light_sources_to(shader)
-	noexcept_send_uniform(shader, 'light_count', #self.lights)
-	for i = 1, #self.lights do
-		local light = self.lights[i]
-		light:to_uniforms(shader, light.name .. "[" .. (i - 1) .. "].")
+	for k, v in pairs(self.lights) do
+		noexcept_send_uniform(shader, k .. '_count', #v)
+		for i, light in ipairs(v) do
+			light:send_to(shader, k .. "[" .. (i - 1) .. "].")
+		end
 	end
 end
 

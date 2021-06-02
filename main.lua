@@ -64,10 +64,6 @@ function PointLight:constructor(x, y, z, r, g, b, sr, sg, sb)
 	self:set('specular', {r, g, b})
 end
 
-function PointLight:to_uniforms(shader, light_index_str)
-	self:send_to(shader, light_index_str)
-end
-
 -- Inherit from the scene class and create new scene.
 local NewScene = menori.Scene:extend('NewScene')
 
@@ -112,8 +108,8 @@ function NewScene:constructor()
 	self.camera_2d = menori.Camera()
 	self.environment_2d = menori.Environment(self.camera_2d)
 
-	self.environment_3d:add_light(PointLight(-2, 1,-1, 0.8, 0.2, 0.1))
-	self.environment_3d:add_light(PointLight( 2, 1,-1, 0.1, 0.6, 0.9))
+	self.environment_3d:add_light('point_lights', PointLight(-2, 1,-1, 0.8, 0.2, 0.1))
+	self.environment_3d:add_light('point_lights', PointLight( 2, 1,-1, 0.1, 0.6, 0.9))
 
 	-- Creating and attaching nodes to each other.
 	local sprite_node = SpriteNode(100, 100, 1, 1, 1)
