@@ -8,7 +8,11 @@
 
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
-local ffi = require 'ffi'
+
+local ffi
+if type(jit) == 'table' and jit.status() then
+	ffi = require 'ffi'
+end
 
 local geometry_buffer = class('GeometryBuffer')
 

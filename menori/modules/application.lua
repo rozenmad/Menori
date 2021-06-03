@@ -46,8 +46,9 @@ function application:resize_viewport(w, h, opt)
 	self.w = w
 	self.h = h
 	local filter = opt.filter or 'nearest'
-	self.canvas = lovg.newCanvas(self.w, self.h, { format = 'normal', msaa = opt.msaa })
+	self.canvas = lovg.newCanvas(self.w, self.h, { format = opt.format, msaa = opt.msaa })
 	self.canvas:setFilter(filter, filter)
+
 	self:_update_viewport_position()
 end
 
@@ -136,7 +137,7 @@ end
 --- Application render function.
 -- @tparam number dt
 function application:render(dt)
-	love.graphics.setCanvas({ self.canvas, depth = true, stencil = true })
+	love.graphics.setCanvas({ self.canvas, depth = true })
 	lovg.clear()
 	lovg.push()
 	if current_scene and current_scene.render then current_scene:render(dt) end

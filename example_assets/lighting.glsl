@@ -34,7 +34,7 @@ struct PointLight {
       float quadratic;
 };
 
-#define MAX_POINT_LIGHTS 6
+const int MAX_POINT_LIGHTS = 6;
 uniform PointLight point_lights[MAX_POINT_LIGHTS];
 uniform int point_lights_count;
 
@@ -57,8 +57,10 @@ vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords) {
       vec3 view_direction = normalize(view_position - frag_position);
 
       vec3 result;
-      for(int i = 0; i < point_lights_count; i++) {
-            result += calculate_point_light(point_lights[i], normal, frag_position, view_direction);
+      for(int i = 0; i < MAX_POINT_LIGHTS; i++) {
+            if( point_lights[i].constant != 0.0 ) {
+                  result += calculate_point_light(point_lights[i], normal, frag_position, view_direction);
+            }
       }
 
       vec4 texcolor = Texel(t, texture_coords);

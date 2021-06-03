@@ -15,7 +15,11 @@ local modules = (...):match('(.*%menori.modules.)')
 local ImageLoader = require (modules .. 'imageloader')
 
 local json = require 'libs.rxijson.json'
-local ffi = require 'ffi'
+
+local ffi
+if type(jit) == 'table' and jit.status() then
+	ffi = require 'ffi'
+end
 
 local buffers, images, materials, meshes
 local data
@@ -127,16 +131,68 @@ local function get_indices_content(v)
 	local buffer = get_buffer(v)
 	local element_size = buffer.component_size * buffer.type_elements_count
 
-	local temp_data = love.data.newByteData(buffer.count * element_size)
-	local temp_data_pointer = ffi.cast('char*', temp_data:getFFIPointer())
+	local temp_data
+	if ffi then
+		temp_data = love.data.newByteData(buffer.count * element_size)
+		local temp_data_pointer = ffi.cast('char*', temp_data:getFFIPointer())
+		local data = ffi.cast('char*', buffer.data:getFFIPointer()) + buffer.offset
 
-	local data = ffi.cast('char*', buffer.data:getFFIPointer()) + buffer.offset
+		for i = 0, buffer.count - 1 do
+			ffi.copy(temp_data_pointer + i * element_size, data + i * buffer.stride, element_size)
+		end
+	else
+		temp_data = {}
+		local data_string = buffer.data:getString()
 
-	for i = 0, buffer.count - 1 do
-		ffi.copy(temp_data_pointer + i * element_size, data + i * buffer.stride, element_size)
+		for i = 0, buffer.count - 1 do
+			local pos =  buffer.offset + i * element_size + 1
+			local v = love.data.unpack(buffer.component_type, data_string, pos) + 1
+			table.insert(temp_data, v)
+		end
+	end
+	return temp_data, element_size
+end
+
+local function get_vertices_content(attribute_buffers, components_stride, length)
+	local start_offset = 0
+	local temp_data
+
+	if ffi then
+		temp_data = love.data.newByteData(length)
+		local temp_data_pointer = ffi.cast('char*', temp_data:getFFIPointer())
+
+		for _, buffer in ipairs(attribute_buffers) do
+			local element_size = buffer.component_size * buffer.type_elements_count
+			for i = 0, buffer.count - 1 do
+				local p1 = buffer.offset + i * buffer.stride
+				local data = ffi.cast('char*', buffer.data:getFFIPointer()) + p1
+
+				local p2 = start_offset + i * components_stride
+
+				ffi.copy(temp_data_pointer + p2, data, element_size)
+			end
+			start_offset = start_offset + element_size
+		end
+	else
+		temp_data = {}
+		for _, buffer in ipairs(attribute_buffers) do
+			local data_string = buffer.data:getString()
+			for i = 0, buffer.count - 1 do
+				local vertex = temp_data[i + 1] or {}
+				temp_data[i + 1] = vertex
+
+				local pos = buffer.offset + i * buffer.stride
+				for k = 0, buffer.type_elements_count - 1 do
+					local element_pos = pos + k * buffer.component_size + 1
+					local attr = love.data.unpack(buffer.component_type, data_string, element_pos)
+					vertex[start_offset + k + 1] = attr
+				end
+			end
+			start_offset = start_offset + buffer.type_elements_count
+		end
 	end
 
-	return temp_data, element_size
+	return temp_data
 end
 
 local function init_mesh(mesh)
@@ -176,22 +232,7 @@ local function init_mesh(mesh)
 			})
 		end
 
-		local start_offset = 0
-		local temp_data = love.data.newByteData(length)
-		local temp_data_pointer = ffi.cast('char*', temp_data:getFFIPointer())
-
-		for _, buffer in ipairs(attribute_buffers) do
-			local element_size = buffer.component_size * buffer.type_elements_count
-			for i = 0, buffer.count - 1 do
-				local p1 = buffer.offset + i * buffer.stride
-				local data = ffi.cast('char*', buffer.data:getFFIPointer()) + p1
-
-				local p2 = start_offset + i * components_stride
-
-				ffi.copy(temp_data_pointer + p2, data, element_size)
-			end
-			start_offset = start_offset + element_size
-		end
+		local vertices = get_vertices_content(attribute_buffers, components_stride, length)
 
 		local material
 		if primitive.material then
@@ -202,7 +243,7 @@ local function init_mesh(mesh)
 		primitives[j] = {
 			mode = get_primitive_modes_constants(primitive.mode),
 			vertexformat = vertexformat,
-			vertices = temp_data,
+			vertices = vertices,
 			indices = indices,
 			indices_type_size = indices_type_size,
 			material = material,

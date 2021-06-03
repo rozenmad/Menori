@@ -12,7 +12,10 @@ local class = require (modules .. 'libs.class')
 local geometry_buffer = require (modules .. 'core3d.geometry_buffer')
 local model = require (modules .. 'core3d.model')
 
-local ffi = require 'ffi'
+local ffi
+if type(jit) == 'table' and jit.status() then
+	ffi = require 'ffi'
+end
 
 local instanced_mesh = class('InstancedMesh')
 
