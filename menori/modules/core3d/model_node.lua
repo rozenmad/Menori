@@ -13,6 +13,7 @@
 
 local modules = (...):match('(.*%menori.modules.)')
 
+local utils = require (modules .. 'libs.utils')
 local Node = require (modules .. 'node')
 
 local ModelNode = Node:extend('ModelNode')
@@ -52,6 +53,12 @@ function ModelNode:constructor(model, matrix, shader)
 	self.model = model
 end
 
+local function send_material_to(shader, material)
+      for k, v in pairs(material) do
+            utils.noexcept_send_uniform(shader, k, v)
+      end
+end
+
 --- Render function.
 -- @param scene Scene that draws this object
 -- @param environment Environment that is used when drawing the current object
@@ -62,11 +69,10 @@ function ModelNode:render(scene, environment, shader)
 	environment:send_uniforms_to(shader)
 
 	shader:send('m_model', self.world_matrix.data)
+
 	for _, v in ipairs(self.model.primitives) do
-            local r, g, b, a = love.graphics.getColor()
-            love.graphics.setColor(v.material.base_color_factor)
+            send_material_to(shader, v.material)
 		love.graphics.draw(v.mesh)
-            love.graphics.setColor(r, g, b, a)
 	end
 	love.graphics.setShader()
 end

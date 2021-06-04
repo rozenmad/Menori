@@ -264,14 +264,24 @@ local function init_material(v)
 	material.name = v.name
 	if v.pbrMetallicRoughness then
 		local pbr = v.pbrMetallicRoughness
-		material.base_color_factor = pbr.baseColorFactor
+		if pbr.baseColorFactor then
+			material.base_color_factor = pbr.baseColorFactor
+		end
 
 		local baseColorTexture = pbr.baseColorTexture
 		if baseColorTexture then
 			local image = get_image_by_index(baseColorTexture.index)
 			material.base_color_texture = image.data
-			material.base_color_texture_coord = baseColorTexture.texCoord
+			material.base_color_texture_coord = baseColorTexture.texCoord or 0
 		end
+	end
+	if v.emissiveTexture then
+		local image = get_image_by_index(v.emissiveTexture.index)
+		material.emissive_texture = image.data
+		material.emissive_texture_coord = v.emissiveTexture.coord or 0
+	end
+	if v.emissiveFactor then
+		material.emissive_factor = v.emissiveFactor
 	end
 	return material
 end

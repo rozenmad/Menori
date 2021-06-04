@@ -35,4 +35,10 @@ function utils.shader_preprocess(code)
 	return _explicit_struct_uniforms_usage(code)
 end
 
+function utils.noexcept_send_uniform(shader, name, value, ...)
+	if value and shader:hasUniform(name) then
+      	shader:send(name, value, ...)
+	end
+end
+
 return utils

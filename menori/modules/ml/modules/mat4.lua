@@ -576,8 +576,8 @@ function mat4.is_mat4(a)
 end
 
 function mat4.unproject(win, viewproj, viewport)
-	local x = (2 * (win.x - viewport[2])) / viewport[4] - 1
-	local y = (2 * (win.y - viewport[3])) / viewport[5] - 1
+	local x = (2 * (win.x - viewport[1])) / viewport[3] - 1
+	local y = (2 * (win.y - viewport[2])) / viewport[4] - 1
 	local z = win.z * 2 - 1
 	local ray = {x = x, y = y, z = z, w = 1}
 	viewproj:clone():inverse():multiply_vec4(ray)

@@ -43,6 +43,7 @@ end
 -- @tparam table renderstates (Optional)
 -- @tparam function filter (Optional)
 function scene:render_nodes(node, environment, renderstates, filter)
+	assert(node, "in function 'scene:update_nodes' node does not exist.")
 	environment._shader_cache_object = nil
 	renderstates = renderstates or temp_renderstate
 	filter = filter or default_filter
@@ -110,6 +111,7 @@ end
 -- @tparam Node node
 -- @tparam Environment environment
 function scene:update_nodes(node, environment)
+	assert(node, "in function 'scene:update_nodes' node does not exist.")
 	temp_environment = environment
 	self:_recursive_update_nodes(node)
 end

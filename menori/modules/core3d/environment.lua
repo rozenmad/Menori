@@ -13,6 +13,7 @@ An environment is a class that sends information about the current settings of t
 
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
+local utils = require (modules .. 'libs.utils')
 local UniformList = require (modules .. 'core3d.uniform_list')
 
 --- Class members
@@ -59,17 +60,11 @@ function Environment:send_uniforms_to(shader)
 	end
 end
 
-local function noexcept_send_uniform(shader, name, ...)
-	if shader:hasUniform(name) then
-      	shader:send(name, ...)
-	end
-end
-
 --- Sends light sources uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.
 -- @tparam Shader shader
 function Environment:send_light_sources_to(shader)
 	for k, v in pairs(self.lights) do
-		noexcept_send_uniform(shader, k .. '_count', #v)
+		utils.noexcept_send_uniform(shader, k .. '_count', #v)
 		for i, light in ipairs(v) do
 			light:send_to(shader, k .. "[" .. (i - 1) .. "].")
 		end
