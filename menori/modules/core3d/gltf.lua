@@ -291,7 +291,10 @@ end
 -- @tparam string path path to the directory where the file is located
 -- @tparam string filename
 local function load(path, filename)
-	data = json.decode(love.filesystem.read(path .. filename .. '.gltf'))
+	local filepath = path .. filename .. '.gltf'
+	assert(love.filesystem.getInfo(filepath), 'in function <glTFLoader.load> file "' .. filepath .. '" not found.')
+
+	data = json.decode(love.filesystem.read(filepath))
 
 	buffers = {}
 	for i, v in ipairs(data.buffers) do

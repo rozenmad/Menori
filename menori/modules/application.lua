@@ -12,6 +12,7 @@ The main class for managing scenes and the viewport.
 -- @module menori.Application
 
 local modules = (...):match('(.*%menori.modules.)')
+
 local class = require (modules .. 'libs.class')
 
 local list = {}
@@ -20,7 +21,6 @@ local accumulator = 0
 local tick_period = 1.0 / 60.0
 local ox = 0
 local oy = 0
-local canvas_scale = 1
 
 local application = class('Application')
 
@@ -43,8 +43,12 @@ function application:resize_viewport(w, h, opt)
 	if self.resizable then
 		w, h = love.graphics.getDimensions()
 	end
-	self.w = w
-	self.h = h
+	self.x = opt.x
+	self.y = opt.y
+	self.w = (w - (self.x or 0))
+	self.h = (h - (self.y or 0))
+	self.sx = 1
+	self.sy = 1
 	local filter = opt.filter or 'nearest'
 	self.canvas = lovg.newCanvas(self.w, self.h, { format = opt.format, msaa = opt.msaa })
 	self.canvas:setFilter(filter, filter)
@@ -65,12 +69,22 @@ function application:_update_viewport_position()
 
 	local w = math.floor(window_w / dpi)
 	local h = math.floor(window_h / dpi)
-	local sx = w / self.w
-	local sy = h / self.h
-	canvas_scale = math.min(sx, sy)
+	if not self.x and not self.y then
+		local _sx = w / self.w
+		local _sy = h / self.h
+		local canvas_scale = math.min(_sx, _sy)
+		self.sx = canvas_scale
+		self.sy = canvas_scale
 
-	ox = (w - self.w * canvas_scale) / 2
-	oy = (h - self.h * canvas_scale) / 2
+		self.x = 0
+		self.y = 0
+
+		ox = (w - self.w * self.sx) / 2
+		oy = (h - self.h * self.sy) / 2
+	else
+		ox = self.x
+		oy = self.y
+	end
 end
 
 --- Change scene with a transition effect.
@@ -137,7 +151,7 @@ end
 --- Application render function.
 -- @tparam number dt
 function application:render(dt)
-	love.graphics.setCanvas({ self.canvas, depth = true })
+	lovg.setCanvas({ self.canvas, depth = true })
 	lovg.clear()
 	lovg.push()
 	if current_scene and current_scene.render then current_scene:render(dt) end
@@ -150,11 +164,11 @@ function application:render(dt)
 			self.effect = nil
 		end
 	end
-	love.graphics.setCanvas()
+	lovg.setCanvas()
 	lovg.setShader()
 	lovg.pop()
 
-	lovg.draw(self.canvas, ox, oy, 0, canvas_scale, canvas_scale)
+	lovg.draw(self.canvas, ox, oy, 0, self.sx, self.sy)
 end
 
 local instance = application()

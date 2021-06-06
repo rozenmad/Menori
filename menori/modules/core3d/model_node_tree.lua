@@ -44,6 +44,7 @@ end
 -- @tparam table scenes
 function ModelNodeTree:constructor(nodes, scenes, shader)
       ModelNodeTree.super.constructor(self)
+      self._nodes = nodes
 
       for _, v in ipairs(nodes) do
             local node
@@ -91,6 +92,16 @@ function ModelNodeTree:set_scene_by_name(name)
       for _, v in ipairs(self.scenes) do
             if v.name == name then
                   self:attach(v)
+            end
+      end
+end
+
+--- Find a node by name.
+-- @tparam string name
+function ModelNodeTree:find(name)
+      for _, v in ipairs(self._nodes) do
+            if v.name == name then
+                  return v.node
             end
       end
 end
