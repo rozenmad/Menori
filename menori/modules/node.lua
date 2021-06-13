@@ -52,6 +52,7 @@ function node:constructor()
 
 	self.position = vec3(0, 0, 0)
 	self.rotation = quat()
+	self.scale = vec3(1, 1, 1)
 end
 
 function node:set_position(x, y, z)
@@ -62,6 +63,11 @@ end
 function node:set_rotation(q)
 	self._transform_flag = true
 	self.rotation = q
+end
+
+function node:set_scale(sx, sy, sz)
+	self._transform_flag = true
+	self.scale:set(sx, sy, sz)
 end
 
 --- Update transformation matrix for current node and its children.
@@ -83,6 +89,7 @@ function node:update_transform()
 		temp_matrix:identity()
 	end
 	temp_matrix:set_position_and_rotation(self.position, self.rotation)
+	temp_matrix:scale(self.scale)
 
 	local parent = self.parent
 	if parent then

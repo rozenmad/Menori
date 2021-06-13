@@ -44,10 +44,10 @@ end
 function SpriteNode:update()
 	self.angle = self.angle + self.speed
 
-	self.local_matrix:identity()
-	self.local_matrix:translate(self.x, self.y, 0)
-	self.local_matrix:rotate(math.rad(self.angle), vec3.unit_z)
-	self.local_matrix:scale(self.sx, self.sy, 1)
+	self:set_position(self.x, self.y, 0)
+	self:set_rotation(quat.from_angle_axis(math.rad(self.angle), vec3.unit_z))
+
+	self:set_scale(self.sx, self.sy, 1)
 end
 
 local PointLight = menori.UniformList:extend('PointLight')
@@ -130,7 +130,7 @@ function NewScene:constructor()
 	self.root_node_2d:attach(sprite_node)
 
 	-- Camera rotation angle.
-	self.angle = -90
+	self.angle = 0
 end
 
 -- Turn on the depth buffer, clear the canvases and set the color.
@@ -152,8 +152,8 @@ end
 function NewScene:update_camera()
 	-- Rotating the camera around the model.
 	self.angle = self.angle + 0.2
-	local q = quat.from_euler_angles(math.rad(self.angle), math.rad(35), 0)
-	local v = vec3(14, 0, 0)
+	local q = quat.from_euler_angles(0, math.rad(self.angle), math.rad(-45))
+	local v = vec3(0, 0, 12)
 	self.camera_3d.eye = q * v
 	self.camera_3d:update_view_matrix()
 
