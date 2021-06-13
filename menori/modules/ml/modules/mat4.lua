@@ -226,7 +226,7 @@ function mat4_mt:set_position_and_rotation(position, angle, axis)
 		angle, axis = angle:to_angle_axis()
 	end
 	local length = axis:length()
-	local e = self.e
+	local e = temp_array
 
 	if length ~= 0 then
 		rotate(e, angle, axis.x, axis.y, axis.z, length)
@@ -242,6 +242,9 @@ function mat4_mt:set_position_and_rotation(position, angle, axis)
 	e[14] = position.y
 	e[15] = position.z
 	e[16] = 1
+
+	multiply(self.e, temp_array)
+	return self
 end
 
 function mat4_mt:scale(x, y, z)
