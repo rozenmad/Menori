@@ -25,6 +25,15 @@ function vec2_mt:clone()
 	return new(self.x, self.y)
 end
 
+function vec2_mt:set(x, y)
+	if type(x) == 'table' then
+		x, y = x.x, x.y
+	end
+	self.x = x
+	self.y = y
+	return self
+end
+
 function vec2_mt:add(other)
 	self.x = self.x + other.x
 	self.y = self.y + other.y
@@ -57,6 +66,10 @@ end
 
 function vec2_mt:length()
 	return math.sqrt(self.x * self.x + self.y * self.y)
+end
+
+function vec2_mt:length2()
+	return self.x * self.x + self.y * self.y
 end
 
 function vec2_mt:normalize()

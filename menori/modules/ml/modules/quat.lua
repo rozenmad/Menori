@@ -70,7 +70,7 @@ function quat_mt:mul(other)
 	return self
 end
 
-function quat_mt:mul_vec3(v3)
+function quat_mt:multiply_vec3(v3)
 	temp_v.x = self.x
 	temp_v.y = self.y
 	temp_v.z = self.z
@@ -247,7 +247,7 @@ function quat_mt.__mul(a, b)
 		return a:clone():scale(b)
 	end
 
-	return a:mul_vec3(b)
+	return a:multiply_vec3(b)
 end
 
 function quat_mt.__pow(a, n)
@@ -259,10 +259,19 @@ end
 -- quat --
 
 function quat.from_euler_angles(y, p, r)
-	local _y = quat.from_angle_axis(y, 0, 1, 0)
-	local _p = quat.from_angle_axis(p, 0, 0, 1)
-	local _r = quat.from_angle_axis(r, 1, 0, 0)
-	return _y * _p * _r
+	local cy = cos(y * 0.5)
+	local sy = sin(y * 0.5)
+	local cp = cos(p * 0.5)
+	local sp = sin(p * 0.5)
+	local cr = cos(r * 0.5)
+	local sr = sin(r * 0.5)
+
+	local q = new()
+	q.w = cr * cp * cy + sr * sp * sy
+	q.x = sr * cp * cy - cr * sp * sy
+	q.y = cr * sp * cy + sr * cp * sy
+	q.z = cr * cp * sy - sr * sp * cy
+	return q
 end
 
 function quat.from_angle_axis(angle, axis, a3, a4)

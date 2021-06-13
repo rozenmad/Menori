@@ -18,6 +18,8 @@ local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
 local ml    = require (modules .. 'ml')
 local mat4  = ml.mat4
+local vec3  = ml.vec3
+local quat  = ml.quat
 
 --- Class members
 -- @table Node
@@ -32,6 +34,8 @@ local mat4  = ml.mat4
 local node = class('Node')
 node.layer = 0
 
+local temp_matrix = mat4()
+
 --- Constructor.
 function node:constructor()
 	self.children = {}
@@ -43,6 +47,21 @@ function node:constructor()
 
 	self.local_matrix = mat4()
 	self.world_matrix = mat4()
+
+	self._transform_flag = true
+
+	self.position = vec3(0, 0, 0)
+	self.rotation = quat()
+end
+
+function node:set_position(x, y, z)
+	self._transform_flag = true
+	self.position:set(x, y, z)
+end
+
+function node:set_rotation(q)
+	self._transform_flag = true
+	self.rotation = q
 end
 
 --- Update transformation matrix for current node and its children.
@@ -58,14 +77,20 @@ function node:update_transform()
 	local local_matrix = self.local_matrix
 	local world_matrix = self.world_matrix
 
+	if local_matrix then
+		temp_matrix:copy(local_matrix)
+	else
+		temp_matrix:identity()
+	end
+	temp_matrix:set_position_and_rotation(self.position, self.rotation)
+
 	local parent = self.parent
 	if parent then
 		world_matrix:copy(parent.world_matrix)
-		world_matrix:multiply(local_matrix)
+		world_matrix:multiply(temp_matrix)
 	else
-		world_matrix:copy(local_matrix)
+		world_matrix:copy(temp_matrix)
 	end
-	local_matrix._changed = false
 end
 
 --- Get child node by index.

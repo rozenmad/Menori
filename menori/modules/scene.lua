@@ -91,7 +91,7 @@ function scene:render_nodes(node, environment, renderstates, filter)
 end
 
 function scene:_recursive_render_nodes(parent_node, transform_flag)
-	if parent_node.local_matrix:is_changed() or transform_flag then
+	if parent_node._transform_flag or transform_flag then
 		parent_node:update_transform()
 		transform_flag = true
 	end

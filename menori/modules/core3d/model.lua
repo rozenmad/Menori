@@ -94,9 +94,9 @@ function Model.generate_indices(count, template)
 	return indices
 end
 
-local function get_position_attribute_index(format)
+function Model.get_attribute_index(attribute, format)
 	for i, v in ipairs(format) do
-		if v[1] == 'VertexPosition' then
+		if v[1] == attribute then
 			return i
 		end
 	end
@@ -108,7 +108,7 @@ function Model.calculate_bound(mesh)
 	local count = mesh:getVertexCount()
 	if count then
 		local format = mesh:getVertexFormat()
-		local pindex = get_position_attribute_index(format)
+		local pindex = Model.get_attribute_index('VertexPosition', format)
 
 		local x, y, z = mesh:getVertexAttribute(1, pindex)
 		t.x1, t.x2 = x, x

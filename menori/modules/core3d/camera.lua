@@ -38,22 +38,15 @@ function PerspectiveCamera:constructor(fov, aspect, nclip, fclip)
 	self.m_inv_projection = self.m_projection:clone():inverse()
 	self.m_view = mat4()
 
-	self.center = vec3( 0, 0, 0 )
-	self.eye 	= vec3( 0, 0, 1 )
-	self.up 	= vec3( 0,-1, 0 )
-
-	self.swap_look_at = false
+	self.center   = vec3( 0, 0, 0 )
+	self.eye 	  = vec3( 0, 0, 1 )
+	self.up 	  = vec3( 0,-1, 0 )
 end
 
 -- Updating the view matrix.
 function PerspectiveCamera:update_view_matrix()
 	self.m_view:identity()
-	if self.swap_look_at then
-		self.m_view:look_at(self.center, self.eye, self.up)
-	else
-		self.m_view:look_at(self.eye, self.center, self.up)
-	end
-	return self.m_view
+	self.m_view:look_at(self.eye, self.center, self.up)
 end
 
 --- Returns a ray going from camera through a screen point.
@@ -62,7 +55,7 @@ end
 -- @tparam table viewport (optional) viewport rectangle (x, y, w, h)
 -- @treturn vec3
 function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
-	viewport = viewport or {0.0, 0.0, app.w, app.h}
+	viewport = viewport or {0, 0, app.w * app.sx, app.h * app.sx}
 
 	local temp_view = self.m_view:clone()
 	temp_view[12] = 0
@@ -81,8 +74,12 @@ function PerspectiveCamera:world_to_screen_point(x, y, z)
 	local m_proj = self.m_projection
 	local m_view = self.m_view
 
-	local view_p = m_view:multiply_vec4(vec4(x, y, z, 1.0))
+	local view_p = m_view:multiply_vec4(vec4(x, y, z, 1))
 	local proj_p = m_proj:multiply_vec4(view_p)
+
+	if proj_p.w < 0 then
+		return vec2(0, 0)
+	end
 
 	local ndc_space_pos = vec2(
 		proj_p.x / proj_p.w,
@@ -90,40 +87,11 @@ function PerspectiveCamera:world_to_screen_point(x, y, z)
 	)
 
 	local screen_space_pos = vec2(
-		(ndc_space_pos.x + 1) / 2.0 * app.w * app.sx + app.x,
-		(ndc_space_pos.y + 1) / 2.0 * app.h * app.sy + app.y
+		(ndc_space_pos.x + 1) / 2 * app.w * app.sx,
+		(ndc_space_pos.y + 1) / 2 * app.h * app.sy
 	)
 
 	return screen_space_pos
-end
-
---- Set camera position.
--- @tparam vec3 position
-function PerspectiveCamera:set_position(position)
-	local direction = self:get_direction()
-	self.eye = position + direction
-	self.center = position
-end
-
---- Get camera position.
--- @treturn vec3
-function PerspectiveCamera:get_position()
-	return self.center
-end
-
---- Move camera.
--- @tparam vec3 delta
-function PerspectiveCamera:move(delta)
-	self.eye = self.eye + delta
-	self.center = self.center + delta
-end
-
---- Set camera direction.
--- @tparam vec3 direction
--- @tparam number distance (optional)
-function PerspectiveCamera:set_direction(direction, distance)
-	distance = distance or 1
-	self.eye = self.center + direction * distance
 end
 
 --- Get direction.

@@ -23,10 +23,6 @@ mat4_mt.__index = mat4_mt
 local temp_array = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 local temp_a4 = {0, 0, 0, 0}
 
-local function dot(a, b)
-	return a.x * b.x + a.y * b.y + a.z * b.z
-end
-
 local function identity(e)
 	e[ 1], e[ 2], e[ 3], e[ 4] = 1, 0, 0, 0
 	e[ 5], e[ 6], e[ 7], e[ 8] = 0, 1, 0, 0
@@ -66,7 +62,8 @@ local function new(m)
 end
 
 local tmat4 = {}
-local function multiply(a, b)
+local function multiply(a, b, result)
+	result = result or a
 	tmat4[1]  = a[1] * b[1]  + a[5] * b[2]  + a[9]  * b[3]  + a[13] * b[4]
 	tmat4[2]  = a[2] * b[1]  + a[6] * b[2]  + a[10] * b[3]  + a[14] * b[4]
 	tmat4[3]  = a[3] * b[1]  + a[7] * b[2]  + a[11] * b[3]  + a[15] * b[4]
@@ -85,10 +82,9 @@ local function multiply(a, b)
 	tmat4[16] = a[4] * b[13] + a[8] * b[14] + a[12] * b[15] + a[16] * b[16]
 
 	for i = 1, 16 do
-		a[i] = tmat4[i]
+		result[i] = tmat4[i]
 	end
-
-	return a
+	return result
 end
 
 local function rotate(e, angle, ax, ay, az, length)
@@ -226,7 +222,7 @@ end
 
 function mat4_mt:set_position_and_rotation(position, angle, axis)
 	self._changed = true
-	if type(angle) == "table" or type(angle) == "cdata" then
+	if type(angle) == "table" then
 		angle, axis = angle:to_angle_axis()
 	end
 	local length = axis:length()
@@ -235,10 +231,10 @@ function mat4_mt:set_position_and_rotation(position, angle, axis)
 	if length ~= 0 then
 		rotate(e, angle, axis.x, axis.y, axis.z, length)
 
-		e[4], e[8], e[12] = 0, 0, 0
+		e[4], e[8], e[12]  = 0, 0, 0
 	else
-		e[1], e[2], e[3] = 0, 0, 0
-		e[5], e[6], e[7] = 0, 0, 0
+		e[1], e[2], e[3]   = 0, 0, 0
+		e[5], e[6], e[7]   = 0, 0, 0
 		e[9], e[10], e[11] = 0, 0, 0
 	end
 
@@ -250,7 +246,7 @@ end
 
 function mat4_mt:scale(x, y, z)
 	self._changed = true
-	if type(x) == 'table' or type(x) == 'cdata' then
+	if type(x) == 'table' then
 		x, y, z = x.x, x.y, x.z
 	end
 	identity(temp_array)
@@ -263,7 +259,7 @@ end
 
 function mat4_mt:translate(x, y, z)
 	self._changed = true
-	if type(x) == 'table' or type(x) == 'cdata' then
+	if type(x) == 'table' then
 		x, y, z = x.x, x.y, x.z
 	end
 	identity(temp_array)
@@ -290,7 +286,7 @@ end
 
 function mat4_mt:rotate(angle, axis)
 	self._changed = true
-	if type(angle) == "table" or type(angle) == "cdata" then
+	if type(angle) == "table" then
 		angle, axis = angle:to_angle_axis()
 	end
 	local length = axis:length()
@@ -306,7 +302,7 @@ end
 function mat4_mt:reflect(position, normal)
 	self._changed = true
 	local nx, ny, nz = normal:unpack()
-	local d = -position:dot(normal)
+	local d = vec3.dot(-position, normal)
 	temp_array[1]  = 1 - 2 * nx ^ 2
 	temp_array[2]  = 2 * nx * ny
 	temp_array[3]  =-2 * nx * nz
@@ -343,12 +339,12 @@ local function look_at_LH(self, eye, center, up)
 	temp_array[7]  = f.y
 	temp_array[8]  = 0
 	temp_array[9]  = s.z
-	temp_array[10]  = u.z
+	temp_array[10] = u.z
 	temp_array[11] = f.z
 	temp_array[12] = 0
-	temp_array[13] = -dot(s, eye)
-	temp_array[14] = -dot(u, eye)
-	temp_array[15] = -dot(f, eye)
+	temp_array[13] = -vec3.dot(s, eye)
+	temp_array[14] = -vec3.dot(u, eye)
+	temp_array[15] = -vec3.dot(f, eye)
 	temp_array[16] = 1
 
 	multiply(self.e, temp_array)
@@ -370,12 +366,12 @@ local function look_at_RH(self, eye, center, up)
 	temp_array[7]  =-f.y
 	temp_array[8]  = 0
 	temp_array[9]  = s.z
-	temp_array[10]  = u.z
+	temp_array[10] = u.z
 	temp_array[11] =-f.z
 	temp_array[12] = 0
-	temp_array[13] = -dot(s, eye)
-	temp_array[14] = -dot(u, eye)
-	temp_array[15] =  dot(f, eye)
+	temp_array[13] = -vec3.dot(s, eye)
+	temp_array[14] = -vec3.dot(u, eye)
+	temp_array[15] =  vec3.dot(f, eye)
 	temp_array[16] = 1
 
 	multiply(self.e, temp_array)
@@ -397,7 +393,7 @@ local function look_at_np(self, eye, look_at, up)
 	temp_array[7]  = z_axis.y
 	temp_array[8]  = 0
 	temp_array[9]  = x_axis.z
-	temp_array[10]  = y_axis.z
+	temp_array[10] = y_axis.z
 	temp_array[11] = z_axis.z
 	temp_array[12] = 0
 	temp_array[13] = 0
@@ -550,7 +546,7 @@ function mat4_mt.__tostring(a)
 	for i = 0, 3 do
 		str = str .. '\t'
 		for j = 0, 3 do
-			str = str .. string.format("%+0.3f", a.e[i+j*4])
+			str = str .. string.format("%+0.3f", a.e[i+j*4+1])
 			str = str .. ", "
 		end
 		str = str .. '\n'
@@ -561,17 +557,18 @@ end
 
 -- mat4 common --
 
+mat4.identity = identity
+mat4.multiply = multiply
+
 function mat4.is_mat4(a)
 	if type(a) ~= "table" then
 		return false
 	end
-
 	for i = 1, 16 do
 		if type(a[i]) ~= "number" then
 			return false
 		end
 	end
-
 	return true
 end
 

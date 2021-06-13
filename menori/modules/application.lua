@@ -87,6 +87,15 @@ function application:_update_viewport_position()
 	end
 end
 
+function application:get_mouse_position()
+	local x, y = love.mouse.getPosition()
+	x = x - self.x
+	y = y - self.y
+	if x < 0 then x = 0 elseif x > self.w then x = self.w end
+	if y < 0 then y = 0 elseif y > self.h then y = self.h end
+	return x, y
+end
+
 --- Change scene with a transition effect.
 -- @tparam string name
 function application:switch_scene(effect, name)
@@ -189,6 +198,13 @@ end
 function application.mousemoved(x, y, dx, dy, istouch)
 	for _, v in pairs(list) do
 		if v.mousemoved then v:mousemoved(x, y, dx, dy, istouch) end
+	end
+end
+
+--- Wheelmoved callback.
+function application.wheelmoved(x, y)
+	for _, v in pairs(list) do
+		if v.wheelmoved then v:wheelmoved(x, y) end
 	end
 end
 

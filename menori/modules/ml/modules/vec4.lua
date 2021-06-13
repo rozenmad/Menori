@@ -29,6 +29,17 @@ function vec4_mt:clone()
     	return new(self.x, self.y, self.z, self.w)
 end
 
+function vec4_mt:set(x, y, z, w)
+	if type(x) == 'table' then
+		x, y, z, w = x.x, x.y, x.z, x.w
+	end
+	self.x = x
+	self.y = y
+	self.z = z
+	self.w = w
+	return self
+end
+
 function vec4_mt:add(other)
 	self.x = self.x + other.x
 	self.y = self.y + other.y

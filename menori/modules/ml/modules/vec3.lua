@@ -27,6 +27,16 @@ function vec3_mt:clone()
 	return new(self.x, self.y, self.z)
 end
 
+function vec3_mt:set(x, y, z)
+	if type(x) == 'table' then
+		x, y, z = x.x, x.y, x.z
+	end
+	self.x = x
+	self.y = y
+	self.z = z
+	return self
+end
+
 function vec3_mt:add(other)
 	self.x = self.x + other.x
 	self.y = self.y + other.y
@@ -57,6 +67,10 @@ end
 
 function vec3_mt:length()
 	return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+end
+
+function vec3_mt:length2()
+	return self.x * self.x + self.y * self.y + self.z * self.z
 end
 
 function vec3_mt:normalize()
@@ -152,7 +166,8 @@ function vec3.is_vec3(a)
 	return type(a) == "table" and
 		type(a.x) == "number" and
 		type(a.y) == "number" and
-		type(a.z) == "number"
+		type(a.z) == "number" and
+		type(a.w) == "nil"
 end
 
 function vec3.dot(a, b)
