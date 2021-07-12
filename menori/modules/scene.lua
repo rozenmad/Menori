@@ -32,8 +32,8 @@ end
 
 local scene = class('Scene')
 
---- Constructor
-function scene:constructor()
+--- init
+function scene:init()
 	self.list_drawable_nodes = {}
 end
 
@@ -44,13 +44,15 @@ end
 -- @tparam function filter (Optional)
 function scene:render_nodes(node, environment, renderstates, filter)
 	assert(node, "in function 'scene:update_nodes' node does not exist.")
-	environment._shader_cache_object = nil
+
+	lovg.push('all')
+
+	environment._shader_object_cache = nil
 	renderstates = renderstates or temp_renderstate
 	filter = filter or default_filter
 	self:_recursive_render_nodes(node, false)
 	table.sort(self.list_drawable_nodes, node_sort)
 
-	lovg.push()
 	temp_environment = environment
 	local camera = temp_environment.camera
 
@@ -60,7 +62,6 @@ function scene:render_nodes(node, environment, renderstates, filter)
 
 	local canvases = #renderstates > 0
 
-	local prev_canvas = love.graphics.getCanvas()
 	if canvases then
 		lovg.setCanvas(renderstates)
 	end
@@ -77,12 +78,7 @@ function scene:render_nodes(node, environment, renderstates, filter)
 		filter(n, self, temp_environment)
 	end
 
-	if canvases then
-		love.graphics.setCanvas(prev_canvas)
-	end
-
 	lovg.pop()
-	love.graphics.setShader()
 
 	local count = #self.list_drawable_nodes
 	self.list_drawable_nodes = {}
@@ -91,13 +87,18 @@ function scene:render_nodes(node, environment, renderstates, filter)
 end
 
 function scene:_recursive_render_nodes(parent_node, transform_flag)
+	if not parent_node.render_flag then
+		return
+	end
 	if parent_node._transform_flag or transform_flag then
 		parent_node:update_transform()
 		transform_flag = true
 	end
-	if parent_node.render and parent_node.render_flag then
+
+	if parent_node.render then
 		table.insert(self.list_drawable_nodes, parent_node)
 	end
+
 	local i = 1
 	local children = parent_node.children
 	while i <= #children do
@@ -117,21 +118,23 @@ function scene:update_nodes(node, environment)
 end
 
 function scene:_recursive_update_nodes(parent_node)
-	if parent_node.update_flag then
-		if parent_node.update then
-			parent_node:update(self, temp_environment)
-		end
+	if not parent_node.update_flag then
+		return
+	end
 
-		local i = 1
-		local children = parent_node.children
-		while i <= #children do
-			local node = children[i]
-			if node.detach_flag then
-				table.remove(children, i)
-			else
-				self:_recursive_update_nodes(node)
-				i = i + 1
-			end
+	if parent_node.update then
+		parent_node:update(self, temp_environment)
+	end
+
+	local i = 1
+	local children = parent_node.children
+	while i <= #children do
+		local node = children[i]
+		if node.detach_flag then
+			table.remove(children, i)
+		else
+			self:_recursive_update_nodes(node)
+			i = i + 1
 		end
 	end
 end

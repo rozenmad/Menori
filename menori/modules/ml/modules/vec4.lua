@@ -40,35 +40,43 @@ function vec4_mt:set(x, y, z, w)
 	return self
 end
 
-function vec4_mt:add(other)
-	self.x = self.x + other.x
-	self.y = self.y + other.y
-	self.z = self.z + other.z
-	self.w = self.w + other.w
+function vec4_mt:add(a, b)
+	self.x = a.x + b.x
+	self.y = a.y + b.y
+	self.z = a.z + b.z
+	self.w = a.w + b.w
 	return self
 end
 
-function vec4_mt:sub(other)
-	self.x = self.x - other.x
-	self.y = self.y - other.y
-	self.z = self.z - other.z
-	self.w = self.w - other.w
+function vec4_mt:sub(a, b)
+	self.x = a.x - b.x
+	self.y = a.y - b.y
+	self.z = a.z - b.z
+	self.w = a.w - b.w
 	return self
 end
 
-function vec4_mt:mul(other)
-	self.x = self.x * other.x
-	self.y = self.y * other.y
-	self.z = self.z * other.z
-	self.w = self.w * other.w
+function vec4_mt:mul(a, b)
+	self.x = a.x * b.x
+	self.y = a.y * b.y
+	self.z = a.z * b.z
+	self.w = a.w * b.w
 	return self
 end
 
-function vec4_mt:div(other)
-	self.x = self.x / other.x
-	self.y = self.y / other.y
-	self.z = self.z / other.z
-	self.w = self.w / other.w
+function vec4_mt:div(a, b)
+	self.x = a.x / b.x
+	self.y = a.y / b.y
+	self.z = a.z / b.z
+	self.w = a.w / b.w
+	return self
+end
+
+function vec4_mt:scale(scalar)
+	self.x = self.x * scalar
+	self.y = self.y * scalar
+	self.z = self.z * scalar
+	self.w = self.w * scalar
 	return self
 end
 
@@ -108,7 +116,7 @@ function vec4_mt.__add(a, b)
 	local is_a_vec4 = vec4.is_vec4(a)
 	local is_b_vec4 = vec4.is_vec4(b)
 	if is_a_vec4 and is_b_vec4 then
-		return a:clone():add(b)
+		return vec4:add(a, b)
 	end
 
 	if is_a_vec4 then
@@ -122,7 +130,7 @@ function vec4_mt.__sub(a, b)
 	local is_a_vec4 = vec4.is_vec4(a)
 	local is_b_vec4 = vec4.is_vec4(b)
 	if is_a_vec4 and is_b_vec4 then
-		return a:clone():sub(b)
+		return vec4:sub(a, b)
 	end
 
 	if is_a_vec4 then
@@ -136,7 +144,7 @@ function vec4_mt.__mul(a, b)
 	local is_a_vec4 = vec4.is_vec4(a)
 	local is_b_vec4 = vec4.is_vec4(b)
 	if is_a_vec4 and is_b_vec4 then
-		return a:clone():mul(b)
+		return vec4:mul(a, b)
 	end
 
 	if is_a_vec4 then
@@ -150,7 +158,7 @@ function vec4_mt.__div(a, b)
 	local is_a_vec4 = vec4.is_vec4(a)
 	local is_b_vec4 = vec4.is_vec4(b)
 	if is_a_vec4 and is_b_vec4 then
-		return a:clone():div(b)
+		return vec4:div(a, b)
 	end
 
 	if is_a_vec4 then

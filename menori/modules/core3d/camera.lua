@@ -23,12 +23,12 @@ local vec4 = ml.vec4
 
 local PerspectiveCamera = class('PerspectiveCamera')
 
---- Constructor
+--- init
 -- @tparam number fov
 -- @tparam number aspect
 -- @tparam number nclip
 -- @tparam number fclip
-function PerspectiveCamera:constructor(fov, aspect, nclip, fclip)
+function PerspectiveCamera:init(fov, aspect, nclip, fclip)
 	fov = fov or 60
 	aspect = aspect or 1.6666667
 	nclip = nclip or 0.1

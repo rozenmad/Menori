@@ -9,6 +9,7 @@
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3 = require(modules .. "vec3")
+local mat4 = require(modules .. "mat4")
 
 local DOT_THRESHOLD = 0.9995
 local DBL_EPSILON = 2.2204460492503131e-16
@@ -42,6 +43,17 @@ function quat_mt:clone()
     	return new(self.x, self.y, self.z, self.w)
 end
 
+function quat_mt:set(x, y, z, w)
+	if type(x) == 'table' then
+		x, y, z, w = x.x, x.y, x.z, x.w
+	end
+	self.x = x
+	self.y = y
+	self.z = z
+	self.w = w
+	return self
+end
+
 function quat_mt:add(other)
 	self.x = self.x + other.x
 	self.y = self.y + other.y
@@ -67,6 +79,51 @@ function quat_mt:mul(other)
 	self.y = temp_q.y
 	self.z = temp_q.z
 	self.w = temp_q.w
+	return self
+end
+
+-- http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+function quat_mt:set_from_matrix_rotation(m)
+	local e = m.e
+	local m11, m12, m13 = e[1], e[5], e[ 9]
+	local m21, m22, m23 = e[2], e[6], e[10]
+	local m31, m32, m33 = e[3], e[7], e[11]
+
+	local tr = m11 + m22 + m33
+
+	if
+	tr > 0 then
+		local s = 0.5 / math.sqrt(tr + 1)
+
+		self.w = 0.25 / s
+		self.x = (m32 - m23) * s
+		self.y = (m13 - m31) * s
+		self.z = (m21 - m12) * s
+	elseif
+	m11 > m22 and m11 > m33 then
+		local s = 2 * math.sqrt(1 + m11 - m22 - m33)
+
+		self.w = (m32 - m23) / s
+		self.x = 0.25 * s
+		self.y = (m12 + m21) / s
+		self.z = (m13 + m31) / s
+
+	elseif
+	m22 > m33 then
+		local s = 2 * math.sqrt(1 + m22 - m11 - m33)
+
+		self.w = (m13 - m31) / s
+		self.x = (m12 + m21) / s
+		self.y = 0.25 * s
+		self.z = (m23 + m32) / s
+	else
+		local s = 2 * math.sqrt(1 + m33 - m11 - m22)
+
+		self.w = (m21 - m12) / s
+		self.x = (m13 + m31) / s
+		self.y = (m23 + m32) / s
+		self.z = 0.25 * s
+	end
 	return self
 end
 
@@ -120,7 +177,7 @@ function quat_mt:normalize()
 	if self:is_zero() then
 		return new(0, 0, 0, 0)
 	end
-	return self:scale(1 / self:len())
+	return self:scale(1 / self:length())
 end
 
 function quat_mt:reciprocal()
@@ -206,6 +263,89 @@ end
 function quat_mt:to_angle_axis(identityAxis)
 	local angle, x, y, z = self:to_angle_axis_unpack(identityAxis)
 	return angle, vec3(x, y, z)
+end
+
+local function clamp( value, _min, _max )
+	return math.max( _min, math.min( _max, value ) )
+end
+
+function quat_mt:to_euler(order)
+	order = order or 'XYZ'
+      local m = mat4():rotate(self)
+	local e = m.e
+	local m11, m12, m13 = e[1], e[5], e[ 9]
+	local m21, m22, m23 = e[2], e[6], e[10]
+	local m31, m32, m33 = e[3], e[7], e[11]
+
+	local x, y, z
+	if
+	order == 'XYZ' then
+		y = math.asin( clamp( m13, -1, 1 ) )
+
+		if math.abs( m13 ) < 0.9999999 then
+			x = math.atan2( - m23, m33 )
+			z = math.atan2( - m12, m11 )
+		else
+			x = math.atan2( m32, m22 )
+			z = 0
+		end
+	elseif
+	order == 'YXZ' then
+		x = math.asin(-clamp( m23, - 1, 1 ) )
+
+		if math.abs( m23 ) < 0.9999999 then
+			y = math.atan2( m13, m33 )
+			z = math.atan2( m21, m22 )
+		else
+			y = math.atan2( - m31, m11 )
+			z = 0
+		end
+	elseif
+	order == 'ZXY' then
+		x = math.asin( clamp( m32, - 1, 1 ) )
+
+		if math.abs( m32 ) < 0.9999999 then
+			y = math.atan2( - m31, m33 )
+			z = math.atan2( - m12, m22 )
+		else
+			y = 0
+			z = math.atan2( m21, m11 )
+		end
+	elseif
+	order == 'ZYX' then
+		y = math.asin(-clamp( m31, - 1, 1 ) )
+
+		if math.abs( m31 ) < 0.9999999 then
+			x = math.atan2( m32, m33 )
+			z = math.atan2( m21, m11 )
+		else
+			x = 0
+			z = math.atan2( - m12, m22 )
+		end
+	elseif
+	order == 'YZX' then
+		z = math.asin( clamp( m21, - 1, 1 ) )
+
+		if math.abs( m21 ) < 0.9999999 then
+			x = math.atan2( - m23, m22 )
+			y = math.atan2( - m31, m11 )
+		else
+			x = 0
+			y = math.atan2( m13, m33 )
+		end
+	elseif
+	order == 'XZY' then
+		z = math.asin(-clamp( m12, - 1, 1 ) )
+
+		if math.abs( m12 ) < 0.9999999 then
+			x = math.atan2( m32, m22 )
+			y = math.atan2( m13, m11 )
+		else
+			x = math.atan2( - m23, m33 )
+			y = 0
+		end
+	end
+	return x, y, z
 end
 
 function quat_mt.__tostring(a)

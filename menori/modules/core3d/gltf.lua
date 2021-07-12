@@ -290,22 +290,27 @@ end
 -- @function load
 -- @tparam string path path to the directory where the file is located
 -- @tparam string filename
-local function load(path, filename)
-	local filepath = path .. filename .. '.gltf'
-	assert(love.filesystem.getInfo(filepath), 'in function <glTFLoader.load> file "' .. filepath .. '" not found.')
+local function load(path, filename, io_read)
+	io_read = io_read or love.filesystem.read
 
-	data = json.decode(love.filesystem.read(filepath))
+	local filepath = path .. filename .. '.gltf'
+	--assert(love.filesystem.getInfo(filepath), 'in function <glTFLoader.load> file "' .. filepath .. '" not found.')
+
+	data = json.decode(io_read(filepath))
 
 	buffers = {}
 	for i, v in ipairs(data.buffers) do
-		buffers[i] = love.filesystem.read('data', path .. v.uri)
+		buffers[i] = love.data.newByteData(io_read(path .. v.uri))
 	end
 
 	images  = {}
 	if data.images then
 		for i, v in ipairs(data.images) do
 			local image_filename = path .. v.uri
-			local image = ImageLoader.load(image_filename)
+			print('imgload', image_filename)
+			local image_file_data = love.filesystem.newFileData(io_read(image_filename), image_filename)
+			local imageData = love.image.newImageData(image_file_data)
+			local image = love.graphics.newImage(imageData)
 			images[i] = {
 				data = image, filename = image_filename
 			}
@@ -328,7 +333,12 @@ local function load(path, filename)
 		local mesh_index = v.mesh or -1
 		v.primitives = meshes[mesh_index + 1]
 	end
-	return nodes, data.scenes
+
+	return {
+		nodes = nodes,
+		scenes = data.scenes,
+		asset = data.asset,
+	}
 end
 
 return {

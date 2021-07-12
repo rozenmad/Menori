@@ -10,9 +10,9 @@ local love_logo = menori.ImageLoader.load('example_assets/love_logo.png')
 -- Creating a node for drawing an object.
 local SpriteNode = menori.Node:extend('SpriteNode')
 
-function SpriteNode:constructor(x, y, sx, sy, speed)
+function SpriteNode:init(x, y, sx, sy, speed, ox, oy)
 	-- Calling the parent's constructor.
-	SpriteNode.super.constructor(self)
+	SpriteNode.super.init(self)
 	-- Creating a sprite object from an image.
 	self.sprite = menori.SpriteLoader.from_image(love_logo)
 	self.sprite:set_pivot(0.5, 0.5)
@@ -35,9 +35,6 @@ function SpriteNode:render()
 
 	-- Draw a sprite.
 	self.sprite:draw()
-	-- we can also pass transformations to this function
-	-- like this:
-	-- self.sprite:draw(0, 0, 0, 1, 1)
 
 	love.graphics.pop()
 end
@@ -51,8 +48,8 @@ function SpriteNode:update()
 end
 
 local PointLight = menori.UniformList:extend('PointLight')
-function PointLight:constructor(x, y, z, r, g, b)
-	PointLight.super.constructor(self)
+function PointLight:init(x, y, z, r, g, b)
+	PointLight.super.init(self)
 
 	self:set('position', {x, y, z})
 	self:set('constant', 1.0)
@@ -66,9 +63,9 @@ end
 -- Inherit from the scene class and create new scene.
 local NewScene = menori.Scene:extend('NewScene')
 
-function NewScene:constructor()
+function NewScene:init()
 	-- Calling the parent's constructor.
-	NewScene.super.constructor(self)
+	NewScene.super.init(self)
 
 	local shader_code = love.filesystem.read('example_assets/lighting.glsl')
 	local shader_lighting = love.graphics.newShader(menori.utils.shader_preprocess(shader_code))
@@ -96,8 +93,8 @@ function NewScene:constructor()
 	-- Now you can use an model instance for every new node.
 	local quadmesh1 = menori.ModelNode(model_instance, nil, shader_lighting)
 	local quadmesh2 = menori.ModelNode(model_instance, nil, shader_lighting)
-	quadmesh1.local_matrix:translate(5, 0.1,-2)
-	quadmesh2.local_matrix:translate(2, 0.1, 2)
+	quadmesh1:set_position(5, 0.1,-2)
+	quadmesh2:set_position(2, 0.1, 2)
 
 	-- Initializing the perspective camera and environment.
 	local aspect = menori.Application.w/menori.Application.h
@@ -111,9 +108,9 @@ function NewScene:constructor()
 	self.environment_3d:add_light('point_lights', PointLight( 2, 1,-1, 0.1, 0.6, 0.9))
 
 	-- Creating and attaching nodes to each other.
-	local sprite_node = SpriteNode(100, 100, 1, 1, 1)
-	local child1 = sprite_node:attach(SpriteNode(150, 50, 0.5, 0.5, 3))
-	local child2 = child1:attach(SpriteNode(200, 0, 0.5, 0.5, -6))
+
+	local sprite_node = SpriteNode(200, 200, 0.5, 0.5, 2)
+	self.child1 = sprite_node:attach(SpriteNode(128, 128, 0.5, 0.5, 1))
 
 	-- Load the scene from gltf format, get a table of nodes and scenes contained in the file.
 	local nodes, scenes = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
@@ -147,6 +144,16 @@ function NewScene:render()
 	love.graphics.setDepthMode()
 
 	self:render_nodes(self.root_node_2d, self.environment_2d, renderstates)
+
+	love.graphics.setColor(1, 0, 0, 1)
+	local v = self.child1:get_world_position()
+	love.graphics.rectangle('fill', v.x - 5, v.y - 5, 10, 10)
+
+	local r = self.child1:get_world_rotation()
+	local p = r * vec3(1, 0, 0) * 100
+
+	love.graphics.rectangle('fill', 200 + p.x - 5, 200 + p.y - 5, 10, 10)
+	love.graphics.setColor(1, 1, 1, 1)
 end
 
 function NewScene:update_camera()

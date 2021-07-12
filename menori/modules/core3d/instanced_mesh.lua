@@ -19,7 +19,7 @@ end
 
 local instanced_mesh = class('InstancedMesh')
 
-function instanced_mesh:constructor(primitive, image, instanced_format, shader)
+function instanced_mesh:init(primitive, image, instanced_format, shader)
 	self.shader = shader
 
 	self.hashtable = {}

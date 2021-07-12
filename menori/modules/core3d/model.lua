@@ -14,6 +14,8 @@ Class for initializing and storing mesh vertices and material.
 local modules = (...):match('(.*%menori.modules.)')
 
 local class = require (modules .. 'libs.class')
+local ml = require (modules .. 'ml')
+local vec3 = ml.vec3
 
 local Model = class('Model')
 
@@ -35,6 +37,7 @@ Model.vertexformat_default = {
 -- @tparam number indices_type_size Size of the index type if the indices stored in Data [2 or 4]
 function Model.create_primitive(vertices, indices, count, image, vertexformat, color, indices_type_size)
 	local primitive = {
+		mode = 'triangles',
 		vertexformat = vertexformat or Model.vertexformat_default,
 		vertices = vertices,
 		indices = indices,
@@ -132,9 +135,9 @@ function Model.calculate_bound(mesh)
 	}
 end
 
---- Constructor
+--- init
 -- @tparam table primitives List of primitives
-function Model:constructor(primitives)
+function Model:init(primitives)
 	self.primitives = {}
 	for i, p in ipairs(primitives) do
 		local mesh = Model.create_mesh_from_primitive(p)
@@ -143,6 +146,25 @@ function Model:constructor(primitives)
 			material = p.material,
 			bound = Model.calculate_bound(mesh),
 		}
+	end
+end
+
+function Model:apply_matrix(m)
+      local t = {}
+	local temp_v3 = vec3(0, 0, 0)
+
+	for i, p in ipairs(self.primitives) do
+		local mesh = p.mesh
+		local format = mesh:getVertexFormat()
+		local pindex = Model.get_attribute_index('VertexPosition', format)
+
+		for j = 1, mesh:getVertexCount() do
+			local x, y, z = mesh:getVertexAttribute(j, pindex)
+			temp_v3:set(x, y, z)
+			m:multiply_vec3(temp_v3, temp_v3)
+
+			mesh:setVertexAttribute(j, pindex, temp_v3.x, temp_v3.y, temp_v3.z)
+		end
 	end
 end
 

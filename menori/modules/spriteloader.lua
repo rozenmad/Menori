@@ -63,7 +63,7 @@ end
 -- @return New sprite
 function spriteloader.from_image(image)
 	local w, h = image:getDimensions()
-	return Sprite:new({love.graphics.newQuad(0, 0, w, h, w, h)}, image)
+	return Sprite({love.graphics.newQuad(0, 0, w, h, w, h)}, image)
 end
 
 --- Create sprite from tileset image.
@@ -74,7 +74,7 @@ end
 -- @tparam number h
 -- @return Sprite object
 function spriteloader.from_tileset_image(image, offsetx, offsety, w, h)
-	return Sprite:new(ImageLoader.create_tileset_from_image(offsetx, offsety, w, h), image)
+	return Sprite(ImageLoader.create_tileset_from_image(offsetx, offsety, w, h), image)
 end
 
 --- Load sprite from Aseprite Sprite Sheet using sprite cache list.

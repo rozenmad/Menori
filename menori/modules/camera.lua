@@ -22,8 +22,8 @@ local vec3 = ml.vec3
 
 local camera = class('Camera')
 
---- Constructor
-function camera:constructor()
+--- init
+function camera:init()
 	self._update = true
 	self.x = 0
 	self.y = 0

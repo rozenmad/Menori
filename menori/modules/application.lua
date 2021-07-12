@@ -27,8 +27,8 @@ local application = class('Application')
 local lovg = love.graphics
 local default_effect = nil
 
---- Constructor.
-function application:constructor()
+--- init.
+function application:init()
 	self.next_scene = nil
 	self.effect = default_effect
 end
@@ -59,8 +59,8 @@ end
 --- Get viewport dimensions.
 -- @treturn number w
 -- @treturn number h
-function application:get_dimensions()
-	return self.w, self.h
+function application:get_viewport()
+	return self.x, self.y, self.w, self.h
 end
 
 function application:_update_viewport_position()
@@ -205,6 +205,20 @@ end
 function application.wheelmoved(x, y)
 	for _, v in pairs(list) do
 		if v.wheelmoved then v:wheelmoved(x, y) end
+	end
+end
+
+--- Mousemoved callback.
+function application.mousepressed(x, y, button)
+	for _, v in pairs(list) do
+		if v.mousepressed then v:mousepressed(x, y, button) end
+	end
+end
+
+--- Wheelmoved callback.
+function application.mousereleased(x, y, button)
+	for _, v in pairs(list) do
+		if v.mousereleased then v:mousereleased(x, y, button) end
 	end
 end
 

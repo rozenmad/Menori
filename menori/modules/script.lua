@@ -27,7 +27,7 @@ local function wait(object, tvalue)
 	end
 end
 
-function script:constructor(coroutine_fn, opt)
+function script:init(coroutine_fn, opt)
 	self.opt = opt or { loop = false }
 	self.handle = coroutine.create(function()
 		repeat

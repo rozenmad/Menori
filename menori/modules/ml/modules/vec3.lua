@@ -37,31 +37,38 @@ function vec3_mt:set(x, y, z)
 	return self
 end
 
-function vec3_mt:add(other)
-	self.x = self.x + other.x
-	self.y = self.y + other.y
-	self.z = self.z + other.z
+function vec3_mt:add(a, b)
+	self.x = a.x + b.x
+	self.y = a.y + b.y
+	self.z = a.z + b.z
 	return self
 end
 
-function vec3_mt:sub(other)
-	self.x = self.x - other.x
-	self.y = self.y - other.y
-	self.z = self.z - other.z
+function vec3_mt:sub(a, b)
+	self.x = a.x - b.x
+	self.y = a.y - b.y
+	self.z = a.z - b.z
 	return self
 end
 
-function vec3_mt:mul(other)
-	self.x = self.x * other.x
-	self.y = self.y * other.y
-	self.z = self.z * other.z
+function vec3_mt:mul(a, b)
+	self.x = a.x * b.x
+	self.y = a.y * b.y
+	self.z = a.z * b.z
 	return self
 end
 
-function vec3_mt:div(other)
-	self.x = self.x / other.x
-	self.y = self.y / other.y
-	self.z = self.z / other.z
+function vec3_mt:div(a, b)
+	self.x = a.x / b.x
+	self.y = a.y / b.y
+	self.z = a.z / b.z
+	return self
+end
+
+function vec3_mt:scale(scalar)
+	self.x = self.x * scalar
+	self.y = self.y * scalar
+	self.z = self.z * scalar
 	return self
 end
 
@@ -87,6 +94,12 @@ function vec3_mt:unpack()
 	return self.x, self.y, self.z
 end
 
+function vec3_mt:set_from_matrix_position(m)
+	self.x = m.e[13]
+	self.y = m.e[14]
+	self.z = m.e[15]
+end
+
 -- vec3 operator overloading --
 
 function vec3_mt.__unm(a)
@@ -104,7 +117,7 @@ function vec3_mt.__add(a, b)
 	local is_a_vec3 = vec3.is_vec3(a)
 	local is_b_vec3 = vec3.is_vec3(b)
 	if is_a_vec3 and is_b_vec3 then
-		return a:clone():add(b)
+		return vec3():add(a, b)
 	end
 
 	if is_a_vec3 then
@@ -118,7 +131,7 @@ function vec3_mt.__sub(a, b)
 	local is_a_vec3 = vec3.is_vec3(a)
 	local is_b_vec3 = vec3.is_vec3(b)
 	if is_a_vec3 and is_b_vec3 then
-		return a:clone():sub(b)
+		return vec3():sub(a, b)
 	end
 
 	if is_a_vec3 then
@@ -132,7 +145,7 @@ function vec3_mt.__mul(a, b)
 	local is_a_vec3 = vec3.is_vec3(a)
 	local is_b_vec3 = vec3.is_vec3(b)
 	if is_a_vec3 and is_b_vec3 then
-		return a:clone():mul(b)
+		return vec3():mul(a, b)
 	end
 
 	if is_a_vec3 then
@@ -146,7 +159,7 @@ function vec3_mt.__div(a, b)
 	local is_a_vec3 = vec3.is_vec3(a)
 	local is_b_vec3 = vec3.is_vec3(b)
 	if is_a_vec3 and is_b_vec3 then
-		return a:clone():div(b)
+		return vec3():div(a, b)
 	end
 
 	if is_a_vec3 then

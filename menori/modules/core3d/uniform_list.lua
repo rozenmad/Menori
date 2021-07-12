@@ -16,8 +16,8 @@ local class = require (modules .. 'libs.class')
 
 local UniformList = class('UniformList')
 
---- Constructor.
-function UniformList:constructor()
+--- init.
+function UniformList:init()
 	self.list = {}
 end
 

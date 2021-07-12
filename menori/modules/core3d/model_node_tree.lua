@@ -24,57 +24,61 @@ local quat = ml.quat
 
 local ModelNodeTree = Node:extend('ModelNodeTree')
 
-local function create_transform_matrix(node)
-      local m
-      if node.translation or node.rotation or node.scale then
-            local t = node.translation or {0, 0, 0}
-            local r = node.rotation or {0, 0, 0, 1}
-            local s = node.scale or {1, 1, 1}
-		m = mat4()
-		m:set_position_and_rotation(vec3(t), quat(r))
-		m:scale(vec3(s))
-	else
-		m = mat4(node.matrix)
+local function set_transform(node, v)
+      if v.translation or v.rotation or v.scale then
+            local t = v.translation or {0, 0, 0}
+            local r = v.rotation or {0, 0, 0, 1}
+            local s = v.scale or {1, 1, 1}
+            node:set_position(t[1], t[2], t[3])
+            node:set_rotation(quat(r[1], r[2], r[3], r[4]))
+            node:set_scale(s[1], s[2], s[3])
+	elseif v.matrix then
+            local t = vec3()
+            local r = quat()
+            local s = vec3()
+		mat4(v.matrix):decompose(t, r, s)
+            node:set_position(t)
+            node:set_rotation(r)
+            node:set_scale(s)
 	end
-      return m
 end
 
---- Constructor. Takes as arguments a list of nodes and scenes loaded with glTFLoader.
+--- init. Takes as arguments a list of nodes and scenes loaded with glTFLoader.
 -- @tparam table nodes
 -- @tparam table scenes
-function ModelNodeTree:constructor(nodes, scenes, shader)
-      ModelNodeTree.super.constructor(self)
-      self._nodes = nodes
+function ModelNodeTree:init(data, shader)
+      ModelNodeTree.super.init(self)
+      self._nodes = data.nodes
 
-      for _, v in ipairs(nodes) do
+      for _, v in ipairs(data.nodes) do
             local node
             if v.primitives then
-                  local m = create_transform_matrix(v)
-                  node = ModelNode(Model(v.primitives), m, shader)
+                  node = ModelNode(Model(v.primitives), shader)
+                  set_transform(node, v)
             else
                   node = Node()
-                  local m = create_transform_matrix(v)
-                  node.local_matrix:copy(m)
+                  set_transform(node, v)
             end
+            node.name = v.name
             v.node = node
       end
 
-      for _, v in ipairs(nodes) do
+      for _, v in ipairs(data.nodes) do
             if v.children then
                   for _, child_index in ipairs(v.children) do
-                        local child = nodes[child_index + 1]
+                        local child = data.nodes[child_index + 1]
                         v.node:attach(child.node)
                   end
             end
       end
 
       self.scenes = {}
-      for i, v in ipairs(scenes) do
+      for i, v in ipairs(data.scenes) do
             local scene_node = Node()
             scene_node.name = v.name
             self.scenes[i] = scene_node
             for _, node_index in ipairs(v.nodes) do
-                  scene_node:attach(nodes[node_index + 1].node)
+                  scene_node:attach(data.nodes[node_index + 1].node)
             end
       end
 

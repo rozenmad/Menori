@@ -26,7 +26,7 @@ local function attribute_sizeof(type)
 	end
 end
 
-function geometry_buffer:constructor(size, format, mode)
+function geometry_buffer:init(size, format, mode)
 	self.mode = mode
 	self.format = format
 	self.bytesize = 0

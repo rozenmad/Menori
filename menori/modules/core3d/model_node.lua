@@ -15,6 +15,8 @@ local modules = (...):match('(.*%menori.modules.)')
 
 local utils = require (modules .. 'libs.utils')
 local Node = require (modules .. 'node')
+local ml = require (modules .. 'ml')
+local vec3 = ml.vec3
 
 local ModelNode = Node:extend('ModelNode')
 
@@ -40,23 +42,47 @@ ModelNode.default_shader = love.graphics.newShader([[
 #endif
 ]])
 
---- Constructor
--- @param model Model objects
--- @param matrix (Optional) Matrix transformations
--- @param shader (Optional) ShaderObject which will be used for drawing
-function ModelNode:constructor(model, matrix, shader)
-	ModelNode.super.constructor(self)
-      self.shader = shader or ModelNode.default_shader
-      if matrix then
-            self.local_matrix:copy(matrix)
-      end
-	self.model = model
-end
-
 local function send_material_to(shader, material)
       for k, v in pairs(material) do
             utils.noexcept_send_uniform(shader, k, v)
       end
+end
+
+--- init
+-- @param model Model objects
+-- @param shader (Optional) ShaderObject which will be used for drawing
+function ModelNode:init(model, shader)
+	ModelNode.super.init(self)
+      self.shader = shader or ModelNode.default_shader
+	self.model = model
+      self.color = ml.vec4(1)
+end
+
+function ModelNode:clone()
+      local t = ModelNode(self.model, self.shader)
+      ModelNode.super.clone(self, t)
+      return t
+end
+
+function ModelNode:calculate_aabb(index)
+      index = index or 1
+      local b = self.model.primitives[index].bound
+      local world_matrix = self.world_matrix
+
+      local min = vec3(b.x, b.y, b.z)
+      local max = vec3(b.x+b.w, b.y+b.h, b.z+b.d)
+
+      world_matrix:multiply_vec3(min)
+      world_matrix:multiply_vec3(max)
+
+      return {min = min, max = max}
+end
+
+function ModelNode:set_color(r, g, b, a)
+      self.color.x = r
+      self.color.y = g
+      self.color.z = b
+      self.color.w = a
 end
 
 --- Render function.
@@ -65,16 +91,17 @@ end
 -- @param shader ShaderObject that can replace the shader that is used for the current object
 function ModelNode:render(scene, environment, shader)
 	shader = shader or self.shader
-	love.graphics.setShader(shader)
-	environment:send_uniforms_to(shader)
+
+      environment:apply_shader(shader)
 
 	shader:send('m_model', self.world_matrix.data)
 
+      local c = self.color
+      love.graphics.setColor(c.x, c.y, c.z, c.w)
 	for _, v in ipairs(self.model.primitives) do
             send_material_to(shader, v.material)
 		love.graphics.draw(v.mesh)
 	end
-	love.graphics.setShader()
 end
 
 return ModelNode

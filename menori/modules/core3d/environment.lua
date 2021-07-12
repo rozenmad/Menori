@@ -24,15 +24,15 @@ local UniformList = require (modules .. 'core3d.uniform_list')
 
 local Environment = class('Environment')
 
---- Constructor
+--- init
 -- @tparam Сamera camera camera that will be associated with this environment
-function Environment:constructor(camera)
+function Environment:init(camera)
 	self.camera = camera
 
 	self.uniform_list = UniformList()
 	self.lights = {}
 
-	self._shader_cache_object = nil
+	self._shader_object_cache = nil
 end
 
 --- Add light source.
@@ -47,17 +47,25 @@ end
 --- Sends all the environment uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.
 -- @tparam Shader shader
 function Environment:send_uniforms_to(shader)
-	if self._shader_cache_object ~= shader then
-		self.uniform_list:send_to(shader)
+	self.uniform_list:send_to(shader)
 
-		local camera = self.camera
-		shader:send("m_view", camera.m_view.data)
-		shader:send("m_projection", camera.m_projection.data)
+	love.graphics.setShader(shader)
+	local camera = self.camera
+	shader:send("m_view", camera.m_view.data)
+	shader:send("m_projection", camera.m_projection.data)
 
-		self:send_light_sources_to(shader)
+	self:send_light_sources_to(shader)
+end
 
-		self._shader_cache_object = shader
-	end
+--- Apply shader.
+-- @tparam Shader shader
+function Environment:apply_shader(shader)
+	if self._shader_object_cache ~= shader then
+            love.graphics.setShader(shader)
+
+	      self:send_uniforms_to(shader)
+            self._shader_object_cache = shader
+      end
 end
 
 --- Sends light sources uniforms to the shader. This function can be used when creating your own display objects, or for shading technique.

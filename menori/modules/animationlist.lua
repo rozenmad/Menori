@@ -13,7 +13,7 @@ local class = require (modules .. 'libs.class')
 local animation_list = class('animation_list')
 local animation = class('animation')
 
-function animation:constructor(name, sprite)
+function animation:init(name, sprite)
 	self.name = name
 
 	self.loops = 0
@@ -39,7 +39,7 @@ function animation:reset()
 	self.index = 1
 end
 
-function animation_list:constructor(list)
+function animation_list:init(list)
 	self.list = {}
 	for k, v in pairs(list) do
 		self.list[k] = animation(k, v:clone())

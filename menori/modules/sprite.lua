@@ -17,10 +17,10 @@ local class = require (modules .. 'libs.class')
 
 local sprite = class('Sprite')
 
---- Constructor
+--- init
 -- @param quads table of [Quad](https://love2d.org/wiki/Quad) objects
 -- @param image [Image](https://love2d.org/wiki/Image)
-function sprite:constructor(quads, image)
+function sprite:init(quads, image)
 	self.quads = quads
 	self.image = image
 	self.index = 1
