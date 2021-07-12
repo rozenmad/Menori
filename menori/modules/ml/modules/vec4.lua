@@ -116,7 +116,7 @@ function vec4_mt.__add(a, b)
 	local is_a_vec4 = vec4.is_vec4(a)
 	local is_b_vec4 = vec4.is_vec4(b)
 	if is_a_vec4 and is_b_vec4 then
-		return vec4:add(a, b)
+		return vec4():add(a, b)
 	end
 
 	if is_a_vec4 then
@@ -130,7 +130,7 @@ function vec4_mt.__sub(a, b)
 	local is_a_vec4 = vec4.is_vec4(a)
 	local is_b_vec4 = vec4.is_vec4(b)
 	if is_a_vec4 and is_b_vec4 then
-		return vec4:sub(a, b)
+		return vec4():sub(a, b)
 	end
 
 	if is_a_vec4 then
@@ -144,7 +144,7 @@ function vec4_mt.__mul(a, b)
 	local is_a_vec4 = vec4.is_vec4(a)
 	local is_b_vec4 = vec4.is_vec4(b)
 	if is_a_vec4 and is_b_vec4 then
-		return vec4:mul(a, b)
+		return vec4():mul(a, b)
 	end
 
 	if is_a_vec4 then
@@ -158,7 +158,7 @@ function vec4_mt.__div(a, b)
 	local is_a_vec4 = vec4.is_vec4(a)
 	local is_b_vec4 = vec4.is_vec4(b)
 	if is_a_vec4 and is_b_vec4 then
-		return vec4:div(a, b)
+		return vec4():div(a, b)
 	end
 
 	if is_a_vec4 then

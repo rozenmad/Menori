@@ -107,7 +107,7 @@ function vec2_mt.__add(a, b)
 	local is_a_vec2 = vec2.is_vec2(a)
 	local is_b_vec2 = vec2.is_vec2(b)
 	if is_a_vec2 and is_b_vec2 then
-		return vec2:add(a, b)
+		return vec2():add(a, b)
 	end
 
 	if is_a_vec2 then
@@ -121,7 +121,7 @@ function vec2_mt.__sub(a, b)
 	local is_a_vec2 = vec2.is_vec2(a)
 	local is_b_vec2 = vec2.is_vec2(b)
 	if is_a_vec2 and is_b_vec2 then
-		return vec2:sub(a, b)
+		return vec2():sub(a, b)
 	end
 
 	if is_a_vec2 then
@@ -135,7 +135,7 @@ function vec2_mt.__mul(a, b)
 	local is_a_vec2 = vec2.is_vec2(a)
 	local is_b_vec2 = vec2.is_vec2(b)
 	if is_a_vec2 and is_b_vec2 then
-		return vec2:mul(a, b)
+		return vec2():mul(a, b)
 	end
 
 	if is_a_vec2 then
@@ -149,7 +149,7 @@ function vec2_mt.__div(a, b)
 	local is_a_vec2 = vec2.is_vec2(a)
 	local is_b_vec2 = vec2.is_vec2(b)
 	if is_a_vec2 and is_b_vec2 then
-		return vec2:div(a, b)
+		return vec2():div(a, b)
 	end
 
 	if is_a_vec2 then
