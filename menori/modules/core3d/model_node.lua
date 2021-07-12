@@ -67,15 +67,31 @@ end
 function ModelNode:calculate_aabb(index)
       index = index or 1
       local b = self.model.primitives[index].bound
-      local world_matrix = self.world_matrix
 
-      local min = vec3(b.x, b.y, b.z)
-      local max = vec3(b.x+b.w, b.y+b.h, b.z+b.d)
+      self:recursive_update_transform()
+      local m = self.world_matrix
+      local t = {
+            m:multiply_vec3(vec3(b.x    , b.y    ,     b.z)),
+            m:multiply_vec3(vec3(b.x+b.w, b.y    ,     b.z)),
+            m:multiply_vec3(vec3(b.x    , b.y    , b.z+b.d)),
 
-      world_matrix:multiply_vec3(min)
-      world_matrix:multiply_vec3(max)
+            m:multiply_vec3(vec3(b.x    , b.y+b.h,     b.z)),
+            m:multiply_vec3(vec3(b.x+b.w, b.y+b.h,     b.z)),
+            m:multiply_vec3(vec3(b.x    , b.y+b.h, b.z+b.d)),
 
-      return {min = min, max = max}
+            m:multiply_vec3(vec3(b.x+b.w, b.y    , b.z+b.d)),
+            m:multiply_vec3(vec3(b.x+b.w, b.y+b.h, b.z+b.d)),
+      }
+
+      local aabb = { min = t[1]:clone(), max = t[1]:clone() }
+      for i = 2, #t do
+            local v = t[i]
+            if aabb.min.x > v.x then aabb.min.x = v.x elseif aabb.max.x < v.x then aabb.max.x = v.x end
+            if aabb.min.y > v.y then aabb.min.y = v.y elseif aabb.max.y < v.y then aabb.max.y = v.y end
+            if aabb.min.z > v.z then aabb.min.z = v.z elseif aabb.max.z < v.z then aabb.max.z = v.z end
+      end
+
+      return aabb
 end
 
 function ModelNode:set_color(r, g, b, a)
