@@ -88,8 +88,8 @@ function NewScene:init()
 	})
 
 	-- Now you can use an model instance for every new node.
-	local quadmesh1 = menori.ModelNode(model_instance, nil, shader_lighting)
-	local quadmesh2 = menori.ModelNode(model_instance, nil, shader_lighting)
+	local quadmesh1 = menori.ModelNode(model_instance, shader_lighting)
+	local quadmesh2 = menori.ModelNode(model_instance, shader_lighting)
 	quadmesh1:set_position(5, 0.1,-2)
 	quadmesh2:set_position(2, 0.1, 2)
 
@@ -110,9 +110,9 @@ function NewScene:init()
 	self.child1 = sprite_node:attach(SpriteNode(128, 128, 0.5, 0.5, 1))
 
 	-- Load the scene from gltf format, get a table of nodes and scenes contained in the file.
-	local nodes, scenes = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
+	local gltf = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
 
-	local model_node_tree = menori.ModelNodeTree(nodes, scenes, shader_lighting)
+	local model_node_tree = menori.ModelNodeTree(gltf, shader_lighting)
 
 	-- Create a root node and add the loaded scene to it.
 	self.root_node_3d = menori.Node()

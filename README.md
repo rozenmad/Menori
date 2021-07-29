@@ -20,15 +20,15 @@ local quat = ml.quat
 
 local NewScene = menori.Scene:extend('NewScene')
 
-function NewScene:constructor()
-	NewScene.super.constructor(self)
+function NewScene:init()
+	NewScene.super.init(self)
 
 	local aspect = menori.Application.w/menori.Application.h
 	self.camera = menori.PerspectiveCamera(60, aspect, 0.5, 1024)
 	self.environment = menori.Environment(self.camera)
 
-	local nodes, scenes = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
-	local model_node_tree = menori.ModelNodeTree(nodes, scenes)
+	local gltf = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
+	local model_node_tree = menori.ModelNodeTree(gltf)
 
 	self.root_node = menori.Node()
 	self.root_node:attach(model_node_tree)
@@ -46,8 +46,9 @@ end
 
 function NewScene:update_camera()
 	self.y_angle = self.y_angle + 0.5
-	local q = quat.from_euler_angles(math.rad(self.y_angle), math.rad(25), 0)
-	self.camera:set_direction(q * vec3(10, 0, 0))
+	local q = quat.from_euler_angles(0, math.rad(self.y_angle), math.rad(-45))
+	local v = vec3(0, 0, 8)
+	self.camera.eye = q * v
 	self.camera:update_view_matrix()
 end
 
