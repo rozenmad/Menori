@@ -10,28 +10,48 @@ local modules = (...):match('(.*%menori.modules.)')
 
 local class = require (modules .. 'libs.class')
 local geometry_buffer = require (modules .. 'core3d.geometry_buffer')
-local model = require (modules .. 'core3d.model')
 
 local ffi
 if type(jit) == 'table' and jit.status() then
 	ffi = require 'ffi'
 end
 
+local default_shader = love.graphics.newShader([[
+#ifdef VERTEX
+      uniform mat4 m_view;
+      uniform mat4 m_projection;
+
+	attribute vec4 matv0;
+	attribute vec4 matv1;
+	attribute vec4 matv2;
+	attribute vec4 matv3;
+
+      vec4 position(mat4 transform_projection, vec4 vertex_position) {
+		mat4 m_model = mat4(matv0, matv1, matv2, matv3);
+		m_model = transpose(m_model);
+            return vertex_position * m_model * m_view * m_projection;
+      }
+#endif
+#ifdef PIXEL
+      vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords)
+      {
+            vec4 texcolor = Texel(t, texture_coords);
+            if( texcolor.a <= 0.0 ) discard;
+            return texcolor * color;
+      }
+#endif
+]])
+
 local instanced_mesh = class('InstancedMesh')
 
-function instanced_mesh:init(primitive, image, instanced_format, shader)
-	self.shader = shader
+function instanced_mesh:init(mesh, instanced_format, shader)
+	self.shader = default_shader
 
 	self.hashtable = {}
 	self.inverse_hashtable = {}
 
-	self.mesh_data = model.create_mesh_from_primitive(primitive)
-	self.mesh_data:setTexture(image)
-
-	self.instanced_buffer_size = 128
-	self.instanced_buffer = geometry_buffer(self.instanced_buffer_size, instanced_format)
-
-	--self.instance_data_ptr = self.instanced_buffer:get_data_pointer('float*')
+	self.mesh = mesh
+	self.instanced_buffer = geometry_buffer(16, instanced_format)
 
 	self.count = 0
 	self:_attach_buffers()
@@ -51,7 +71,7 @@ function instanced_mesh:set_ic(count)
 end
 
 function instanced_mesh:set_texture(image)
-	self.mesh_data:setTexture(image)
+	self.mesh:setTexture(image)
 end
 
 function instanced_mesh:update_instanced_buffer()
@@ -60,7 +80,7 @@ function instanced_mesh:update_instanced_buffer()
 	end
 end
 
-function instanced_mesh:get_instance_data(index, userdata, ct)
+function instanced_mesh:get_instance_data(index, ctype)
 	if index + 1 > self.instanced_buffer.size then
 		self:_detach_buffers()
 		self.instanced_buffer:reallocate(index + index)
@@ -70,8 +90,9 @@ function instanced_mesh:get_instance_data(index, userdata, ct)
 		self.hashtable[index + 1] = userdata -- start from 0, size - 1
 		self.inverse_hashtable[userdata.id] = index + 1
 	end]]
+	self._need_update = true
 	local ptr = self.instanced_buffer:get_data_pointer(index)
-	return ffi.cast(ct, ptr)
+	return ffi.cast(ctype, ptr)
 end
 
 function instanced_mesh:remove_instance(userdata)
@@ -114,24 +135,32 @@ end
 function instanced_mesh:_attach_buffers()
 	local buffer = self.instanced_buffer
 	for i, v in ipairs(buffer.format) do
-		self.mesh_data:attachAttribute(v[1], buffer.mesh, "perinstance")
+		self.mesh:attachAttribute(v[1], buffer.mesh, "perinstance")
 	end
 end
 
 function instanced_mesh:_detach_buffers()
 	local buffer = self.instanced_buffer
 	for i, v in ipairs(buffer.format) do
-		self.mesh_data:detachAttribute(v[1])
+		self.mesh:detachAttribute(v[1])
 	end
 end
 
-function instanced_mesh:draw(environment, world_matrix, shader)
-	shader = shader or self.shader
-	shader:attach()
-	environment:send_uniforms_to(shader)
-	shader:send_matrix('m_model', world_matrix)
-	love.graphics.drawInstanced(self.mesh_data, self.count)
-	shader:detach()
+function instanced_mesh:draw(environment)
+	if self._need_update then
+		self._need_update = false
+		self:update_instanced_buffer()
+	end
+	--shader = shader or self.shader
+	environment:apply_shader(self.shader)
+	love.graphics.drawInstanced(self.mesh, self.count)
+end
+
+local instance_list = {}
+function instanced_mesh.create_instance(mesh, instanced_format, shader)
+	local i = instance_list[mesh] or instanced_mesh(mesh, instanced_format, shader)
+	instance_list[mesh] = i
+	return i
 end
 
 return instanced_mesh

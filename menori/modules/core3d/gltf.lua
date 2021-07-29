@@ -7,12 +7,11 @@
 --]]
 
 --[[--
-Module for importing models from the *gltf format.
+Module for import/export the *gltf format.
 ]]
 -- @module menori.glTFLoader
 
 local modules = (...):match('(.*%menori.modules.)')
-local ImageLoader = require (modules .. 'imageloader')
 
 local json = require 'libs.rxijson.json'
 
@@ -21,7 +20,7 @@ if type(jit) == 'table' and jit.status() then
 	ffi = require 'ffi'
 end
 
-local buffers, images, materials, meshes
+local buffers, images, materials
 local data
 
 local type_constants = {
@@ -50,6 +49,16 @@ local datatypes = {
 	'float',
 }
 
+local function get_component_type_value(typename)
+	if typename == 'byte' then
+		return 5120
+	elseif typename == 'unorm16' then
+		return 5123
+	elseif typename == 'float' then
+		return 5126
+	end
+end
+
 local attribute_aliases = {
 	['POSITION'] = 'VertexPosition',
 	['TEXCOORD'] = 'VertexTexCoord',
@@ -59,6 +68,14 @@ local attribute_aliases = {
 	['WEIGHTS']  = 'VertexWeights',
 	['TANGENT']  = 'VertexTangent',
 }
+
+local function get_key_from_value(t, value)
+	for k, v in pairs(t) do
+		if v == value then
+			return k
+		end
+	end
+end
 
 local function get_primitive_modes_constants(mode)
 	if mode == 0 then
@@ -75,17 +92,23 @@ local function get_primitive_modes_constants(mode)
 end
 
 local function unpack_type(component_type)
-	if component_type == 5120 then
+	if
+	component_type == 5120 then
 		return 'b'
-	elseif component_type == 5121 then
+	elseif
+	component_type == 5121 then
 		return 'B'
-	elseif component_type == 5122 then
+	elseif
+	component_type == 5122 then
 		return 'h'
-	elseif component_type == 5123 then
+	elseif
+	component_type == 5123 then
 		return 'H'
-	elseif component_type == 5125 then
+	elseif
+	component_type == 5125 then
 		return 'I4'
-	elseif component_type == 5126 then
+	elseif
+	component_type == 5126 then
 		return 'f'
 	end
 end
@@ -198,9 +221,9 @@ end
 local function init_mesh(mesh)
 	local primitives = {}
 	for j, primitive in ipairs(mesh.primitives) do
-		local indices, indices_type_size
+		local indices, indices_tsize
 		if primitive.indices then
-			indices, indices_type_size = get_indices_content(primitive.indices)
+			indices, indices_tsize = get_indices_content(primitive.indices)
 		end
 
 		local length = 0
@@ -245,7 +268,7 @@ local function init_mesh(mesh)
 			vertexformat = vertexformat,
 			vertices = vertices,
 			indices = indices,
-			indices_type_size = indices_type_size,
+			indices_tsize = indices_tsize,
 			material = material,
 			count = count
 		}
@@ -253,37 +276,117 @@ local function init_mesh(mesh)
 	return primitives
 end
 
-local function get_image_by_index(index)
-	return images[data.textures[index + 1].source + 1]
+local function texture(textures, t)
+	if t then
+		local texture = textures[t.index + 1]
+		local ret = {
+			texture = texture,
+			source  = texture.image.source,
+		}
+		for k, v in pairs(t) do
+			if k ~= 'index' then
+				ret[k] = v
+			end
+		end
+		return ret
+	end
 end
 
-local function init_material(v)
-	local material = {
-		base_color_factor = {1, 1, 1, 1}
-	}
-	material.name = v.name
-	if v.pbrMetallicRoughness then
-		local pbr = v.pbrMetallicRoughness
-		if pbr.baseColorFactor then
-			material.base_color_factor = pbr.baseColorFactor
+local function create_material(textures, material)
+	local uniforms = {}
+
+	local baseTexture
+	local metallicRoughnessTexture
+	local normalTexture
+	local occlusionTexture
+	local emissiveTexture
+
+	local pbr = material.pbrMetallicRoughness
+	if pbr then
+		local _pbrBaseColorTexture = pbr.baseColorTexture
+		local _pbrMetallicRoughnessTexture = pbr.metallicRoughnessTexture
+
+		baseTexture = texture(textures, _pbrBaseColorTexture)
+		metallicRoughnessTexture = texture(textures, _pbrMetallicRoughnessTexture)
+
+		if baseTexture then
+			uniforms.baseTexture = baseTexture.source
+			uniforms.baseTextureCoord = baseTexture.tcoord
+		end
+		if metallicRoughnessTexture then
+			uniforms.metallicRoughnessTexture = metallicRoughnessTexture.source
+			uniforms.metallicRoughnessTextureCoord = metallicRoughnessTexture.tcoord
 		end
 
-		local baseColorTexture = pbr.baseColorTexture
-		if baseColorTexture then
-			local image = get_image_by_index(baseColorTexture.index)
-			material.base_color_texture = image.data
-			material.base_color_texture_coord = baseColorTexture.texCoord or 0
-		end
+		uniforms.metalness = pbr.metallicFactor
+		uniforms.roughness = pbr.roughnessFactor
+
+		uniforms.baseColor = pbr.baseColorFactor
 	end
-	if v.emissiveTexture then
-		local image = get_image_by_index(v.emissiveTexture.index)
-		material.emissive_texture = image.data
-		material.emissive_texture_coord = v.emissiveTexture.coord or 0
+
+	if material.normalTexture then
+		local normalTexture = texture(textures, material.normalTexture)
+		uniforms.normalTexture = normalTexture.source
+		uniforms.normalTextureCoord = normalTexture.tcoord
+		uniforms.normalTextureScale = normalTexture.scale
 	end
-	if v.emissiveFactor then
-		material.emissive_factor = v.emissiveFactor
+
+	if material.occlusionTexture then
+		local occlusionTexture = texture(textures, material.occlusionTexture)
+		uniforms.occlusionTexture = occlusionTexture.source
+		uniforms.occlusionTextureCoord = occlusionTexture.tcoord
+		uniforms.occlusionTextureStrength = occlusionTexture.strength
 	end
-	return material
+
+	if material.emissiveTexture then
+		local emissiveTexture = texture(textures, material.emissiveTexture)
+		uniforms.emissiveTexture = emissiveTexture.source
+		uniforms.occlusionTextureCoord = emissiveTexture.tcoord
+	end
+	uniforms.emissiveColor = material.emissiveFactor
+
+	return {
+		baseTexture = baseTexture,
+		metallicRoughnessTexture = metallicRoughnessTexture,
+		normalTexture = normalTexture,
+		occlusionTexture = occlusionTexture,
+		emissiveTexture = emissiveTexture,
+
+		uniforms = uniforms,
+	}
+end
+
+local function parse_mag_filter(value)
+	if
+	value == 9728 then
+		return 'nearest'
+	elseif
+	value == 9729 then
+		return 'linear'
+	end
+end
+
+local function parse_min_filter(value)
+	if
+	value == 9728 then
+		return 'nearest'
+	elseif
+	value == 9729 then
+		return 'linear'
+	end
+end
+
+local function parse_wrap(value)
+	if
+	value == 33071 then
+		return 'clamp'
+	elseif
+	value == 33648 then
+		return 'mirroredrepeat'
+	elseif
+	value == 10497 then
+		return 'repeat'
+	end
 end
 
 --- Load model by filename
@@ -303,44 +406,64 @@ local function load(path, filename, io_read)
 		buffers[i] = love.data.newByteData(io_read(path .. v.uri))
 	end
 
-	images  = {}
+	images = {}
 	if data.images then
 		for i, v in ipairs(data.images) do
 			local image_filename = path .. v.uri
-			print('imgload', image_filename)
-			local image_file_data = love.filesystem.newFileData(io_read(image_filename), image_filename)
-			local imageData = love.image.newImageData(image_file_data)
+			local image_filedata = love.filesystem.newFileData(io_read(image_filename), image_filename)
+			local imageData = love.image.newImageData(image_filedata)
 			local image = love.graphics.newImage(imageData)
+			imageData:release()
 			images[i] = {
-				data = image, filename = image_filename
+				source = image, name = v.uri, path = path, filedata = image_filedata
 			}
 		end
 	end
 
-	materials = {}
-	for i, v in ipairs(data.materials or {}) do
-		materials[i] = init_material(v)
+	local samplers = {}
+	if data.samplers then
+		for _, v in ipairs(data.samplers) do
+			table.insert(samplers, {
+				magFilter = parse_mag_filter(v.magFilter),
+				minFilter = parse_min_filter(v.minFilter),
+				wrapS = parse_wrap(v.wrapS),
+				wrapT = parse_wrap(v.wrapT),
+			})
+		end
 	end
 
-	meshes = {}
+	local textures = {}
+	if data.textures then
+		for _, v in ipairs(data.textures) do
+			table.insert(textures, {
+				image = images[v.source + 1], sampler = samplers[v.sampler]
+			})
+		end
+	end
+
+	materials = {}
+	if data.materials then
+		for i, v in ipairs(data.materials) do
+			materials[i] = create_material(textures, v)
+		end
+	end
+
+	local meshes = {}
 	for i, v in ipairs(data.meshes) do
 		meshes[i] = init_mesh(v)
 	end
 
-	local nodes = data.nodes
-	setmetatable(nodes, nodes_mt)
-	for i, v in ipairs(nodes) do
-		local mesh_index = v.mesh or -1
-		v.primitives = meshes[mesh_index + 1]
-	end
-
 	return {
-		nodes = nodes,
-		scenes = data.scenes,
 		asset = data.asset,
+		nodes = data.nodes,
+		scene = data.scene,
+
+		meshes = meshes,
+		scenes = data.scenes,
+		images = images,
 	}
 end
 
 return {
-	load = load
+	load = load,
 }

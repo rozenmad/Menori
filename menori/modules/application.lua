@@ -19,8 +19,6 @@ local list = {}
 local current_scene
 local accumulator = 0
 local tick_period = 1.0 / 60.0
-local ox = 0
-local oy = 0
 
 local application = class('Application')
 
@@ -79,21 +77,12 @@ function application:_update_viewport_position()
 		self.x = 0
 		self.y = 0
 
-		ox = (w - self.w * self.sx) / 2
-		oy = (h - self.h * self.sy) / 2
+		self.ox = (w - self.w * self.sx) / 2
+		self.oy = (h - self.h * self.sy) / 2
 	else
-		ox = self.x
-		oy = self.y
+		self.ox = self.x
+		self.oy = self.y
 	end
-end
-
-function application:get_mouse_position()
-	local x, y = love.mouse.getPosition()
-	x = x - self.x
-	y = y - self.y
-	if x < 0 then x = 0 elseif x > self.w then x = self.w end
-	if y < 0 then y = 0 elseif y > self.h then y = self.h end
-	return x, y
 end
 
 --- Change scene with a transition effect.
@@ -177,7 +166,7 @@ function application:render(dt)
 	lovg.setShader()
 	lovg.pop()
 
-	lovg.draw(self.canvas, ox, oy, 0, self.sx, self.sy)
+	lovg.draw(self.canvas, self.ox, self.oy, 0, self.sx, self.sy)
 end
 
 local instance = application()

@@ -15,7 +15,7 @@ local modules = (...):match('(.*%menori.modules.)')
 
 local Node = require (modules .. '.node')
 local ModelNode = require (modules .. 'core3d.model_node')
-local Model = require (modules .. 'core3d.model')
+local Mesh = require (modules .. 'core3d.mesh')
 
 local ml = require (modules .. 'ml')
 local mat4 = ml.mat4
@@ -46,14 +46,15 @@ end
 --- init. Takes as arguments a list of nodes and scenes loaded with glTFLoader.
 -- @tparam table nodes
 -- @tparam table scenes
-function ModelNodeTree:init(data, shader)
+function ModelNodeTree:init(gltf, shader)
       ModelNodeTree.super.init(self)
-      self._nodes = data.nodes
+      self._nodes = gltf.nodes
 
-      for _, v in ipairs(data.nodes) do
+      for _, v in ipairs(gltf.nodes) do
             local node
-            if v.primitives then
-                  node = ModelNode(Model(v.primitives), shader)
+            if v.mesh then
+                  local mesh = gltf.meshes[v.mesh + 1]
+                  node = ModelNode(Mesh(mesh), shader)
                   set_transform(node, v)
             else
                   node = Node()
@@ -63,22 +64,22 @@ function ModelNodeTree:init(data, shader)
             v.node = node
       end
 
-      for _, v in ipairs(data.nodes) do
+      for _, v in ipairs(gltf.nodes) do
             if v.children then
                   for _, child_index in ipairs(v.children) do
-                        local child = data.nodes[child_index + 1]
+                        local child = gltf.nodes[child_index + 1]
                         v.node:attach(child.node)
                   end
             end
       end
 
       self.scenes = {}
-      for i, v in ipairs(data.scenes) do
+      for i, v in ipairs(gltf.scenes) do
             local scene_node = Node()
             scene_node.name = v.name
             self.scenes[i] = scene_node
             for _, node_index in ipairs(v.nodes) do
-                  scene_node:attach(data.nodes[node_index + 1].node)
+                  scene_node:attach(gltf.nodes[node_index + 1].node)
             end
       end
 

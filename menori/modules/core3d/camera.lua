@@ -55,15 +55,13 @@ end
 -- @tparam table viewport (optional) viewport rectangle (x, y, w, h)
 -- @treturn vec3
 function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
-	viewport = viewport or {0, 0, app.w * app.sx, app.h * app.sx}
+	viewport = viewport or {app.ox, app.oy, app.w * app.sx, app.h * app.sy}
 
-	local temp_view = self.m_view:clone()
-	temp_view[12] = 0
-	temp_view[13] = 0
-	temp_view[14] = 0
-	local inverse_vp = self.m_projection * temp_view
-
-	return vec3(mat4.unproject(vec3(x, y, 1), inverse_vp, viewport))
+	local m_pos = vec3(mat4.unproject(vec3(x, y, 1), self.m_view, self.m_projection, viewport))
+	local c_pos = self.eye:clone()
+	return {
+		position = c_pos, direction = m_pos - self.eye
+	}
 end
 
 function PerspectiveCamera:world_to_screen_point(x, y, z)

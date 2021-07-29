@@ -35,6 +35,7 @@ local scene = class('Scene')
 --- init
 function scene:init()
 	self.list_drawable_nodes = {}
+	self.instance_list = {}
 end
 
 --- Recursively call render function for every node.
@@ -53,9 +54,7 @@ function scene:render_nodes(node, environment, renderstates, filter)
 	self:_recursive_render_nodes(node, false)
 	table.sort(self.list_drawable_nodes, node_sort)
 
-	temp_environment = environment
-	local camera = temp_environment.camera
-
+	local camera = environment.camera
 	if camera._camera_2d_mode then
 		camera:_apply_transform()
 	end
@@ -74,8 +73,15 @@ function scene:render_nodes(node, environment, renderstates, filter)
 		end
 	end
 
-	for _, n in ipairs(self.list_drawable_nodes) do
-		filter(n, self, temp_environment)
+	for _, v in ipairs(self.list_drawable_nodes) do
+		filter(v, self, environment)
+	end
+
+	for k, v in pairs(self.instance_list) do
+		if v ~= false then
+			v:draw(environment)
+		end
+		self.instance_list[k] = false
 	end
 
 	lovg.pop()
@@ -86,25 +92,21 @@ function scene:render_nodes(node, environment, renderstates, filter)
 	return count
 end
 
-function scene:_recursive_render_nodes(parent_node, transform_flag)
-	if not parent_node.render_flag then
+function scene:_recursive_render_nodes(node, transform_flag)
+	if not node.render_flag then
 		return
 	end
-	if parent_node._transform_flag or transform_flag then
-		parent_node:update_transform()
+	if node._transform_flag or transform_flag then
+		node:update_transform()
 		transform_flag = true
 	end
 
-	if parent_node.render then
-		table.insert(self.list_drawable_nodes, parent_node)
+	if node.render then
+		table.insert(self.list_drawable_nodes, node)
 	end
 
-	local i = 1
-	local children = parent_node.children
-	while i <= #children do
-		local node = children[i]
-		self:_recursive_render_nodes(node, transform_flag)
-		i = i + 1
+	for _, v in ipairs(node.children) do
+		self:_recursive_render_nodes(v, transform_flag)
 	end
 end
 
@@ -117,23 +119,23 @@ function scene:update_nodes(node, environment)
 	self:_recursive_update_nodes(node)
 end
 
-function scene:_recursive_update_nodes(parent_node)
-	if not parent_node.update_flag then
+function scene:_recursive_update_nodes(node)
+	if not node.update_flag then
 		return
 	end
 
-	if parent_node.update then
-		parent_node:update(self, temp_environment)
+	if node.update then
+		node:update(self, temp_environment)
 	end
 
 	local i = 1
-	local children = parent_node.children
+	local children = node.children
 	while i <= #children do
-		local node = children[i]
-		if node.detach_flag then
+		local child = children[i]
+		if child.detach_flag then
 			table.remove(children, i)
 		else
-			self:_recursive_update_nodes(node)
+			self:_recursive_update_nodes(child)
 			i = i + 1
 		end
 	end

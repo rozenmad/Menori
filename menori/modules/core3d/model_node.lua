@@ -13,7 +13,6 @@
 
 local modules = (...):match('(.*%menori.modules.)')
 
-local utils = require (modules .. 'libs.utils')
 local Node = require (modules .. 'node')
 local ml = require (modules .. 'ml')
 local vec3 = ml.vec3
@@ -42,31 +41,27 @@ ModelNode.default_shader = love.graphics.newShader([[
 #endif
 ]])
 
-local function send_material_to(shader, material)
-      for k, v in pairs(material) do
-            utils.noexcept_send_uniform(shader, k, v)
-      end
-end
-
 --- init
--- @param model Model objects
+-- @param mesh Mesh object
 -- @param shader (Optional) ShaderObject which will be used for drawing
-function ModelNode:init(model, shader)
+function ModelNode:init(mesh, shader, instanced)
 	ModelNode.super.init(self)
       self.shader = shader or ModelNode.default_shader
-	self.model = model
+	self.mesh = mesh
+
       self.color = ml.vec4(1)
 end
 
 function ModelNode:clone()
-      local t = ModelNode(self.model, self.shader)
+      local t = ModelNode(self.mesh, self.shader, false)
+      t.instanced_mesh = self.instanced_mesh
       ModelNode.super.clone(self, t)
       return t
 end
 
 function ModelNode:calculate_aabb(index)
       index = index or 1
-      local b = self.model.primitives[index].bound
+      local b = self.mesh.primitives[index].bound
 
       self:recursive_update_transform()
       local m = self.world_matrix
@@ -109,15 +104,11 @@ function ModelNode:render(scene, environment, shader)
 	shader = shader or self.shader
 
       environment:apply_shader(shader)
-
-	shader:send('m_model', self.world_matrix.data)
+      shader:send('m_model', self.world_matrix.data)
 
       local c = self.color
       love.graphics.setColor(c.x, c.y, c.z, c.w)
-	for _, v in ipairs(self.model.primitives) do
-            send_material_to(shader, v.material)
-		love.graphics.draw(v.mesh)
-	end
+      self.mesh:draw(shader)
 end
 
 return ModelNode

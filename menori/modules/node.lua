@@ -217,13 +217,13 @@ function node:detach(child)
 	end
 end
 
---- Recursively traverse all child nodes.
+--- Recursively traverse all nodes.
 -- @tparam function callback Function that is called for every child node with params (child, index)
-function node:foreach(callback)
+function node:foreach(callback, i)
+	i = i or 1
+	callback(self, i)
 	for i, v in ipairs(self.children) do
-		if callback(v, i) then
-			v:foreach(callback)
-		end
+		v:foreach(callback, i)
 	end
 end
 
@@ -234,7 +234,6 @@ function node:detach_from_parent()
 		local children = parent.children
 		for i = 1, #children do
 			if children[i] == self then
-				print('detach')
 				table.remove(children, i)
 				break
 			end

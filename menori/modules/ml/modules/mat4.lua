@@ -9,6 +9,7 @@
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3 = require(modules .. "vec3")
+local vec4 = require(modules .. "vec4")
 
 local ffi, bytesize
 if type(jit) == 'table' and jit.status() then
@@ -27,6 +28,20 @@ local function identity(e)
 	e[ 5], e[ 6], e[ 7], e[ 8] = 0, 1, 0, 0
 	e[ 9], e[10], e[11], e[12] = 0, 0, 1, 0
 	e[13], e[14], e[15], e[16] = 0, 0, 0, 1
+end
+
+local function is_identity(m, size)
+	local m = m or m.e
+	local s = math.sqrt(size or #m)
+	for i = 0, s - 1 do
+		for j = 0, s - 1 do
+			local element = m[(i + j * s) + 1]
+			if (element ~= 0 and i ~= j) or (element ~= 1 and i == j) then
+				return false
+			end
+		end
+	end
+	return true
 end
 
 local function copy(dest, source)
@@ -158,6 +173,10 @@ function mat4_mt:identity()
 	self._changed = true
 	identity(self.e)
 	return self
+end
+
+function mat4_mt:is_identity()
+	return is_identity(self.e, 16)
 end
 
 function mat4_mt:multiply(other)
@@ -611,6 +630,14 @@ function mat4_mt:is_changed()
 	return self._changed == true
 end
 
+function mat4_mt:unpack()
+	local e = self.e
+	return e[ 1], e[ 2], e[ 3], e[ 4],
+		 e[ 5], e[ 6], e[ 7], e[ 8],
+		 e[ 9], e[10], e[11], e[12],
+		 e[13], e[14], e[15], e[16]
+end
+
 -- metamethods --
 function mat4_mt.__index(t, k)
 	if type(k) == 'number' then
@@ -650,8 +677,10 @@ end
 
 -- mat4 common --
 
-mat4.identity = identity
-mat4.multiply = multiply
+mat4.identity    = identity
+mat4.multiply    = multiply
+mat4.copy        = copy
+mat4.is_identity = is_identity
 
 function mat4.is_mat4(a)
 	if type(a) ~= "table" then
@@ -665,17 +694,18 @@ function mat4.is_mat4(a)
 	return true
 end
 
-function mat4.unproject(win, viewproj, viewport)
-	local x = (2 * (win.x - viewport[1])) / viewport[3] - 1
-	local y = (2 * (win.y - viewport[2])) / viewport[4] - 1
-	local z = win.z * 2 - 1
-	local ray = {x = x, y = y, z = z, w = 1}
-	viewproj:clone():inverse():multiply_vec4(ray)
-	local v = {x = ray.x, y = ray.y, z = ray.z}
-	v.x = v.x / ray.w
-	v.y = v.y / ray.w
-	v.z = v.z / ray.w
-	return v
+function mat4.unproject(win, model, proj, viewport)
+	local pos = vec4(win.x, win.y, win.z, 1)
+	pos.x = ((pos.x - viewport[1]) / viewport[3])
+	pos.y = ((pos.y - viewport[2]) / viewport[4])
+	pos.x = pos.x * 2 - 1
+	pos.y = pos.y * 2 - 1
+	pos.z = pos.z * 2 - 1
+	pos.w = pos.w * 2 - 1
+
+	local m = (proj * model):inverse()
+	m:multiply_vec4(pos)
+	return vec3(pos.x / pos.w, pos.y / pos.w, pos.z / pos.w)
 end
 
 return setmetatable(mat4, { __call = function(_, m)

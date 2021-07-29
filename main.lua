@@ -70,7 +70,7 @@ function NewScene:init()
 	local shader_code = love.filesystem.read('example_assets/lighting.glsl')
 	local shader_lighting = love.graphics.newShader(menori.utils.shader_preprocess(shader_code))
 
-	-- An example of creating a primitive.
+	-- An example of creating a mesh.
 	local vx = 1
 	local vz = 1
 
@@ -80,15 +80,12 @@ function NewScene:init()
 		{ vx, 0,-vz, 1, 0, 0, 1, 0 },
 		{ vx, 0, vz, 1, 1, 0, 1, 0 }
 	}
-	local indices = menori.Model.generate_indices(#vertices)
+	local indices = menori.Mesh.generate_indices(#vertices)
 
 	-- default mesh format POS3|TEX2|NOR3
-	local primitive = menori.Model.create_primitive(
-		vertices, indices, #vertices, love_logo
-	)
-
-	-- Create a model instance from a primitive
-	local model_instance = menori.Model(primitive)
+	local model_instance = menori.Mesh.from_primitive(vertices, {
+		indices = indices, mode = 'triangles', texture = love_logo,
+	})
 
 	-- Now you can use an model instance for every new node.
 	local quadmesh1 = menori.ModelNode(model_instance, nil, shader_lighting)
