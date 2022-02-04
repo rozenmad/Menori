@@ -75,30 +75,30 @@ local function new(m)
 	return t
 end
 
-local tm4 = new()
-local temp_array = tm4.e
+local temp_m4 = new()
+local temp_array = new()
 
 local function multiply(a, b, result)
 	result = result or a
-	temp_array[1]  = a[1] * b[1]  + a[5] * b[2]  + a[9]  * b[3]  + a[13] * b[4]
-	temp_array[2]  = a[2] * b[1]  + a[6] * b[2]  + a[10] * b[3]  + a[14] * b[4]
-	temp_array[3]  = a[3] * b[1]  + a[7] * b[2]  + a[11] * b[3]  + a[15] * b[4]
-	temp_array[4]  = a[4] * b[1]  + a[8] * b[2]  + a[12] * b[3]  + a[16] * b[4]
-	temp_array[5]  = a[1] * b[5]  + a[5] * b[6]  + a[9]  * b[7]  + a[13] * b[8]
-	temp_array[6]  = a[2] * b[5]  + a[6] * b[6]  + a[10] * b[7]  + a[14] * b[8]
-	temp_array[7]  = a[3] * b[5]  + a[7] * b[6]  + a[11] * b[7]  + a[15] * b[8]
-	temp_array[8]  = a[4] * b[5]  + a[8] * b[6]  + a[12] * b[7]  + a[16] * b[8]
-	temp_array[9]  = a[1] * b[9]  + a[5] * b[10] + a[9]  * b[11] + a[13] * b[12]
-	temp_array[10] = a[2] * b[9]  + a[6] * b[10] + a[10] * b[11] + a[14] * b[12]
-	temp_array[11] = a[3] * b[9]  + a[7] * b[10] + a[11] * b[11] + a[15] * b[12]
-	temp_array[12] = a[4] * b[9]  + a[8] * b[10] + a[12] * b[11] + a[16] * b[12]
-	temp_array[13] = a[1] * b[13] + a[5] * b[14] + a[9]  * b[15] + a[13] * b[16]
-	temp_array[14] = a[2] * b[13] + a[6] * b[14] + a[10] * b[15] + a[14] * b[16]
-	temp_array[15] = a[3] * b[13] + a[7] * b[14] + a[11] * b[15] + a[15] * b[16]
-	temp_array[16] = a[4] * b[13] + a[8] * b[14] + a[12] * b[15] + a[16] * b[16]
+	temp_m4[1]  = a[1] * b[1]  + a[5] * b[2]  + a[9]  * b[3]  + a[13] * b[4]
+	temp_m4[2]  = a[2] * b[1]  + a[6] * b[2]  + a[10] * b[3]  + a[14] * b[4]
+	temp_m4[3]  = a[3] * b[1]  + a[7] * b[2]  + a[11] * b[3]  + a[15] * b[4]
+	temp_m4[4]  = a[4] * b[1]  + a[8] * b[2]  + a[12] * b[3]  + a[16] * b[4]
+	temp_m4[5]  = a[1] * b[5]  + a[5] * b[6]  + a[9]  * b[7]  + a[13] * b[8]
+	temp_m4[6]  = a[2] * b[5]  + a[6] * b[6]  + a[10] * b[7]  + a[14] * b[8]
+	temp_m4[7]  = a[3] * b[5]  + a[7] * b[6]  + a[11] * b[7]  + a[15] * b[8]
+	temp_m4[8]  = a[4] * b[5]  + a[8] * b[6]  + a[12] * b[7]  + a[16] * b[8]
+	temp_m4[9]  = a[1] * b[9]  + a[5] * b[10] + a[9]  * b[11] + a[13] * b[12]
+	temp_m4[10] = a[2] * b[9]  + a[6] * b[10] + a[10] * b[11] + a[14] * b[12]
+	temp_m4[11] = a[3] * b[9]  + a[7] * b[10] + a[11] * b[11] + a[15] * b[12]
+	temp_m4[12] = a[4] * b[9]  + a[8] * b[10] + a[12] * b[11] + a[16] * b[12]
+	temp_m4[13] = a[1] * b[13] + a[5] * b[14] + a[9]  * b[15] + a[13] * b[16]
+	temp_m4[14] = a[2] * b[13] + a[6] * b[14] + a[10] * b[15] + a[14] * b[16]
+	temp_m4[15] = a[3] * b[13] + a[7] * b[14] + a[11] * b[15] + a[15] * b[16]
+	temp_m4[16] = a[4] * b[13] + a[8] * b[14] + a[12] * b[15] + a[16] * b[16]
 
 	for i = 1, 16 do
-		result[i] = temp_array[i]
+		result[i] = temp_m4[i]
 	end
 	return result
 end
@@ -203,25 +203,25 @@ end
 function mat4_mt:inverse()
 	self._changed = true
 	local e = self.e
-	temp_array[1]  = e[6] * e[11] * e[16] - e[6] * e[12] * e[15] - e[10] * e[7] * e[16] + e[10] * e[8] * e[15] + e[14] * e[7] * e[12] - e[14] * e[8] * e[11]
-	temp_array[5]  =-e[5] * e[11] * e[16] + e[5] * e[12] * e[15] + e[9]  * e[7] * e[16] - e[9]  * e[8] * e[15] - e[13] * e[7] * e[12] + e[13] * e[8] * e[11]
-	temp_array[9]  = e[5] * e[10] * e[16] - e[5] * e[12] * e[14] - e[9]  * e[6] * e[16] + e[9]  * e[8] * e[14] + e[13] * e[6] * e[12] - e[13] * e[8] * e[10]
-	temp_array[13] =-e[5] * e[10] * e[15] + e[5] * e[11] * e[14] + e[9]  * e[6] * e[15] - e[9]  * e[7] * e[14] - e[13] * e[6] * e[11] + e[13] * e[7] * e[10]
-	temp_array[2]  =-e[2] * e[11] * e[16] + e[2] * e[12] * e[15] + e[10] * e[3] * e[16] - e[10] * e[4] * e[15] - e[14] * e[3] * e[12] + e[14] * e[4] * e[11]
-	temp_array[6]  = e[1] * e[11] * e[16] - e[1] * e[12] * e[15] - e[9]  * e[3] * e[16] + e[9]  * e[4] * e[15] + e[13] * e[3] * e[12] - e[13] * e[4] * e[11]
-	temp_array[10] =-e[1] * e[10] * e[16] + e[1] * e[12] * e[14] + e[9]  * e[2] * e[16] - e[9]  * e[4] * e[14] - e[13] * e[2] * e[12] + e[13] * e[4] * e[10]
-	temp_array[14] = e[1] * e[10] * e[15] - e[1] * e[11] * e[14] - e[9]  * e[2] * e[15] + e[9]  * e[3] * e[14] + e[13] * e[2] * e[11] - e[13] * e[3] * e[10]
-	temp_array[3]  = e[2] * e[7]  * e[16] - e[2] * e[8]  * e[15] - e[6]  * e[3] * e[16] + e[6]  * e[4] * e[15] + e[14] * e[3] * e[8]  - e[14] * e[4] * e[7]
-	temp_array[7]  =-e[1] * e[7]  * e[16] + e[1] * e[8]  * e[15] + e[5]  * e[3] * e[16] - e[5]  * e[4] * e[15] - e[13] * e[3] * e[8]  + e[13] * e[4] * e[7]
-	temp_array[11] = e[1] * e[6]  * e[16] - e[1] * e[8]  * e[14] - e[5]  * e[2] * e[16] + e[5]  * e[4] * e[14] + e[13] * e[2] * e[8]  - e[13] * e[4] * e[6]
-	temp_array[15] =-e[1] * e[6]  * e[15] + e[1] * e[7]  * e[14] + e[5]  * e[2] * e[15] - e[5]  * e[3] * e[14] - e[13] * e[2] * e[7]  + e[13] * e[3] * e[6]
-	temp_array[4]  =-e[2] * e[7]  * e[12] + e[2] * e[8]  * e[11] + e[6]  * e[3] * e[12] - e[6]  * e[4] * e[11] - e[10] * e[3] * e[8]  + e[10] * e[4] * e[7]
-	temp_array[8]  = e[1] * e[7]  * e[12] - e[1] * e[8]  * e[11] - e[5]  * e[3] * e[12] + e[5]  * e[4] * e[11] + e[9]  * e[3] * e[8]  - e[9]  * e[4] * e[7]
-	temp_array[12] =-e[1] * e[6]  * e[12] + e[1] * e[8]  * e[10] + e[5]  * e[2] * e[12] - e[5]  * e[4] * e[10] - e[9]  * e[2] * e[8]  + e[9]  * e[4] * e[6]
-	temp_array[16] = e[1] * e[6]  * e[11] - e[1] * e[7]  * e[10] - e[5]  * e[2] * e[11] + e[5]  * e[3] * e[10] + e[9]  * e[2] * e[7]  - e[9]  * e[3] * e[6]
+	temp_m4[1]  = e[6] * e[11] * e[16] - e[6] * e[12] * e[15] - e[10] * e[7] * e[16] + e[10] * e[8] * e[15] + e[14] * e[7] * e[12] - e[14] * e[8] * e[11]
+	temp_m4[5]  =-e[5] * e[11] * e[16] + e[5] * e[12] * e[15] + e[9]  * e[7] * e[16] - e[9]  * e[8] * e[15] - e[13] * e[7] * e[12] + e[13] * e[8] * e[11]
+	temp_m4[9]  = e[5] * e[10] * e[16] - e[5] * e[12] * e[14] - e[9]  * e[6] * e[16] + e[9]  * e[8] * e[14] + e[13] * e[6] * e[12] - e[13] * e[8] * e[10]
+	temp_m4[13] =-e[5] * e[10] * e[15] + e[5] * e[11] * e[14] + e[9]  * e[6] * e[15] - e[9]  * e[7] * e[14] - e[13] * e[6] * e[11] + e[13] * e[7] * e[10]
+	temp_m4[2]  =-e[2] * e[11] * e[16] + e[2] * e[12] * e[15] + e[10] * e[3] * e[16] - e[10] * e[4] * e[15] - e[14] * e[3] * e[12] + e[14] * e[4] * e[11]
+	temp_m4[6]  = e[1] * e[11] * e[16] - e[1] * e[12] * e[15] - e[9]  * e[3] * e[16] + e[9]  * e[4] * e[15] + e[13] * e[3] * e[12] - e[13] * e[4] * e[11]
+	temp_m4[10] =-e[1] * e[10] * e[16] + e[1] * e[12] * e[14] + e[9]  * e[2] * e[16] - e[9]  * e[4] * e[14] - e[13] * e[2] * e[12] + e[13] * e[4] * e[10]
+	temp_m4[14] = e[1] * e[10] * e[15] - e[1] * e[11] * e[14] - e[9]  * e[2] * e[15] + e[9]  * e[3] * e[14] + e[13] * e[2] * e[11] - e[13] * e[3] * e[10]
+	temp_m4[3]  = e[2] * e[7]  * e[16] - e[2] * e[8]  * e[15] - e[6]  * e[3] * e[16] + e[6]  * e[4] * e[15] + e[14] * e[3] * e[8]  - e[14] * e[4] * e[7]
+	temp_m4[7]  =-e[1] * e[7]  * e[16] + e[1] * e[8]  * e[15] + e[5]  * e[3] * e[16] - e[5]  * e[4] * e[15] - e[13] * e[3] * e[8]  + e[13] * e[4] * e[7]
+	temp_m4[11] = e[1] * e[6]  * e[16] - e[1] * e[8]  * e[14] - e[5]  * e[2] * e[16] + e[5]  * e[4] * e[14] + e[13] * e[2] * e[8]  - e[13] * e[4] * e[6]
+	temp_m4[15] =-e[1] * e[6]  * e[15] + e[1] * e[7]  * e[14] + e[5]  * e[2] * e[15] - e[5]  * e[3] * e[14] - e[13] * e[2] * e[7]  + e[13] * e[3] * e[6]
+	temp_m4[4]  =-e[2] * e[7]  * e[12] + e[2] * e[8]  * e[11] + e[6]  * e[3] * e[12] - e[6]  * e[4] * e[11] - e[10] * e[3] * e[8]  + e[10] * e[4] * e[7]
+	temp_m4[8]  = e[1] * e[7]  * e[12] - e[1] * e[8]  * e[11] - e[5]  * e[3] * e[12] + e[5]  * e[4] * e[11] + e[9]  * e[3] * e[8]  - e[9]  * e[4] * e[7]
+	temp_m4[12] =-e[1] * e[6]  * e[12] + e[1] * e[8]  * e[10] + e[5]  * e[2] * e[12] - e[5]  * e[4] * e[10] - e[9]  * e[2] * e[8]  + e[9]  * e[4] * e[6]
+	temp_m4[16] = e[1] * e[6]  * e[11] - e[1] * e[7]  * e[10] - e[5]  * e[2] * e[11] + e[5]  * e[3] * e[10] + e[9]  * e[2] * e[7]  - e[9]  * e[3] * e[6]
 
-	local det = e[1] * temp_array[1] + e[2] * temp_array[5] + e[3] * temp_array[9] + e[4] * temp_array[13]
-	copy(e, temp_array)
+	local det = e[1] * temp_m4[1] + e[2] * temp_m4[5] + e[3] * temp_m4[9] + e[4] * temp_m4[13]
+	copy(e, temp_m4)
 
 	if det ~= 0.0 then
 		local invdet = 1.0 / det
@@ -324,7 +324,7 @@ function mat4_mt:decompose(position, rotation, scale)
 			temp_array[10] = temp_array[10] * invSZ
 			temp_array[11] = temp_array[11] * invSZ
 
-			rotation:set_from_matrix_rotation(tm4)
+			rotation:set_from_matrix_rotation(temp_array)
 		end
 	end
 end
@@ -335,22 +335,21 @@ function mat4_mt:set_position_and_rotation(position, angle, axis)
 		angle, axis = angle:to_angle_axis()
 	end
 	local length = axis:length()
-	local e = temp_array
 
 	if length ~= 0 then
-		rotate(e, angle, axis.x, axis.y, axis.z, length)
+		rotate(temp_array, angle, axis.x, axis.y, axis.z, length)
 
-		e[4], e[8], e[12]  = 0, 0, 0
+		temp_array[4], temp_array[8],  temp_array[12] = 0, 0, 0
 	else
-		e[1], e[2], e[3]   = 0, 0, 0
-		e[5], e[6], e[7]   = 0, 0, 0
-		e[9], e[10], e[11] = 0, 0, 0
+		temp_array[1], temp_array[2],  temp_array[3]  = 0, 0, 0
+		temp_array[5], temp_array[6],  temp_array[7]  = 0, 0, 0
+		temp_array[9], temp_array[10], temp_array[11] = 0, 0, 0
 	end
 
-	e[13] = position.x
-	e[14] = position.y
-	e[15] = position.z
-	e[16] = 1
+	temp_array[13] = position.x
+	temp_array[14] = position.y
+	temp_array[15] = position.z
+	temp_array[16] = 1
 
 	multiply(self.e, temp_array)
 	return self
