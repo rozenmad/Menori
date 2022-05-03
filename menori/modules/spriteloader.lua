@@ -19,10 +19,10 @@ local Sprite      = require(modules .. 'sprite')
 local spriteloader = {}
 local list = setmetatable({}, {__mode = 'v'})
 
-local function load_aseprite_sprite_sheet(path, name)
-	local filename = path .. name
-	print(filename)
-	local data = json.decode(love.filesystem.read(filename .. '.json'))
+local function load_aseprite_sprite_sheet(filename)
+	local path, name = filename:match("(.*/)(.+)%.json$")
+	print(filename, path, name)
+	local data = json.decode(love.filesystem.read(filename))
 	local meta = data.meta
 
 	local image = love.graphics.newImage(path .. meta.image)
@@ -40,7 +40,22 @@ local function load_aseprite_sprite_sheet(path, name)
 		frames = data.frames
 	end
 
+	local quads = {}
+	for i, v in ipairs(frames) do
+		local frame = v.frame
+		quads[i] = love.graphics.newQuad(frame.x, frame.y, frame.w, frame.h, iw, ih)
+	end
+
 	local spritesheet = {}
+	for _, v in ipairs(meta.frameTags) do
+		local t = {}
+		for i = v.from + 1, v.to + 1 do
+			table.insert(t, quads[i])
+		end
+		spritesheet[v.name] = Sprite(t, image)
+	end
+
+	--[[local spritesheet = {}
 
 	for _, slice in ipairs(meta.slices) do
 		local quads = {}
@@ -54,7 +69,7 @@ local function load_aseprite_sprite_sheet(path, name)
 		end
 
 		spritesheet[slice.name] = Sprite(quads, image, slice.pivot)
-	end
+	end]]
 
 	return spritesheet
 end
@@ -104,9 +119,9 @@ end
 -- @tparam string path
 -- @tparam string name
 -- @return Sprite object
-function spriteloader.from_aseprite_sprite_sheet(path, name)
-	if not list[name] then list[name] = load_aseprite_sprite_sheet(path, name) end
-	return list[name]
+function spriteloader.from_aseprite_sprite_sheet(filename)
+	if not list[filename] then list[filename] = load_aseprite_sprite_sheet(filename) end
+	return list[filename]
 end
 
 --- Find Aseprite Sprite Sheet in cache list.

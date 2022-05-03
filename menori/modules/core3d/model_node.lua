@@ -104,7 +104,7 @@ function ModelNode:render(scene, environment, shader)
       shader:send('m_model', self.world_matrix.data)
 
       local c = self.color
-      --love.graphics.setColor(c.x, c.y, c.z, c.w)
+      love.graphics.setColor(c.x, c.y, c.z, c.w)
       self.mesh:draw(shader)
 end
 

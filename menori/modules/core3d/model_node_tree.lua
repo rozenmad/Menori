@@ -45,23 +45,26 @@ end
 -- @tparam table scenes
 function ModelNodeTree:init(gltf, shader)
       ModelNodeTree.super.init(self)
-      self._nodes = gltf.nodes
+      self.meshes = {}
+      for i, v in ipairs(gltf.meshes) do
+            self.meshes[i] = Mesh(v)
+      end
 
-      for _, v in ipairs(gltf.nodes) do
+      self.nodes = {}
+      for i, v in ipairs(gltf.nodes) do
             local node
             if v.mesh then
-                  local mesh = gltf.meshes[v.mesh + 1]
-                  node = ModelNode(Mesh(mesh), shader)
+                  local mesh = self.meshes[v.mesh + 1]
+                  node = ModelNode(mesh, shader)
                   set_transform(node, v)
             else
                   node = Node()
                   set_transform(node, v)
             end
             node.name = v.name
-            v.node = node
+            self.nodes[i] = node
       end
-
-      for _, v in ipairs(gltf.nodes) do
+      for i, v in ipairs(gltf.nodes) do
             if v.children then
                   for _, child_index in ipairs(v.children) do
                         local child = gltf.nodes[child_index + 1]
@@ -72,19 +75,22 @@ function ModelNodeTree:init(gltf, shader)
 
       self.scenes = {}
       for i, v in ipairs(gltf.scenes) do
-            local scene_node = Node()
-            scene_node.name = v.name
-            self.scenes[i] = scene_node
-            for _, node_index in ipairs(v.nodes) do
-                  scene_node:attach(gltf.nodes[node_index + 1].node)
+            local scene_node = Node(v.name)
+            for _, i in ipairs(v.nodes) do
+                  scene_node:attach(self.nodes[i + 1])
             end
+            self.scenes[i] = scene_node
       end
 
-      local first = self.scenes[1]
-      if first then
-            first:update_transform()
-            self:attach(first)
+      self.current_scene = self.scenes[1]
+      if self.current_scene then
+            self.current_scene:update_transform()
+            self:attach(self.current_scene)
       end
+end
+
+function ModelNodeTree:foreach(fn)
+      self.current_scene:foreach(fn)
 end
 
 --- Set scene by name.
@@ -94,14 +100,15 @@ function ModelNodeTree:set_scene_by_name(name)
       for _, v in ipairs(self.scenes) do
             if v.name == name then
                   self:attach(v)
+                  self.current_scene = v
             end
       end
 end
 
 --- Find a node by name.
 -- @tparam string name
-function ModelNodeTree:find(name)
-      for _, v in ipairs(self._nodes) do
+function ModelNodeTree:find_node(name)
+      for _, v in ipairs(self.nodes) do
             if v.name == name then
                   return v.node
             end

@@ -82,10 +82,16 @@ end
 -- @treturn number y1
 -- @treturn number y2
 function sprite:get_frame_uv(i)
+	i = i or self.index
 	local quad = self.quads[i]
 	local image_w, image_h = quad:getTextureDimensions()
 	local x, y, w, h = quad:getViewport()
-	return x / image_w, (x + w) / image_w, y / image_h, (y + h) / image_h
+	return {
+		x1 = x / image_w,
+		y1 = y / image_h,
+		x2 = (x + w) / image_w,
+		y2 = (y + h) / image_h,
+	}
 end
 
 --- Reset animation.

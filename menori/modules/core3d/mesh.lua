@@ -193,6 +193,11 @@ function Mesh:get_vertices(iprimitive)
 	return vertices
 end
 
+function Mesh:set_vertices(vertices, startvertex, iprimitive)
+	iprimitive = iprimitive or 1
+	self.primitives[iprimitive].mesh:setVertices(vertices, startvertex)
+end
+
 function Mesh:apply_matrix(m)
 	local temp_v3 = vec3(0, 0, 0)
 
