@@ -41,10 +41,10 @@ end
 --- Recursively call render function for every node.
 -- @tparam Node node
 -- @tparam Environment environment
--- @tparam table renderstates (Optional)
--- @tparam function filter (Optional)
+-- @tparam table renderstates (Optional) = temp_renderstate
+-- @tparam function filter (Optional) = default_filter
 function scene:render_nodes(node, environment, renderstates, filter)
-	assert(node, "in function 'scene:update_nodes' node does not exist.")
+	assert(node, "in function 'scene:render_nodes' node does not exist.")
 
 	lovg.push('all')
 
@@ -96,7 +96,7 @@ function scene:_recursive_render_nodes(node, transform_flag)
 	if not node.render_flag then
 		return
 	end
-	if node._transform_flag or transform_flag then
+	if node.update_transform_flag and (node._transform_flag or transform_flag) then
 		node:update_transform()
 		transform_flag = true
 	end

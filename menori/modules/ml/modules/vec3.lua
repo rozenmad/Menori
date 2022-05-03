@@ -6,6 +6,9 @@
 -------------------------------------------------------------------------------
 --]]
 
+local modules = (...):gsub('%.[^%.]+$', '') .. "."
+local utils = require(modules .. "utils")
+
 local vec3 = {}
 local vec3_mt = {}
 vec3_mt.__index = vec3_mt
@@ -29,7 +32,7 @@ end
 
 function vec3_mt:set(x, y, z)
 	if type(x) == 'table' then
-		x, y, z = x.x, x.y, x.z
+		x, y, z = x.x or x[1], x.y or x[2], x.z or x[3]
 	end
 	self.x = x
 	self.y = y
@@ -88,6 +91,12 @@ function vec3_mt:normalize()
 		self.z = self.z / length
 	end
 	return self
+end
+
+function vec3_mt:round()
+	self.x = utils.round(self.x)
+	self.y = utils.round(self.y)
+	self.z = utils.round(self.z)
 end
 
 function vec3_mt:unpack()
@@ -174,6 +183,8 @@ function vec3_mt.__tostring(a)
 end
 
 -- vec3 --
+
+vec3._mt = vec3_mt
 
 function vec3.is_vec3(a)
 	return type(a) == "table" and

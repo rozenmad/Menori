@@ -13,9 +13,10 @@
 
 local modules = (...):match('(.*%menori.modules.)')
 
-local Node = require (modules .. 'node')
-local ml = require (modules .. 'ml')
-local vec3 = ml.vec3
+local Node   = require (modules .. 'node')
+local ml     = require (modules .. 'ml')
+local vec3   = ml.vec3
+local bound3 = ml.bound3
 
 local ModelNode = Node:extend('ModelNode')
 
@@ -32,11 +33,12 @@ ModelNode.default_shader = love.graphics.newShader([[
       }
 #endif
 #ifdef PIXEL
+      uniform vec4 baseColor;
       vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords)
       {
             vec4 texcolor = Texel(t, texture_coords);
-            if( texcolor.a <= 0.0 ) discard;
-            return texcolor * color;
+            if( texcolor.a <= 0.0f ) discard;
+            return texcolor * baseColor * color;
       }
 #endif
 ]])
@@ -44,7 +46,7 @@ ModelNode.default_shader = love.graphics.newShader([[
 --- init
 -- @param mesh Mesh object
 -- @param shader (Optional) ShaderObject which will be used for drawing
-function ModelNode:init(mesh, shader, instanced)
+function ModelNode:init(mesh, shader)
 	ModelNode.super.init(self)
       self.shader = shader or ModelNode.default_shader
 	self.mesh = mesh
@@ -54,7 +56,6 @@ end
 
 function ModelNode:clone()
       local t = ModelNode(self.mesh, self.shader, false)
-      t.instanced_mesh = self.instanced_mesh
       ModelNode.super.clone(self, t)
       return t
 end
@@ -62,7 +63,6 @@ end
 function ModelNode:calculate_aabb(index)
       index = index or 1
       local b = self.mesh.primitives[index].bound
-
       self:recursive_update_transform()
       local m = self.world_matrix
       local t = {
@@ -78,7 +78,7 @@ function ModelNode:calculate_aabb(index)
             m:multiply_vec3(vec3(b.x+b.w, b.y+b.h, b.z+b.d)),
       }
 
-      local aabb = { min = t[1]:clone(), max = t[1]:clone() }
+      local aabb = bound3()
       for i = 2, #t do
             local v = t[i]
             if aabb.min.x > v.x then aabb.min.x = v.x elseif aabb.max.x < v.x then aabb.max.x = v.x end
@@ -90,10 +90,7 @@ function ModelNode:calculate_aabb(index)
 end
 
 function ModelNode:set_color(r, g, b, a)
-      self.color.x = r
-      self.color.y = g
-      self.color.z = b
-      self.color.w = a
+      self.color:set(r, g, b, a)
 end
 
 --- Render function.
@@ -107,7 +104,7 @@ function ModelNode:render(scene, environment, shader)
       shader:send('m_model', self.world_matrix.data)
 
       local c = self.color
-      love.graphics.setColor(c.x, c.y, c.z, c.w)
+      --love.graphics.setColor(c.x, c.y, c.z, c.w)
       self.mesh:draw(shader)
 end
 

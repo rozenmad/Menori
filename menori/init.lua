@@ -19,10 +19,9 @@ local menori = {
 	ModelNodeTree     = require(modules .. 'core3d.model_node_tree'),
 	GeometryBuffer    = require(modules .. 'core3d.geometry_buffer'),
 	InstancedMesh     = require(modules .. 'core3d.instanced_mesh'),
+	
 	AnimationList     = require(modules .. 'animationlist'),
 	Camera            = require(modules .. 'camera'),
-	ImageLoader       = require(modules .. 'imageloader'),
-	Input             = require(modules .. 'input'),
 	Node              = require(modules .. 'node'),
 	Scene             = require(modules .. 'scene'),
 	Application       = require(modules .. 'application'),

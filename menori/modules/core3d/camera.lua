@@ -32,7 +32,7 @@ function PerspectiveCamera:init(fov, aspect, nclip, fclip)
 	fov = fov or 60
 	aspect = aspect or 1.6666667
 	nclip = nclip or 0.1
-	fclip = fclip or 512.0
+	fclip = fclip or 2048.0
 
 	self.m_projection = mat4():perspective_LH_NO(fov, aspect, nclip, fclip)
 	self.m_inv_projection = self.m_projection:clone():inverse()

@@ -45,7 +45,7 @@ end
 
 function quat_mt:set(x, y, z, w)
 	if type(x) == 'table' then
-		x, y, z, w = x.x, x.y, x.z, x.w
+		x, y, z, w = x.x or x[1], x.y or x[2], x.z or x[3], x.w or x[4]
 	end
 	self.x = x
 	self.y = y

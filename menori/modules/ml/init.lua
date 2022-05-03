@@ -10,6 +10,7 @@ local files = {
 	"vec4",
 	"mat4",
 	"quat",
+	"bound3"
 }
 
 for _, file in ipairs(files) do

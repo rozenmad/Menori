@@ -14,7 +14,6 @@ Description.
 local json = require 'libs.rxijson.json'
 
 local modules     = (...):gsub('%.[^%.]+$', '') .. "."
-local ImageLoader = require(modules .. 'imageloader')
 local Sprite      = require(modules .. 'sprite')
 
 local spriteloader = {}
@@ -22,10 +21,12 @@ local list = setmetatable({}, {__mode = 'v'})
 
 local function load_aseprite_sprite_sheet(path, name)
 	local filename = path .. name
+	print(filename)
 	local data = json.decode(love.filesystem.read(filename .. '.json'))
 	local meta = data.meta
 
-	local image = ImageLoader.load(path .. meta.image)
+	local image = love.graphics.newImage(path .. meta.image)
+	image:setFilter('nearest', 'nearest')
 
 	local iw, ih = image:getDimensions()
 
@@ -52,10 +53,32 @@ local function load_aseprite_sprite_sheet(path, name)
 			quads[i] = love.graphics.newQuad(ox+bounds.x, oy+bounds.y, bounds.w, bounds.h, iw, ih)
 		end
 
-		spritesheet[slice.name] = Sprite:new(quads, image, slice.pivot)
+		spritesheet[slice.name] = Sprite(quads, image, slice.pivot)
 	end
 
 	return spritesheet
+end
+
+--- Create a tileset from an image.
+-- @param image [Image](https://love2d.org/wiki/Image)
+-- @tparam number offsetx
+-- @tparam number offsety
+-- @tparam number w
+-- @tparam number h
+-- @treturn table List of [Quad](https://love2d.org/wiki/Quad) objects
+function spriteloader.create_tileset_from_image(image, offsetx, offsety, w, h)
+	local image_w, image_h = image:getDimensions()
+	local quads = {}
+	local iws = math.floor((image_w - offsetx) / w)
+	local ihs = math.floor((image_h - offsety) / h)
+	for j = 0, ihs - 1 do
+		for i = 0, iws - 1 do
+			local px = i * w
+			local py = j * h
+			quads[#quads + 1] = love.graphics.newQuad(px, py, w, h, image_w, image_h)
+		end
+	end
+	return quads
 end
 
 --- Create sprite from image.
@@ -74,14 +97,14 @@ end
 -- @tparam number h
 -- @return Sprite object
 function spriteloader.from_tileset_image(image, offsetx, offsety, w, h)
-	return Sprite(ImageLoader.create_tileset_from_image(offsetx, offsety, w, h), image)
+	return Sprite(spriteloader.create_tileset_from_image(image, offsetx, offsety, w, h), image)
 end
 
 --- Load sprite from Aseprite Sprite Sheet using sprite cache list.
 -- @tparam string path
 -- @tparam string name
 -- @return Sprite object
-function spriteloader.load_sprite_sheet(path, name)
+function spriteloader.from_aseprite_sprite_sheet(path, name)
 	if not list[name] then list[name] = load_aseprite_sprite_sheet(path, name) end
 	return list[name]
 end

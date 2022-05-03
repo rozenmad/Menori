@@ -127,7 +127,7 @@ function Mesh:init(primitives)
 		local mesh = create_mesh_from_primitive(p, base_texture)
 		self.primitives[i] = {
 			mesh = mesh,
-			material = p.material or default_material,
+			material = material,
 			bound = Mesh.calculate_bound(mesh),
 		}
 	end
@@ -143,6 +143,9 @@ function Mesh.from_primitive(vertices, opt)
 			baseTexture = {
 				source = opt.texture
 			},
+			uniforms = {
+				baseColor = {1, 1, 1, 1}
+			}
 		}
 	}
 	return Mesh{ primitive }
@@ -157,6 +160,37 @@ function Mesh:draw(shader)
 		end
 		love.graphics.draw(p.mesh)
 	end
+end
+
+function Mesh:get_triangles()
+	if not self.triangles then
+		local mesh = self.primitives[1].mesh
+		self.triangles = {}
+		local attribute_index = Mesh.get_attribute_index('VertexPosition', mesh:getVertexFormat())
+		local map = mesh:getVertexMap()
+
+		if map then
+			for i = 1, #map, 3 do
+				table.insert(self.triangles, {
+					{mesh:getVertexAttribute(map[i + 0], attribute_index)},
+					{mesh:getVertexAttribute(map[i + 1], attribute_index)},
+					{mesh:getVertexAttribute(map[i + 2], attribute_index)},
+				})
+			end
+		end
+	end
+	return self.triangles
+end
+
+function Mesh:get_vertices(iprimitive)
+	iprimitive = iprimitive or 1
+	local mesh = self.primitives[iprimitive].mesh
+	local count = mesh:getVertexCount()
+	local vertices = {}
+	for i = 1, count do
+		table.insert(vertices, {mesh:getVertex(i)})
+	end
+	return vertices
 end
 
 function Mesh:apply_matrix(m)

@@ -6,6 +6,9 @@
 -------------------------------------------------------------------------------
 --]]
 
+local modules = (...):gsub('%.[^%.]+$', '') .. "."
+local utils = require(modules .. "utils")
+
 local vec2 = {}
 local vec2_mt = {}
 vec2_mt.__index = vec2_mt
@@ -27,7 +30,7 @@ end
 
 function vec2_mt:set(x, y)
 	if type(x) == 'table' then
-		x, y = x.x, x.y
+		x, y = x.x or x[1], x.y or x[2]
 	end
 	self.x = x
 	self.y = y
@@ -79,6 +82,11 @@ function vec2_mt:normalize()
 		self.y = self.y / length
 	end
 	return self
+end
+
+function vec2_mt:round()
+	self.x = utils.round(self.x)
+	self.y = utils.round(self.y)
 end
 
 function vec2_mt:unpack()

@@ -25,22 +25,19 @@ local quat = ml.quat
 local ModelNodeTree = Node:extend('ModelNodeTree')
 
 local function set_transform(node, v)
+      local t = vec3()
+      local r = quat(0, 0, 0, 1)
+      local s = vec3(1)
       if v.translation or v.rotation or v.scale then
-            local t = v.translation or {0, 0, 0}
-            local r = v.rotation or {0, 0, 0, 1}
-            local s = v.scale or {1, 1, 1}
-            node:set_position(t[1], t[2], t[3])
-            node:set_rotation(quat(r[1], r[2], r[3], r[4]))
-            node:set_scale(s[1], s[2], s[3])
+            t:set(v.translation or {0, 0, 0})
+            r:set(v.rotation or {0, 0, 0, 1})
+            s:set(v.scale or {1, 1, 1})
 	elseif v.matrix then
-            local t = vec3()
-            local r = quat()
-            local s = vec3()
 		mat4(v.matrix):decompose(t, r, s)
-            node:set_position(t)
-            node:set_rotation(r)
-            node:set_scale(s)
-	end
+      end
+      node:set_position(t)
+      node:set_rotation(r)
+      node:set_scale(s)
 end
 
 --- init. Takes as arguments a list of nodes and scenes loaded with glTFLoader.

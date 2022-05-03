@@ -6,6 +6,9 @@
 -------------------------------------------------------------------------------
 --]]
 
+local modules = (...):gsub('%.[^%.]+$', '') .. "."
+local utils = require(modules .. "utils")
+
 local vec4 = {}
 local vec4_mt = {}
 vec4_mt.__index = vec4_mt
@@ -31,7 +34,7 @@ end
 
 function vec4_mt:set(x, y, z, w)
 	if type(x) == 'table' then
-		x, y, z, w = x.x, x.y, x.z, x.w
+		x, y, z, w = x.x or x[1], x.y or x[2], x.z or x[3], x.w or x[4]
 	end
 	self.x = x
 	self.y = y
@@ -93,6 +96,13 @@ function vec4_mt:normalize()
 		self.w = self.w / length
 	end
 	return self
+end
+
+function vec4_mt:round()
+	self.x = utils.round(self.x)
+	self.y = utils.round(self.y)
+	self.z = utils.round(self.z)
+	self.w = utils.round(self.w)
 end
 
 function vec4_mt:unpack()

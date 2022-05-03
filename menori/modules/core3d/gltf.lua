@@ -237,8 +237,10 @@ local function init_mesh(mesh)
 			local attribute_name
 			if value == '_0' then
 				attribute_name = attribute_aliases[attribute]
-			else
+			elseif attribute_aliases[attribute] then
 				attribute_name = attribute_aliases[attribute] .. value
+			else
+				attribute_name = k
 			end
 
 			local buffer = get_buffer(v)
@@ -321,7 +323,7 @@ local function create_material(textures, material)
 		uniforms.metalness = pbr.metallicFactor
 		uniforms.roughness = pbr.roughnessFactor
 
-		uniforms.baseColor = pbr.baseColorFactor
+		uniforms.baseColor = pbr.baseColorFactor or {1, 1, 1, 1}
 	end
 
 	if material.normalTexture then
@@ -393,17 +395,24 @@ end
 -- @function load
 -- @tparam string path path to the directory where the file is located
 -- @tparam string filename
-local function load(path, filename, io_read)
+local function load(filename, io_read)
+	local path, name = filename:match("(.*/)(.+)%.gltf$")
 	io_read = io_read or love.filesystem.read
 
-	local filepath = path .. filename .. '.gltf'
+	local filepath = path .. name .. '.gltf'
 	--assert(love.filesystem.getInfo(filepath), 'in function <glTFLoader.load> file "' .. filepath .. '" not found.')
 
-	data = json.decode(io_read(filepath))
+	local gltf_filedata = io_read(filepath)
+	data = json.decode(gltf_filedata)
 
 	buffers = {}
 	for i, v in ipairs(data.buffers) do
-		buffers[i] = love.data.newByteData(io_read(path .. v.uri))
+		local data = v.uri:match('data:application/octet%-stream;base64,(.+)')
+		if data then
+			buffers[i] = love.data.decode('data', 'base64', data)
+		else
+			buffers[i] = love.data.newByteData(io_read(path .. v.uri))
+		end
 	end
 
 	images = {}

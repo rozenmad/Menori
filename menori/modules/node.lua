@@ -15,11 +15,12 @@ You need to inherit from the Node class to create your own display object.
 
 local modules = (...):match('(.*%menori.modules.)')
 
-local class = require (modules .. 'libs.class')
-local ml    = require (modules .. 'ml')
-local mat4  = ml.mat4
-local vec3  = ml.vec3
-local quat  = ml.quat
+local class  = require (modules .. 'libs.class')
+local ml     = require (modules .. 'ml')
+local mat4   = ml.mat4
+local vec3   = ml.vec3
+local quat   = ml.quat
+local bound3 = ml.bound3
 
 --- Class members
 -- @table Node
@@ -35,14 +36,15 @@ local node = class('Node')
 node.layer = 0
 
 --- init.
-function node:init()
+function node:init(name)
 	self.children = {}
 	self.parent = nil
-	self.name = "node"
+	self.name = name or "node"
 
 	self.detach_flag = false
 	self.update_flag = true
 	self.render_flag = true
+	self.update_transform_flag = true
 
 	self.local_matrix = mat4()
 	self.world_matrix = mat4()
@@ -62,6 +64,7 @@ function node:clone(new_object)
 	new_object.detach_flag = self.detach_flag
 	new_object.update_flag = self.update_flag
 	new_object.render_flag = self.render_flag
+	new_object.update_transform_flag = self.update_transform_flag
 
 	new_object.local_matrix:copy(self.local_matrix)
 	new_object.world_matrix:copy(self.world_matrix)
@@ -92,48 +95,39 @@ function node:set_scale(sx, sy, sz)
 	self.scale:set(sx, sy, sz)
 end
 
-function node:get_world_position()
+function node:get_world_position(retvalue)
 	self:recursive_update_transform()
-	local p = vec3()
+	local p = retvalue or vec3()
 	self.world_matrix:decompose(p, nil, nil)
 	return p
 end
 
-function node:get_world_rotation()
+function node:get_world_rotation(retvalue)
 	self:recursive_update_transform()
-	local q = quat()
+	local q = retvalue or quat()
 	self.world_matrix:decompose(nil, q, nil)
 	return q
 end
 
-function node:get_world_scale()
+function node:get_world_scale(retvalue)
 	self:recursive_update_transform()
-	local s = vec3()
+	local s = retvalue or vec3()
 	self.world_matrix:decompose(nil, nil, s)
 	return s
 end
 
-function node:calculate_aabb()
-end
-
 function node:_recursive_get_aabb(t)
-	local aabb = self:calculate_aabb()
-	if aabb then
-		if t.init == false then
-			t.init = true
-			t.aabb = aabb
-		else
-			local a = t.aabb
-			local b = aabb
+	if self.calculate_aabb then
+		local a = t
+		local b = self:calculate_aabb()
 
-			if a.min.x > b.min.x then a.min.x = b.min.x end
-			if a.min.y > b.min.y then a.min.y = b.min.y end
-			if a.min.z > b.min.z then a.min.z = b.min.z end
+		if a.min.x > b.min.x then a.min.x = b.min.x end
+		if a.min.y > b.min.y then a.min.y = b.min.y end
+		if a.min.z > b.min.z then a.min.z = b.min.z end
 
-			if a.max.x < b.max.x then a.max.x = b.max.x end
-			if a.max.y < b.max.y then a.max.y = b.max.y end
-			if a.max.z < b.max.z then a.max.z = b.max.z end
-		end
+		if a.max.x < b.max.x then a.max.x = b.max.x end
+		if a.max.y < b.max.y then a.max.y = b.max.y end
+		if a.max.z < b.max.z then a.max.z = b.max.z end
 	end
 
 	if #self.children > 0 then
@@ -141,21 +135,19 @@ function node:_recursive_get_aabb(t)
 			v:_recursive_get_aabb(t)
 		end
 	end
+	return t
 end
 
 function node:get_aabb()
-	local t = {
-		aabb = { min = vec3(), max = vec3() },
-		init = false,
-	}
-	self:_recursive_get_aabb(t)
-	return t.aabb
+	return self:_recursive_get_aabb(bound3(
+		vec3(math.huge), vec3(-math.huge)
+	))
 end
 
 --- Update transformation matrix for current node and its children.
 function node:recursive_update_transform()
 	if self.parent then self.parent:recursive_update_transform() end
-	if self._transform_flag then
+	if self.update_transform_flag and self._transform_flag then
 		self:update_transform()
 	end
 end
@@ -165,7 +157,9 @@ function node:update_transform()
 	local local_matrix = self.local_matrix
 	local world_matrix = self.world_matrix
 
-	local_matrix:compose(self.position, self.rotation, self.scale)
+	if self.update_transform_flag then
+		local_matrix:compose(self.position, self.rotation, self.scale)
+	end
 
 	local parent = self.parent
 	if parent then
@@ -195,16 +189,16 @@ end
 --- Attach child node to this node.
 -- @tparam Node object
 -- @treturn Node object
-function node:attach(node)
+function node:attach(node_object)
 	--[[for i, node in ipairs({...}) do
 		self.children[#self.children + 1] = node
 		node.parent = self
 	end
 	return ...]]
-	self.children[#self.children + 1] = node
-	node:update_transform()
-	node.parent = self
-	return node
+	self.children[#self.children + 1] = node_object
+	node_object:update_transform()
+	node_object.parent = self
+	return node_object
 end
 
 --- Detach child node from this node.
@@ -260,8 +254,8 @@ function node:debug_print(node, tabs)
 	node = node or self
 	tabs = tabs or ''
 	print(tabs .. '-> ' .. string.format('Node: %s Child count: %i', node, #node.children))
-	tabs = tabs .. '\t'
-	for i, v in ipairs(node.children) do
+	tabs = tabs .. '  '
+	for _, v in ipairs(node.children) do
 		self:debug_print(v, tabs)
 	end
 end
