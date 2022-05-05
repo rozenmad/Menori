@@ -407,7 +407,7 @@ local function load(filename, io_read)
 
 	buffers = {}
 	for i, v in ipairs(data.buffers) do
-		local data = v.uri:match('data:application/octet%-stream;base64,(.+)')
+		local data = v.uri:match('^data:application/octet%-stream;base64,(.+)')
 		if data then
 			buffers[i] = love.data.decode('data', 'base64', data)
 		else

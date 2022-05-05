@@ -84,7 +84,7 @@ end
 
 -- http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
 function quat_mt:set_from_matrix_rotation(m)
-	local e = m.e
+	local e = m.e or m
 	local m11, m12, m13 = e[1], e[5], e[ 9]
 	local m21, m22, m23 = e[2], e[6], e[10]
 	local m31, m32, m33 = e[3], e[7], e[11]
@@ -426,11 +426,16 @@ function quat.from_angle_axis(angle, axis, a3, a4)
 end
 
 function quat.from_direction(normal, up)
-	local u = up or vec3.unit_z
+	local u = up or vec3.unit_y
 	local n = normal:clone():normalize()
 	local a = vec3.cross(u, n)
-	local d = vec3.dot(u, n)
-	return new(a.x, a.y, a.z, d + 1)
+	local d = vec3.cross(n, a)
+	local m = {
+		a.x, a.y, a.z, 0,
+		d.x, d.y, d.z, 0,
+		n.x, n.y, n.z, 0,
+	}
+	return new():set_from_matrix_rotation(m)
 end
 
 function quat.dot(a, b)

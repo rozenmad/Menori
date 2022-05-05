@@ -5,7 +5,7 @@ local ml = menori.ml
 local vec3 = ml.vec3
 local quat = ml.quat
 
-local love_logo = menori.ImageLoader.load('example_assets/love_logo.png')
+local love_logo = love.graphics.newImage('example_assets/love_logo.png')
 
 -- Creating a node for drawing an object.
 local SpriteNode = menori.Node:extend('SpriteNode')
@@ -110,7 +110,7 @@ function NewScene:init()
 	self.child1 = sprite_node:attach(SpriteNode(128, 128, 0.5, 0.5, 1))
 
 	-- Load the scene from gltf format, get a table of nodes and scenes contained in the file.
-	local gltf = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
+	local gltf = menori.glTFLoader.load('example_assets/players_room_model/scene.gltf')
 
 	local model_node_tree = menori.ModelNodeTree(gltf, shader_lighting)
 

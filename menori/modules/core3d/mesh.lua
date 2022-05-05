@@ -17,7 +17,8 @@ local class = require (modules .. 'libs.class')
 local utils = require (modules .. 'libs.utils')
 
 local ml = require (modules .. 'ml')
-local vec3 = ml.vec3
+local vec3   = ml.vec3
+local bound3 = ml.bound3
 
 local Mesh = class('Mesh')
 
@@ -100,14 +101,7 @@ function Mesh.calculate_bound(mesh)
 			if z < t.z1 then t.z1 = z elseif z > t.z2 then t.z2 = z end
 		end
 	end
-	return {
-		x = t.x1,
-		y = t.y1,
-		z = t.z1,
-		w = t.x2 - t.x1,
-		h = t.y2 - t.y1,
-		d = t.z2 - t.z1,
-	}
+	return bound3(vec3(t.x1, t.y1, t.z1), vec3(t.x2, t.y2, t.z2))
 end
 
 --- init

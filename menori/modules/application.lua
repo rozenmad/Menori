@@ -211,4 +211,16 @@ function application.mousereleased(x, y, button)
 	end
 end
 
+function application.keypressed(key, scancode, isrepeat)
+	for _, v in pairs(list) do
+		if v.keypressed then v:keypressed(key, scancode, isrepeat) end
+	end
+end
+
+function application.keyreleased(key, scancode, isrepeat)
+	for _, v in pairs(list) do
+		if v.keyreleased then v:keyreleased(key, scancode, isrepeat) end
+	end
+end
+
 return instance

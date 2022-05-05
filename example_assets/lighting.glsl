@@ -56,7 +56,7 @@ vec3 calculate_point_light(in PointLight light, vec3 normal, vec3 fragPos, vec3 
 vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords) {
       vec3 view_direction = normalize(view_position - frag_position);
 
-      vec3 result;
+      vec3 result = vec3(0.0);
       for(int i = 0; i < MAX_POINT_LIGHTS; i++) {
             if( point_lights[i].constant != 0.0 ) {
                   result += calculate_point_light(point_lights[i], normal, frag_position, view_direction);

@@ -67,8 +67,8 @@ function ModelNodeTree:init(gltf, shader)
       for i, v in ipairs(gltf.nodes) do
             if v.children then
                   for _, child_index in ipairs(v.children) do
-                        local child = gltf.nodes[child_index + 1]
-                        v.node:attach(child.node)
+                        local child = self.nodes[child_index + 1]
+                        self.nodes[i]:attach(child)
                   end
             end
       end
