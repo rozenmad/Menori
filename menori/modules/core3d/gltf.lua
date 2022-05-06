@@ -393,8 +393,9 @@ end
 
 --- Load model by filename
 -- @function load
--- @tparam string path path to the directory where the file is located
--- @tparam string filename
+-- @tparam string filename The filepath to the gltf file (must be separated (.gltf+.bin+textures) or.gltf+textures)
+-- @tparam function io_read Callback to read the file (Optional) = love.filesystem.read
+-- @treturn table
 local function load(filename, io_read)
 	local path, name = filename:match("(.*/)(.+)%.gltf$")
 	io_read = io_read or love.filesystem.read

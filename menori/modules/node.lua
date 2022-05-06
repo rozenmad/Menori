@@ -116,6 +116,19 @@ function node:get_world_scale(retvalue)
 	return s
 end
 
+function node:right(retvalue)
+	self:recursive_update_transform()
+	return (retvalue or vec3()):set( self.world_matrix[1], -self.world_matrix[5], -self.world_matrix[ 9])
+end
+function node:up(retvalue)
+	self:recursive_update_transform()
+	return (retvalue or vec3()):set( self.world_matrix[2],  self.world_matrix[6],  self.world_matrix[10])
+end
+function node:forward(retvalue)
+	self:recursive_update_transform()
+	return (retvalue or vec3()):set( self.world_matrix[3], -self.world_matrix[7], -self.world_matrix[11])
+end
+
 function node:_recursive_get_aabb(t)
 	if self.calculate_aabb then
 		local a = t

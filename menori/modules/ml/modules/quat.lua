@@ -89,40 +89,36 @@ function quat_mt:set_from_matrix_rotation(m)
 	local m21, m22, m23 = e[2], e[6], e[10]
 	local m31, m32, m33 = e[3], e[7], e[11]
 
-	local tr = m11 + m22 + m33
+	local tr = (m11 + m22) + m33
 
-	if
-	tr > 0 then
-		local s = 0.5 / math.sqrt(tr + 1)
-
-		self.w = 0.25 / s
-		self.x = (m32 - m23) * s
-		self.y = (m13 - m31) * s
-		self.z = (m21 - m12) * s
-	elseif
-	m11 > m22 and m11 > m33 then
-		local s = 2 * math.sqrt(1 + m11 - m22 - m33)
-
-		self.w = (m32 - m23) / s
-		self.x = 0.25 * s
-		self.y = (m12 + m21) / s
-		self.z = (m13 + m31) / s
-
-	elseif
-	m22 > m33 then
-		local s = 2 * math.sqrt(1 + m22 - m11 - m33)
-
-		self.w = (m13 - m31) / s
-		self.x = (m12 + m21) / s
-		self.y = 0.25 * s
-		self.z = (m23 + m32) / s
+	if tr > 0 then
+		local s = math.sqrt(tr + 1)
+		local n = 0.5 / s
+		self.x = (m23 - m32) * n
+		self.y = (m31 - m13) * n
+		self.z = (m12 - m21) * n
+		self.w = s * 0.5
+	elseif m11 >= m22 and m11 >= m33 then
+		local s = math.sqrt(((1 + m11) - m22) - m33)
+		local n = 0.5 / s
+		self.x = 0.5 * s
+		self.y = (m12 + m21) * n
+		self.z = (m13 + m31) * n
+		self.w = (m23 - m32) * n
+	elseif m22 > m33 then
+		local s = math.sqrt(((1 + m22) - m11) - m33)
+		local n = 0.5 / s
+		self.x = (m12 + m21) * n
+		self.y = 0.5 * s
+		self.z = (m23 + m32) * n
+		self.w = (m31 - m13) * n
 	else
-		local s = 2 * math.sqrt(1 + m33 - m11 - m22)
-
-		self.w = (m21 - m12) / s
-		self.x = (m13 + m31) / s
-		self.y = (m23 + m32) / s
-		self.z = 0.25 * s
+		local s = math.sqrt(((1 + m33) - m11) - m22)
+		local n = 0.5 / s
+		self.x = (m13 + m31) * n
+		self.y = (m23 + m32) * n
+		self.z = 0.5 * s
+		self.w = (m21 - m12) * n
 	end
 	return self
 end
@@ -425,15 +421,15 @@ function quat.from_angle_axis(angle, axis, a3, a4)
 	end
 end
 
-function quat.from_direction(normal, up)
-	local u = up or vec3.unit_y
-	local n = normal:clone():normalize()
-	local a = vec3.cross(u, n)
-	local d = vec3.cross(n, a)
+function quat.from_direction(forward, up)
+	up = up or vec3.unit_y
+	forward = forward:clone():normalize()
+	local right = vec3.cross(up, forward)
+	up = vec3.cross(forward, right)
 	local m = {
-		a.x, a.y, a.z, 0,
-		d.x, d.y, d.z, 0,
-		n.x, n.y, n.z, 0,
+		right.x, up.x, forward.x, 0,
+		right.y, up.y, forward.y, 0,
+		right.z, up.z, forward.z, 0,
 	}
 	return new():set_from_matrix_rotation(m)
 end

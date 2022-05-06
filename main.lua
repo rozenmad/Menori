@@ -111,6 +111,9 @@ function NewScene:init()
 
 	-- Load the scene from gltf format, get a table of nodes and scenes contained in the file.
 	local gltf = menori.glTFLoader.load('example_assets/players_room_model/scene.gltf')
+	for _, v in ipairs(gltf.images) do
+		v.source:setFilter('nearest', 'nearest')
+	end
 
 	local model_node_tree = menori.ModelNodeTree(gltf, shader_lighting)
 
