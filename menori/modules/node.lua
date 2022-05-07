@@ -22,6 +22,8 @@ local vec3   = ml.vec3
 local quat   = ml.quat
 local bound3 = ml.bound3
 
+local find_child_by_name
+
 --- Class members
 -- @table Node
 -- @field children childen of this node
@@ -202,16 +204,13 @@ end
 --- Attach child node to this node.
 -- @tparam Node object
 -- @treturn Node object
-function node:attach(node_object)
-	--[[for i, node in ipairs({...}) do
+function node:attach(...)
+	for i, node in ipairs({...}) do
 		self.children[#self.children + 1] = node
+		node:update_transform()
 		node.parent = self
 	end
-	return ...]]
-	self.children[#self.children + 1] = node_object
-	node_object:update_transform()
-	node_object.parent = self
-	return node_object
+	return ...
 end
 
 --- Detach child node from this node.
@@ -224,11 +223,34 @@ function node:detach(child)
 	end
 end
 
+--- Finds a child by name and returns it.
+-- @tparam string name If name contains a '/' character it will access
+-- the Node in the hierarchy like a path name.
+-- @treturn Node The found child or nil
+function node:find(name)
+	local t = {}
+	for v in name:gmatch("([^/]+)") do
+		table.insert(t, v)
+	end
+	return find_child_by_name(self.children, t, 1)
+end
+
+find_child_by_name = function(children, t, i)
+	for _, v in ipairs(children) do
+		if v.name == t[i] then
+			if t[i + 1] then
+				return find_child_by_name(v.children, t, i + 1)
+			else
+				return v
+			end
+		end
+	end
+end
+
 --- Recursively traverse all nodes.
 -- @tparam function callback Function that is called for every child node with params (child, index)
-function node:foreach(callback, i)
-	i = i or 1
-	callback(self, i)
+function node:foreach(callback, _index)
+	callback(self, _index or 1)
 	for i, v in ipairs(self.children) do
 		v:foreach(callback, i)
 	end
@@ -245,11 +267,12 @@ function node:detach_from_parent()
 				break
 			end
 		end
+		self.parent = nil
 	end
-	self.parent = nil
-	self.detach_flag = true
 end
 
+--- Returns the topmost Node in the hierarchy.
+-- @tparam Node upto (Optional) the Node where the hierarchy recursion will stop if it exist
 function node:get_root_node(upto)
 	if self.parent and self.parent ~= upto then
 		return self.parent:get_root_node(upto)
@@ -257,7 +280,7 @@ function node:get_root_node(upto)
 	return self
 end
 
--- The number of children attached to this node.
+--- The number of children attached to this node.
 function node:children_count()
 	return #self.children
 end

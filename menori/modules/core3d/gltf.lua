@@ -259,23 +259,20 @@ local function init_mesh(mesh)
 
 		local vertices = get_vertices_content(attribute_buffers, components_stride, length)
 
-		local material
-		if primitive.material then
-			material = materials[primitive.material + 1]
-		else
-			material = {}
-		end
 		primitives[j] = {
 			mode = get_primitive_modes_constants(primitive.mode),
 			vertexformat = vertexformat,
 			vertices = vertices,
 			indices = indices,
 			indices_tsize = indices_tsize,
-			material = material,
-			count = count
+			count = count,
+			material_index = primitive.material,
 		}
 	end
-	return primitives
+	return {
+		primitives = primitives,
+		name = mesh.name,
+	}
 end
 
 local function texture(textures, t)
@@ -297,23 +294,18 @@ end
 local function create_material(textures, material)
 	local uniforms = {}
 
-	local baseTexture
-	local metallicRoughnessTexture
-	local normalTexture
-	local occlusionTexture
-	local emissiveTexture
-
+	local main_texture
 	local pbr = material.pbrMetallicRoughness
 	if pbr then
 		local _pbrBaseColorTexture = pbr.baseColorTexture
 		local _pbrMetallicRoughnessTexture = pbr.metallicRoughnessTexture
 
-		baseTexture = texture(textures, _pbrBaseColorTexture)
-		metallicRoughnessTexture = texture(textures, _pbrMetallicRoughnessTexture)
+		main_texture = texture(textures, _pbrBaseColorTexture)
+		local metallicRoughnessTexture = texture(textures, _pbrMetallicRoughnessTexture)
 
-		if baseTexture then
-			uniforms.baseTexture = baseTexture.source
-			uniforms.baseTextureCoord = baseTexture.tcoord
+		if main_texture then
+			--uniforms.baseTexture = baseTexture.source
+			uniforms.mainTexCoord = main_texture.tcoord
 		end
 		if metallicRoughnessTexture then
 			uniforms.metallicRoughnessTexture = metallicRoughnessTexture.source
@@ -348,12 +340,8 @@ local function create_material(textures, material)
 	uniforms.emissiveColor = material.emissiveFactor
 
 	return {
-		baseTexture = baseTexture,
-		metallicRoughnessTexture = metallicRoughnessTexture,
-		normalTexture = normalTexture,
-		occlusionTexture = occlusionTexture,
-		emissiveTexture = emissiveTexture,
-
+		name = material.name,
+		main_texture = main_texture,
 		uniforms = uniforms,
 	}
 end
@@ -393,7 +381,7 @@ end
 
 --- Load model by filename
 -- @function load
--- @tparam string filename The filepath to the gltf file (must be separated (.gltf+.bin+textures) or.gltf+textures)
+-- @tparam string filename The filepath to the gltf file (must be separated (.gltf+.bin+textures) or (.gltf+textures)
 -- @tparam function io_read Callback to read the file (Optional) = love.filesystem.read
 -- @treturn table
 local function load(filename, io_read)
@@ -467,7 +455,7 @@ local function load(filename, io_read)
 		asset = data.asset,
 		nodes = data.nodes,
 		scene = data.scene,
-
+		materials = materials,
 		meshes = meshes,
 		scenes = data.scenes,
 		images = images,

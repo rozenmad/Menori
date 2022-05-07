@@ -16,6 +16,7 @@ local modules = (...):match('(.*%menori.modules.)')
 local Node = require (modules .. '.node')
 local ModelNode = require (modules .. 'core3d.model_node')
 local Mesh = require (modules .. 'core3d.mesh')
+local Material = require (modules .. 'core3d.material')
 
 local ml = require (modules .. 'ml')
 local mat4 = ml.mat4
@@ -47,7 +48,17 @@ function ModelNodeTree:init(gltf, shader)
       ModelNodeTree.super.init(self)
       self.meshes = {}
       for i, v in ipairs(gltf.meshes) do
-            self.meshes[i] = Mesh(v)
+            self.meshes[i] = Mesh(v.primitives)
+      end
+
+      self.materials = {}
+      for i, v in ipairs(gltf.materials) do
+            local material = Material(v.name, shader)
+            material.main_texture = v.main_texture.source
+            for name, uniform in pairs(v.uniforms) do
+                  material:set(name, uniform)
+            end
+            self.materials[i] = material
       end
 
       self.nodes = {}
@@ -55,7 +66,7 @@ function ModelNodeTree:init(gltf, shader)
             local node
             if v.mesh then
                   local mesh = self.meshes[v.mesh + 1]
-                  node = ModelNode(mesh, shader)
+                  node = ModelNode(mesh, self.materials[mesh.primitives[1].material_index + 1])
                   set_transform(node, v)
             else
                   node = Node()

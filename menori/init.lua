@@ -14,12 +14,12 @@ local menori = {
 	Environment       = require(modules .. 'core3d.environment'),
 	UniformList       = require(modules .. 'core3d.uniform_list'),
 	glTFLoader        = require(modules .. 'core3d.gltf'),
+	Material          = require(modules .. 'core3d.material'),
 	Mesh              = require(modules .. 'core3d.mesh'),
 	ModelNode         = require(modules .. 'core3d.model_node'),
 	ModelNodeTree     = require(modules .. 'core3d.model_node_tree'),
 	GeometryBuffer    = require(modules .. 'core3d.geometry_buffer'),
 	InstancedMesh     = require(modules .. 'core3d.instanced_mesh'),
-	
 	AnimationList     = require(modules .. 'animationlist'),
 	Camera            = require(modules .. 'camera'),
 	Node              = require(modules .. 'node'),

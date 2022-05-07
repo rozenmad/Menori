@@ -53,7 +53,7 @@ end
 -- @tparam number x screen position x
 -- @tparam number y screen position y
 -- @tparam table viewport (optional) viewport rectangle (x, y, w, h)
--- @treturn vec3
+-- @treturn table Contains vec3 (position and direction)
 function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
 	viewport = viewport or {app.ox, app.oy, app.w * app.sx, app.h * app.sy}
 
@@ -64,6 +64,12 @@ function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
 	}
 end
 
+--- Transforms position from world space into screen space.
+-- @tparam x
+-- number (screen position x) or vec3
+-- @tparam number y screen position y
+-- @tparam number z screen position z
+-- @treturn vec2
 function PerspectiveCamera:world_to_screen_point(x, y, z)
 	if type(x) == 'table' then
 		x, y, z = x.x, x.y, x.z

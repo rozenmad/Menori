@@ -19,6 +19,7 @@ local utils = require (modules .. 'libs.utils')
 local ml = require (modules .. 'ml')
 local vec3   = ml.vec3
 local bound3 = ml.bound3
+local lg = love.graphics
 
 local Mesh = class('Mesh')
 
@@ -30,16 +31,14 @@ Mesh.default_vertexformat = {
 	{"VertexNormal"  , "float", 3},
 }
 
-local default_material = {}
-
-local function create_mesh_from_primitive(primitive, base_texture)
+local function create_mesh_from_primitive(primitive, texture)
 	local count = primitive.count or #primitive.vertices
 	assert(count > 0)
 
 	local vertexformat = primitive.vertexformat or Mesh.default_vertexformat
 	local mode = primitive.mode or 'triangles'
 
-	local mesh = love.graphics.newMesh(vertexformat, primitive.vertices, mode, 'static')
+	local mesh = lg.newMesh(vertexformat, primitive.vertices, mode, 'static')
 
 	if primitive.indices then
 		local idatatype
@@ -48,10 +47,36 @@ local function create_mesh_from_primitive(primitive, base_texture)
 		end
 		mesh:setVertexMap(primitive.indices, idatatype)
 	end
-	if base_texture then
-		mesh:setTexture(base_texture)
+	if texture then
+		mesh:setTexture(texture)
 	end
 	return mesh
+end
+
+local function calculate_bound(mesh)
+      local t = {}
+
+	local count = mesh:getVertexCount()
+	if count then
+		local format = mesh:getVertexFormat()
+		local pindex = Mesh.get_attribute_index('VertexPosition', format)
+
+		local x, y, z = mesh:getVertexAttribute(1, pindex)
+		t.x1, t.x2 = x, x
+		t.y1, t.y2 = y, y
+		t.z1, t.z2 = z, z
+
+		for i = 2, mesh:getVertexCount() do
+			local x, y, z = mesh:getVertexAttribute(i, pindex)
+			if x < t.x1 then t.x1 = x elseif x > t.x2 then t.x2 = x end
+			if y < t.y1 then t.y1 = y elseif y > t.y2 then t.y2 = y end
+			if z < t.z1 then t.z1 = z elseif z > t.z2 then t.z2 = z end
+		end
+	end
+	return bound3(
+		vec3(t.x1, t.y1, t.z1),
+		vec3(t.x2, t.y2, t.z2)
+	)
 end
 
 --- Generates indices for quadrilateral primitives.
@@ -81,78 +106,52 @@ function Mesh.get_attribute_index(attribute, format)
 	end
 end
 
-function Mesh.calculate_bound(mesh)
-      local t = {}
-
-	local count = mesh:getVertexCount()
-	if count then
-		local format = mesh:getVertexFormat()
-		local pindex = Mesh.get_attribute_index('VertexPosition', format)
-
-		local x, y, z = mesh:getVertexAttribute(1, pindex)
-		t.x1, t.x2 = x, x
-		t.y1, t.y2 = y, y
-		t.z1, t.z2 = z, z
-
-		for i = 2, mesh:getVertexCount() do
-			local x, y, z = mesh:getVertexAttribute(i, pindex)
-			if x < t.x1 then t.x1 = x elseif x > t.x2 then t.x2 = x end
-			if y < t.y1 then t.y1 = y elseif y > t.y2 then t.y2 = y end
-			if z < t.z1 then t.z1 = z elseif z > t.z2 then t.z2 = z end
-		end
-	end
-	return bound3(vec3(t.x1, t.y1, t.z1), vec3(t.x2, t.y2, t.z2))
-end
-
---- init
--- @tparam table primitives List of primitives
-function Mesh:init(primitives)
-	self.primitives = {}
-	for i, p in ipairs(primitives) do
-		local base_texture
-		local material = p.material
-		if material then
-			if material.baseTexture then
-				base_texture = material.baseTexture.source
-			elseif material.emissiveTexture then
-				base_texture = material.emissiveTexture.source
-			end
-		end
-		local mesh = create_mesh_from_primitive(p, base_texture)
-		self.primitives[i] = {
-			mesh = mesh,
-			material = material,
-			bound = Mesh.calculate_bound(mesh),
-		}
-	end
-end
-
 function Mesh.from_primitive(vertices, opt)
 	local primitive = {
 		mode = opt.mode,
 		vertexformat = opt.vertexformat,
 		vertices = vertices,
 		indices = opt.indices,
-		material = opt.material or {
-			baseTexture = {
-				source = opt.texture
-			},
-			uniforms = {
-				baseColor = {1, 1, 1, 1}
-			}
-		}
+		texture = opt.texture
 	}
-	return Mesh{ primitive }
+	return Mesh{primitive}
 end
 
-function Mesh:draw(shader)
-	for _, p in ipairs(self.primitives) do
-		if p.material.uniforms then
-			for k, v in pairs(p.material.uniforms) do
-				utils.noexcept_send_uniform(shader, k, v)
-			end
+--- init
+-- @tparam table primitives List of primitives
+function Mesh:init(primitives, texture)
+	self.primitives = {}
+	for i, p in ipairs(primitives) do
+		local mesh = create_mesh_from_primitive(p, texture)
+		self.primitives[i] = {
+			mesh = mesh,
+			material_index = p.material_index,
+			bound = calculate_bound(mesh),
+		}
+	end
+end
+
+function Mesh:draw(material)
+	material:send_to(material.shader)
+
+	if material.wireframe ~= lg.isWireframe() then
+		lg.setWireframe(material.wireframe)
+	end
+	if material.depth_test then
+		if material.depth_func ~= lg.getDepthMode() then
+			lg.setDepthMode(material.depth_func, true)
 		end
-		love.graphics.draw(p.mesh)
+	else
+		lg.setDepthMode()
+	end
+	if material.mesh_cull_mode ~= lg.getMeshCullMode() then
+		lg.setMeshCullMode(material.mesh_cull_mode)
+	end
+
+	for i = 1, #self.primitives do
+		local mesh = self.primitives[i].mesh
+		mesh:setTexture(material.main_texture)
+		lg.draw(mesh)
 	end
 end
 

@@ -85,18 +85,18 @@ end
 -- http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
 function quat_mt:set_from_matrix_rotation(m)
 	local e = m.e or m
-	local m11, m12, m13 = e[1], e[5], e[ 9]
-	local m21, m22, m23 = e[2], e[6], e[10]
-	local m31, m32, m33 = e[3], e[7], e[11]
+	local m11, m12, m13 = e[1], e[ 2], e[ 3]
+	local m21, m22, m23 = e[5], e[ 6], e[ 7]
+	local m31, m32, m33 = e[9], e[10], e[11]
 
 	local tr = (m11 + m22) + m33
 
 	if tr > 0 then
 		local s = math.sqrt(tr + 1)
 		local n = 0.5 / s
-		self.x = (m23 - m32) * n
-		self.y = (m31 - m13) * n
-		self.z = (m12 - m21) * n
+		self.x = (m32 - m23) * n
+		self.y = (m13 - m31) * n
+		self.z = (m21 - m12) * n
 		self.w = s * 0.5
 	elseif m11 >= m22 and m11 >= m33 then
 		local s = math.sqrt(((1 + m11) - m22) - m33)
@@ -104,14 +104,14 @@ function quat_mt:set_from_matrix_rotation(m)
 		self.x = 0.5 * s
 		self.y = (m12 + m21) * n
 		self.z = (m13 + m31) * n
-		self.w = (m23 - m32) * n
+		self.w = (m32 - m23) * n
 	elseif m22 > m33 then
 		local s = math.sqrt(((1 + m22) - m11) - m33)
 		local n = 0.5 / s
 		self.x = (m12 + m21) * n
 		self.y = 0.5 * s
 		self.z = (m23 + m32) * n
-		self.w = (m31 - m13) * n
+		self.w = (m13 - m31) * n
 	else
 		local s = math.sqrt(((1 + m33) - m11) - m22)
 		local n = 0.5 / s
@@ -225,39 +225,27 @@ function quat_mt:is_imaginary()
 	return self.w == 0
 end
 
-function quat_mt:to_angle_axis_unpack(identity_axis)
-	local a = self
-	if a.w > 1 or a.w < -1 then
-		a = self:clone():normalize()
-	end
-
-	if a.x*a.x + a.y*a.y + a.z*a.z < DBL_EPSILON*DBL_EPSILON then
-		if identity_axis then
-			return 0, identity_axis:unpack()
-		else
-			return 0, 0, 0, 1
-		end
+function quat_mt:to_angle_axis_unpack()
+	local q = self
+	if math.abs(q.w) > 1 then
+		q = q:clone():normalize()
 	end
 
 	local x, y, z
-	local angle = 2 * acos(a.w)
-	local s = sqrt(1 - a.w * a.w)
+	local angle = 2 * acos(q.w)
+	local s = sqrt(1-q.w * q.w)
 
-	if s < DBL_EPSILON then
-		x = a.x
-		y = a.y
-		z = a.z
+	if s > DBL_EPSILON then
+		x, y, z = q.x / s, q.y / s, q.z / s
 	else
-		x = a.x / s
-		y = a.y / s
-		z = a.z / s
+		x, y, z = 1, 0, 0
 	end
 
 	return angle, x, y, z
 end
 
-function quat_mt:to_angle_axis(identityAxis)
-	local angle, x, y, z = self:to_angle_axis_unpack(identityAxis)
+function quat_mt:to_angle_axis()
+	local angle, x, y, z = self:to_angle_axis_unpack()
 	return angle, vec3(x, y, z)
 end
 
