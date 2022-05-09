@@ -2,14 +2,15 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
+Singleton object.
 The main class for managing scenes and the viewport.
 ]]
--- @module menori.Application
+--- @classmod Application
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -25,16 +26,15 @@ local application = class('Application')
 local lovg = love.graphics
 local default_effect = nil
 
---- init.
 function application:init()
 	self.next_scene = nil
 	self.effect = default_effect
 end
 
 --- Resize viewport.
--- @tparam number w
--- @tparam number h
--- @tparam table opt (Optional)
+-- @tparam number w Virtual viewport width
+-- @tparam number h Virtual viewport height
+-- @tparam[opt] table opt canvas format, filter and msaa. {format=, msaa=, filter=}
 function application:resize_viewport(w, h, opt)
 	opt = opt or {}
 	self.resizable = (w == nil or h == nil)
@@ -55,6 +55,8 @@ function application:resize_viewport(w, h, opt)
 end
 
 --- Get viewport dimensions.
+-- @treturn number x
+-- @treturn number y
 -- @treturn number w
 -- @treturn number h
 function application:get_viewport()
@@ -87,7 +89,7 @@ end
 
 --- Change scene with a transition effect.
 -- @tparam string name
-function application:switch_scene(effect, name)
+function application:switch_scene(name, effect)
 	self.next_scene = list[name]
 	assert(effect)
 	assert(self.next_scene)
@@ -129,7 +131,7 @@ function application:get_current_scene()
 	return current_scene
 end
 
---- Application update function.
+--- Main update function.
 -- @tparam number dt
 function application:update(dt)
 	local update_count = 0
@@ -146,7 +148,7 @@ function application:update(dt)
 	end
 end
 
---- Application render function.
+--- Main render function.
 -- @tparam number dt
 function application:render(dt)
 	lovg.setCanvas({ self.canvas, depth = true })
@@ -183,31 +185,45 @@ function application.resize(w, h)
 	end
 end
 
---- Mousemoved callback.
+--- mousemoved callback.
 function application.mousemoved(x, y, dx, dy, istouch)
 	for _, v in pairs(list) do
 		if v.mousemoved then v:mousemoved(x, y, dx, dy, istouch) end
 	end
 end
 
---- Wheelmoved callback.
+--- wheelmoved callback.
 function application.wheelmoved(x, y)
 	for _, v in pairs(list) do
 		if v.wheelmoved then v:wheelmoved(x, y) end
 	end
 end
 
---- Mousemoved callback.
+--- mousepressed callback.
 function application.mousepressed(x, y, button)
 	for _, v in pairs(list) do
 		if v.mousepressed then v:mousepressed(x, y, button) end
 	end
 end
 
---- Wheelmoved callback.
+--- mousereleased callback.
 function application.mousereleased(x, y, button)
 	for _, v in pairs(list) do
 		if v.mousereleased then v:mousereleased(x, y, button) end
+	end
+end
+
+--- keypressed callback.
+function application.keypressed(key, scancode, isrepeat)
+	for _, v in pairs(list) do
+		if v.keypressed then v:keypressed(key, scancode, isrepeat) end
+	end
+end
+
+--- keyreleased callback.
+function application.keyreleased(key, scancode, isrepeat)
+	for _, v in pairs(list) do
+		if v.keyreleased then v:keyreleased(key, scancode, isrepeat) end
 	end
 end
 

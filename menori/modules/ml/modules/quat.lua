@@ -2,10 +2,16 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
-	this module based on CPML - Cirno's Perfect Math Library
 --]]
+
+--[[--
+Quaternion.
+menori.ml.quat
+]]
+-- @classmod quat
+-- @alias quat_mt
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3 = require(modules .. "vec3")
@@ -39,13 +45,15 @@ local temp_v = vec3()
 quat.unit = new(0, 0, 0, 1)
 quat.zero = new(0, 0, 0, 0)
 
+--- clone
 function quat_mt:clone()
     	return new(self.x, self.y, self.z, self.w)
 end
 
+--- set
 function quat_mt:set(x, y, z, w)
 	if type(x) == 'table' then
-		x, y, z, w = x.x, x.y, x.z, x.w
+		x, y, z, w = x.x or x[1], x.y or x[2], x.z or x[3], x.w or x[4]
 	end
 	self.x = x
 	self.y = y
@@ -54,6 +62,7 @@ function quat_mt:set(x, y, z, w)
 	return self
 end
 
+--- add
 function quat_mt:add(other)
 	self.x = self.x + other.x
 	self.y = self.y + other.y
@@ -62,6 +71,7 @@ function quat_mt:add(other)
 	return self
 end
 
+--- sub
 function quat_mt:sub(other)
 	self.x = self.x - other.x
 	self.y = self.y - other.y
@@ -70,6 +80,7 @@ function quat_mt:sub(other)
 	return self
 end
 
+--- mul
 function quat_mt:mul(other)
 	temp_q.x = self.x * other.w + self.w * other.x + self.y * other.z - self.z * other.y
 	temp_q.y = self.y * other.w + self.w * other.y + self.z * other.x - self.x * other.z
@@ -82,51 +93,50 @@ function quat_mt:mul(other)
 	return self
 end
 
+
 -- http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+--- set from matrix rotation
 function quat_mt:set_from_matrix_rotation(m)
-	local e = m.e
-	local m11, m12, m13 = e[1], e[5], e[ 9]
-	local m21, m22, m23 = e[2], e[6], e[10]
-	local m31, m32, m33 = e[3], e[7], e[11]
+	local e = m.e or m
+	local m11, m12, m13 = e[1], e[ 2], e[ 3]
+	local m21, m22, m23 = e[5], e[ 6], e[ 7]
+	local m31, m32, m33 = e[9], e[10], e[11]
 
-	local tr = m11 + m22 + m33
+	local tr = (m11 + m22) + m33
 
-	if
-	tr > 0 then
-		local s = 0.5 / math.sqrt(tr + 1)
-
-		self.w = 0.25 / s
-		self.x = (m32 - m23) * s
-		self.y = (m13 - m31) * s
-		self.z = (m21 - m12) * s
-	elseif
-	m11 > m22 and m11 > m33 then
-		local s = 2 * math.sqrt(1 + m11 - m22 - m33)
-
-		self.w = (m32 - m23) / s
-		self.x = 0.25 * s
-		self.y = (m12 + m21) / s
-		self.z = (m13 + m31) / s
-
-	elseif
-	m22 > m33 then
-		local s = 2 * math.sqrt(1 + m22 - m11 - m33)
-
-		self.w = (m13 - m31) / s
-		self.x = (m12 + m21) / s
-		self.y = 0.25 * s
-		self.z = (m23 + m32) / s
+	if tr > 0 then
+		local s = math.sqrt(tr + 1)
+		local n = 0.5 / s
+		self.x = (m32 - m23) * n
+		self.y = (m13 - m31) * n
+		self.z = (m21 - m12) * n
+		self.w = s * 0.5
+	elseif m11 >= m22 and m11 >= m33 then
+		local s = math.sqrt(((1 + m11) - m22) - m33)
+		local n = 0.5 / s
+		self.x = 0.5 * s
+		self.y = (m12 + m21) * n
+		self.z = (m13 + m31) * n
+		self.w = (m32 - m23) * n
+	elseif m22 > m33 then
+		local s = math.sqrt(((1 + m22) - m11) - m33)
+		local n = 0.5 / s
+		self.x = (m12 + m21) * n
+		self.y = 0.5 * s
+		self.z = (m23 + m32) * n
+		self.w = (m13 - m31) * n
 	else
-		local s = 2 * math.sqrt(1 + m33 - m11 - m22)
-
-		self.w = (m21 - m12) / s
-		self.x = (m13 + m31) / s
-		self.y = (m23 + m32) / s
-		self.z = 0.25 * s
+		local s = math.sqrt(((1 + m33) - m11) - m22)
+		local n = 0.5 / s
+		self.x = (m13 + m31) * n
+		self.y = (m23 + m32) * n
+		self.z = 0.5 * s
+		self.w = (m21 - m12) * n
 	end
 	return self
 end
 
+--- multiply vec3
 function quat_mt:multiply_vec3(v3)
 	temp_v.x = self.x
 	temp_v.y = self.y
@@ -136,6 +146,7 @@ function quat_mt:multiply_vec3(v3)
 	return v3 + ((v1 * self.w) + v2) * 2
 end
 
+--- scale
 function quat_mt:scale(s)
 	self.x = self.x * s
 	self.y = self.y * s
@@ -144,6 +155,7 @@ function quat_mt:scale(s)
 	return self
 end
 
+--- pow
 function quat_mt:pow(s)
 	if self.w < 0 then
 		self:scale(-1)
@@ -158,6 +170,7 @@ function quat_mt:pow(s)
 	return c
 end
 
+--- conjugate
 function quat_mt:conjugate()
 	self.x = -self.x
 	self.y = -self.y
@@ -165,6 +178,7 @@ function quat_mt:conjugate()
 	return self
 end
 
+--- inverse
 function quat_mt:inverse()
 	temp_q.x = -self.x
 	temp_q.y = -self.y
@@ -173,6 +187,7 @@ function quat_mt:inverse()
 	return temp_q:clone():normalize()
 end
 
+--- normalize
 function quat_mt:normalize()
 	if self:is_zero() then
 		return new(0, 0, 0, 0)
@@ -180,6 +195,7 @@ function quat_mt:normalize()
 	return self:scale(1 / self:length())
 end
 
+--- reciprocal
 function quat_mt:reciprocal()
 	if self:is_zero() then
 		error("Cannot reciprocate a zero quaternion")
@@ -199,17 +215,22 @@ function quat_mt:reciprocal()
 	return self
 end
 
+--- length
 function quat_mt:length()
 	return sqrt(self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w)
 end
+
+--- length2
 function quat_mt:length2()
 	return self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w
 end
 
+--- unpack
 function quat_mt:unpack(a)
 	return a.x, a.y, a.z, a.w
 end
 
+--- is zero
 function quat_mt:is_zero()
 	return
 		self.x == 0 and
@@ -218,6 +239,7 @@ function quat_mt:is_zero()
 		self.w == 0
 end
 
+--- is real
 function quat_mt:is_real()
 	return
 		self.x == 0 and
@@ -225,50 +247,43 @@ function quat_mt:is_real()
 		self.z == 0
 end
 
+--- is imaginary
 function quat_mt:is_imaginary()
 	return self.w == 0
 end
 
-function quat_mt:to_angle_axis_unpack(identity_axis)
-	local a = self
-	if a.w > 1 or a.w < -1 then
-		a = self:clone():normalize()
-	end
-
-	if a.x*a.x + a.y*a.y + a.z*a.z < DBL_EPSILON*DBL_EPSILON then
-		if identity_axis then
-			return 0, identity_axis:unpack()
-		else
-			return 0, 0, 0, 1
-		end
+--- to angle axis unpack
+function quat_mt:to_angle_axis_unpack()
+	local q = self
+	if math.abs(q.w) > 1 then
+		q = q:clone():normalize()
 	end
 
 	local x, y, z
-	local angle = 2 * acos(a.w)
-	local s = sqrt(1 - a.w * a.w)
+	local angle = 2 * acos(q.w)
+	local s = sqrt(1-q.w * q.w)
 
-	if s < DBL_EPSILON then
-		x = a.x
-		y = a.y
-		z = a.z
+	if s > DBL_EPSILON then
+		x, y, z = q.x / s, q.y / s, q.z / s
 	else
-		x = a.x / s
-		y = a.y / s
-		z = a.z / s
+		x, y, z = 1, 0, 0
 	end
 
 	return angle, x, y, z
 end
 
-function quat_mt:to_angle_axis(identityAxis)
-	local angle, x, y, z = self:to_angle_axis_unpack(identityAxis)
+--- to angle axis
+function quat_mt:to_angle_axis()
+	local angle, x, y, z = self:to_angle_axis_unpack()
 	return angle, vec3(x, y, z)
 end
 
+--- clamp
 local function clamp( value, _min, _max )
 	return math.max( _min, math.min( _max, value ) )
 end
 
+--- to euler angles
 function quat_mt:to_euler(order)
 	order = order or 'XYZ'
       local m = mat4():rotate(self)
@@ -398,6 +413,8 @@ end
 
 -- quat --
 
+--- from euler angles
+-- @static
 function quat.from_euler_angles(y, p, r)
 	local cy = cos(y * 0.5)
 	local sy = sin(y * 0.5)
@@ -414,6 +431,8 @@ function quat.from_euler_angles(y, p, r)
 	return q
 end
 
+--- from angle axis
+-- @static
 function quat.from_angle_axis(angle, axis, a3, a4)
 	if axis and a3 and a4 then
 		local x, y, z = axis, a3, a4
@@ -425,22 +444,35 @@ function quat.from_angle_axis(angle, axis, a3, a4)
 	end
 end
 
-function quat.from_direction(normal, up)
-	local u = up or vec3.unit_z
-	local n = normal:clone():normalize()
-	local a = vec3.cross(u, n)
-	local d = vec3.dot(u, n)
-	return new(a.x, a.y, a.z, d + 1)
+--- from direction
+-- @static
+function quat.from_direction(forward, up)
+	up = up or vec3.unit_y
+	forward = forward:clone():normalize()
+	local right = vec3.cross(up, forward)
+	up = vec3.cross(forward, right)
+	local m = {
+		right.x, up.x, forward.x, 0,
+		right.y, up.y, forward.y, 0,
+		right.z, up.z, forward.z, 0,
+	}
+	return new():set_from_matrix_rotation(m)
 end
 
+--- dot
+-- @static
 function quat.dot(a, b)
 	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
 end
 
+--- lerp
+-- @static
 function quat.lerp(a, b, s)
 	return (a + (b - a) * s):clone():normalize()
 end
 
+--- slerp
+-- @static
 function quat.slerp(a, b, s)
 	local dot = quat.dot(a, b)
 
@@ -460,6 +492,8 @@ function quat.slerp(a, b, s)
 	return a * cos(theta) + c * sin(theta)
 end
 
+--- is quat
+-- @static
 function quat.is_quat(a)
 	return
 		type(a)   == "table"  and

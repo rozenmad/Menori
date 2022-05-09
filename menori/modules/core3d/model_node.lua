@@ -2,84 +2,73 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
-Сlass for drawing models.
+Class for drawing Mesh objects. (Inherited from menori.Node class)
 ]]
--- @module menori.ModelNode
+-- @classmod ModelNode
+-- @see Node
 
 local modules = (...):match('(.*%menori.modules.)')
 
-local Node = require (modules .. 'node')
-local ml = require (modules .. 'ml')
-local vec3 = ml.vec3
+local Node     = require (modules .. 'node')
+local ml       = require (modules .. 'ml')
+local Material = require (modules .. 'core3d.material')
+local vec3     = ml.vec3
+local bound3   = ml.bound3
 
 local ModelNode = Node:extend('ModelNode')
 
-ModelNode.default_shader = love.graphics.newShader([[
-#ifdef VERTEX
-      uniform mat4 m_model;
-      uniform mat4 m_view;
-      uniform mat4 m_projection;
-
-      // love2d use row major matrices by default, we have column major and need transpose it.
-      // 11.3 love has bug with matrix layout in shader:send().
-      vec4 position(mat4 transform_projection, vec4 vertex_position) {
-            return vertex_position * m_model * m_view * m_projection;
-      }
-#endif
-#ifdef PIXEL
-      vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords)
-      {
-            vec4 texcolor = Texel(t, texture_coords);
-            if( texcolor.a <= 0.0 ) discard;
-            return texcolor * color;
-      }
-#endif
-]])
-
---- init
--- @param mesh Mesh object
--- @param shader (Optional) ShaderObject which will be used for drawing
-function ModelNode:init(mesh, shader, instanced)
+--- The public constructor.
+-- @tparam menori.Mesh mesh object
+-- @tparam[opt=Material.default] menori.Material material object. (A new copy will be created for the material)
+function ModelNode:init(mesh, material)
 	ModelNode.super.init(self)
-      self.shader = shader or ModelNode.default_shader
+      self.material = material or Material.default
+      self.material = self.material:clone()
 	self.mesh = mesh
 
       self.color = ml.vec4(1)
 end
 
+--- Clone an object.
+-- @treturn menori.ModelNode object
 function ModelNode:clone()
-      local t = ModelNode(self.mesh, self.shader, false)
-      t.instanced_mesh = self.instanced_mesh
+      local t = ModelNode(self.mesh, self.material, false)
       ModelNode.super.clone(self, t)
       return t
 end
 
+--- Calculate AABB by applying the current transformations.
+-- @tparam[opt=1] number index The index of the primitive in the mesh.
+-- @treturn menori.ml.bound3 object
 function ModelNode:calculate_aabb(index)
       index = index or 1
-      local b = self.mesh.primitives[index].bound
-
+      local bound = self.mesh.primitives[index].bound
+      local min = bound.min
+      local max = bound.max
       self:recursive_update_transform()
       local m = self.world_matrix
       local t = {
-            m:multiply_vec3(vec3(b.x    , b.y    ,     b.z)),
-            m:multiply_vec3(vec3(b.x+b.w, b.y    ,     b.z)),
-            m:multiply_vec3(vec3(b.x    , b.y    , b.z+b.d)),
+            m:multiply_vec3(vec3(min.x, min.y, min.z)),
+            m:multiply_vec3(vec3(max.x, min.y, min.z)),
+            m:multiply_vec3(vec3(min.x, min.y, max.z)),
 
-            m:multiply_vec3(vec3(b.x    , b.y+b.h,     b.z)),
-            m:multiply_vec3(vec3(b.x+b.w, b.y+b.h,     b.z)),
-            m:multiply_vec3(vec3(b.x    , b.y+b.h, b.z+b.d)),
+            m:multiply_vec3(vec3(min.x, max.y, min.z)),
+            m:multiply_vec3(vec3(max.x, max.y, min.z)),
+            m:multiply_vec3(vec3(min.x, max.y, max.z)),
 
-            m:multiply_vec3(vec3(b.x+b.w, b.y    , b.z+b.d)),
-            m:multiply_vec3(vec3(b.x+b.w, b.y+b.h, b.z+b.d)),
+            m:multiply_vec3(vec3(max.x, min.y, max.z)),
+            m:multiply_vec3(vec3(max.x, max.y, max.z)),
       }
 
-      local aabb = { min = t[1]:clone(), max = t[1]:clone() }
-      for i = 2, #t do
+      local aabb = bound3(
+		vec3(math.huge), vec3(-math.huge)
+	)
+      for i = 1, #t do
             local v = t[i]
             if aabb.min.x > v.x then aabb.min.x = v.x elseif aabb.max.x < v.x then aabb.max.x = v.x end
             if aabb.min.y > v.y then aabb.min.y = v.y elseif aabb.max.y < v.y then aabb.max.y = v.y end
@@ -90,25 +79,34 @@ function ModelNode:calculate_aabb(index)
 end
 
 function ModelNode:set_color(r, g, b, a)
-      self.color.x = r
-      self.color.y = g
-      self.color.z = b
-      self.color.w = a
+      self.color:set(r, g, b, a)
 end
 
---- Render function.
--- @param scene Scene that draws this object
--- @param environment Environment that is used when drawing the current object
--- @param shader ShaderObject that can replace the shader that is used for the current object
-function ModelNode:render(scene, environment, shader)
-	shader = shader or self.shader
+--- Draw a ModelNode object on the screen.
+-- This function will be called implicitly in the hierarchy when a node is drawn with scene:render_nodes()
+-- @tparam menori.Scene scene object that is used when drawing the model
+-- @tparam menori.Environment environment object that is used when drawing the model
+function ModelNode:render(scene, environment)
+	local shader = self.material.shader
 
       environment:apply_shader(shader)
       shader:send('m_model', self.world_matrix.data)
 
       local c = self.color
       love.graphics.setColor(c.x, c.y, c.z, c.w)
-      self.mesh:draw(shader)
+      self.mesh:draw(self.material)
 end
 
 return ModelNode
+
+---
+-- Own copy of the Material that is bound to the model.
+-- @field material
+
+---
+-- The menori.Mesh object that is bound to the model.
+-- @field mesh
+
+---
+-- Model color. (Deprecated)
+-- @field color

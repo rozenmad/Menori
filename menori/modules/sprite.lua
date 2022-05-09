@@ -2,14 +2,14 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
 Sprite class is a helper object for drawing textures that can contain a set of frames and play animations.
 ]]
--- @module menori.Sprite
+-- @classmod Sprite
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -17,7 +17,7 @@ local class = require (modules .. 'libs.class')
 
 local sprite = class('Sprite')
 
---- init
+--- The public constructor.
 -- @param quads table of [Quad](https://love2d.org/wiki/Quad) objects
 -- @param image [Image](https://love2d.org/wiki/Image)
 function sprite:init(quads, image)
@@ -77,21 +77,25 @@ end
 
 --- Get frame uv position [0 - 1]
 -- @tparam number i frame index
--- @treturn number x1
--- @treturn number x2
--- @treturn number y1
--- @treturn number y2
+-- @treturn table {x1=, y1=, x2=, y2=}
 function sprite:get_frame_uv(i)
+	i = i or self.index
 	local quad = self.quads[i]
 	local image_w, image_h = quad:getTextureDimensions()
 	local x, y, w, h = quad:getViewport()
-	return x / image_w, (x + w) / image_w, y / image_h, (y + h) / image_h
+	return {
+		x1 = x / image_w,
+		y1 = y / image_h,
+		x2 = (x + w) / image_w,
+		y2 = (y + h) / image_h,
+	}
 end
 
 --- Reset animation.
 -- @tparam number duration
 -- @return self
 function sprite:reset(duration)
+	self.index = 1
 	self.duration = duration / self:get_frame_count()
 	self.stop = false
 	self.duration_accumulator = 0
@@ -115,10 +119,18 @@ function sprite:update(dt)
 end
 
 --- Sprite draw function.
-function sprite:draw(x, y, angle, sx, sy, ox, oy)
+-- See [love.graphics.draw](https://love2d.org/wiki/love.graphics.draw).
+-- @tparam number x
+-- @tparam number y
+-- @tparam number angle
+-- @tparam number sx
+-- @tparam number sy
+-- @tparam number ox
+-- @tparam number oy
+function sprite:draw(x, y, angle, sx, sy, ox, oy, ...)
 	ox = (ox or 0) + self.ox
 	oy = (oy or 0) + self.oy
-	love.graphics.draw(self.image, self.quads[self.index], x, y, angle, sx, sy, ox, oy)
+	love.graphics.draw(self.image, self.quads[self.index], x, y, angle, sx, sy, ox, oy, ...)
 end
 
 return sprite

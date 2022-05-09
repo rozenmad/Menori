@@ -2,14 +2,15 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
-Module for import/export the *gltf format.
+Module for load the *gltf format.
+Separated GLTF (.gltf+.bin+textures) or (.gltf+textures) is supported now.
 ]]
--- @module menori.glTFLoader
+-- @module glTFLoader
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -20,6 +21,7 @@ if type(jit) == 'table' and jit.status() then
 	ffi = require 'ffi'
 end
 
+local glTFLoader = {}
 local buffers, images, materials
 local data
 
@@ -237,8 +239,10 @@ local function init_mesh(mesh)
 			local attribute_name
 			if value == '_0' then
 				attribute_name = attribute_aliases[attribute]
-			else
+			elseif attribute_aliases[attribute] then
 				attribute_name = attribute_aliases[attribute] .. value
+			else
+				attribute_name = k
 			end
 
 			local buffer = get_buffer(v)
@@ -257,23 +261,20 @@ local function init_mesh(mesh)
 
 		local vertices = get_vertices_content(attribute_buffers, components_stride, length)
 
-		local material
-		if primitive.material then
-			material = materials[primitive.material + 1]
-		else
-			material = {}
-		end
 		primitives[j] = {
 			mode = get_primitive_modes_constants(primitive.mode),
 			vertexformat = vertexformat,
 			vertices = vertices,
 			indices = indices,
 			indices_tsize = indices_tsize,
-			material = material,
-			count = count
+			count = count,
+			material_index = primitive.material,
 		}
 	end
-	return primitives
+	return {
+		primitives = primitives,
+		name = mesh.name,
+	}
 end
 
 local function texture(textures, t)
@@ -295,23 +296,18 @@ end
 local function create_material(textures, material)
 	local uniforms = {}
 
-	local baseTexture
-	local metallicRoughnessTexture
-	local normalTexture
-	local occlusionTexture
-	local emissiveTexture
-
+	local main_texture
 	local pbr = material.pbrMetallicRoughness
 	if pbr then
 		local _pbrBaseColorTexture = pbr.baseColorTexture
 		local _pbrMetallicRoughnessTexture = pbr.metallicRoughnessTexture
 
-		baseTexture = texture(textures, _pbrBaseColorTexture)
-		metallicRoughnessTexture = texture(textures, _pbrMetallicRoughnessTexture)
+		main_texture = texture(textures, _pbrBaseColorTexture)
+		local metallicRoughnessTexture = texture(textures, _pbrMetallicRoughnessTexture)
 
-		if baseTexture then
-			uniforms.baseTexture = baseTexture.source
-			uniforms.baseTextureCoord = baseTexture.tcoord
+		if main_texture then
+			--uniforms.baseTexture = baseTexture.source
+			uniforms.mainTexCoord = main_texture.tcoord
 		end
 		if metallicRoughnessTexture then
 			uniforms.metallicRoughnessTexture = metallicRoughnessTexture.source
@@ -321,7 +317,7 @@ local function create_material(textures, material)
 		uniforms.metalness = pbr.metallicFactor
 		uniforms.roughness = pbr.roughnessFactor
 
-		uniforms.baseColor = pbr.baseColorFactor
+		uniforms.baseColor = pbr.baseColorFactor or {1, 1, 1, 1}
 	end
 
 	if material.normalTexture then
@@ -346,12 +342,8 @@ local function create_material(textures, material)
 	uniforms.emissiveColor = material.emissiveFactor
 
 	return {
-		baseTexture = baseTexture,
-		metallicRoughnessTexture = metallicRoughnessTexture,
-		normalTexture = normalTexture,
-		occlusionTexture = occlusionTexture,
-		emissiveTexture = emissiveTexture,
-
+		name = material.name,
+		main_texture = main_texture,
 		uniforms = uniforms,
 	}
 end
@@ -389,21 +381,29 @@ local function parse_wrap(value)
 	end
 end
 
---- Load model by filename
+--- Load model by filename.
 -- @function load
--- @tparam string path path to the directory where the file is located
--- @tparam string filename
-local function load(path, filename, io_read)
+-- @tparam string filename The filepath to the gltf file (GLTF must be separated (.gltf+.bin+textures) or (.gltf+textures)
+-- @tparam[opt=love.filesystem.read] function io_read Callback to read the file.
+-- @treturn table
+function glTFLoader.load(filename, io_read)
+	local path, name = filename:match("(.*/)(.+)%.gltf$")
 	io_read = io_read or love.filesystem.read
 
-	local filepath = path .. filename .. '.gltf'
+	local filepath = path .. name .. '.gltf'
 	--assert(love.filesystem.getInfo(filepath), 'in function <glTFLoader.load> file "' .. filepath .. '" not found.')
 
-	data = json.decode(io_read(filepath))
+	local gltf_filedata = io_read(filepath)
+	data = json.decode(gltf_filedata)
 
 	buffers = {}
 	for i, v in ipairs(data.buffers) do
-		buffers[i] = love.data.newByteData(io_read(path .. v.uri))
+		local data = v.uri:match('^data:application/octet%-stream;base64,(.+)')
+		if data then
+			buffers[i] = love.data.decode('data', 'base64', data)
+		else
+			buffers[i] = love.data.newByteData(io_read(path .. v.uri))
+		end
 	end
 
 	images = {}
@@ -457,13 +457,11 @@ local function load(path, filename, io_read)
 		asset = data.asset,
 		nodes = data.nodes,
 		scene = data.scene,
-
+		materials = materials,
 		meshes = meshes,
 		scenes = data.scenes,
 		images = images,
 	}
 end
 
-return {
-	load = load,
-}
+return glTFLoader

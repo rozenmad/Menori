@@ -2,16 +2,16 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
 Base class of scenes.
-It contains methods for recursively drawing and updating all nodes of the scene.
+It contains methods for recursively drawing and updating nodes.
 You need to inherit from the Scene class to create your own scene object.
 ]]
--- @module menori.Scene
+--- @classmod Scene
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -20,7 +20,7 @@ local class = require (modules .. 'libs.class')
 local lovg = love.graphics
 local temp_environment
 
-local temp_renderstate = { clear = false }
+local temp_renderstates = { clear = false }
 
 local function node_sort(a, b)
 	return a.layer < b.layer
@@ -32,24 +32,26 @@ end
 
 local scene = class('Scene')
 
---- init
+--- The public constructor.
 function scene:init()
 	self.list_drawable_nodes = {}
 	self.instance_list = {}
 end
 
 --- Recursively call render function for every node.
--- @tparam Node node
--- @tparam Environment environment
--- @tparam table renderstates (Optional)
--- @tparam function filter (Optional)
+-- @tparam menori.Node node
+-- @tparam menori.Environment environment
+-- @tparam[opt] table renderstates
+-- @tparam[opt] function filter The callback function.
+-- @usage renderstates = { canvas, ..., clear = false, colors = {color, ...} }
+-- @usage function default_filter(node, scene, environment) node:render(scene, environment) end
 function scene:render_nodes(node, environment, renderstates, filter)
-	assert(node, "in function 'scene:update_nodes' node does not exist.")
+	assert(node, "in function 'scene:render_nodes' node does not exist.")
 
 	lovg.push('all')
 
 	environment._shader_object_cache = nil
-	renderstates = renderstates or temp_renderstate
+	renderstates = renderstates or temp_renderstates
 	filter = filter or default_filter
 	self:_recursive_render_nodes(node, false)
 	table.sort(self.list_drawable_nodes, node_sort)
@@ -96,7 +98,7 @@ function scene:_recursive_render_nodes(node, transform_flag)
 	if not node.render_flag then
 		return
 	end
-	if node._transform_flag or transform_flag then
+	if node.update_transform_flag and (node._transform_flag or transform_flag) then
 		node:update_transform()
 		transform_flag = true
 	end

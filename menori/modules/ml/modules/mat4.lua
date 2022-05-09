@@ -2,10 +2,18 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
 	this module based on CPML - Cirno's Perfect Math Library
+	https://github.com/excessive/cpml/blob/master/modules/mat4.lua
 --]]
+
+--[[--
+Matrix4.
+menori.ml.mat4
+]]
+-- @classmod mat4
+-- @alias mat4_mt
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3 = require(modules .. "vec3")
@@ -13,8 +21,8 @@ local vec4 = require(modules .. "vec4")
 
 local ffi, bytesize
 if type(jit) == 'table' and jit.status() then
-	ffi = require 'ffi'
-	bytesize = ffi.sizeof('float[16]')
+	--ffi = require 'ffi'
+	--bytesize = ffi.sizeof('float[16]')
 end
 
 local mat4 = {}
@@ -127,6 +135,8 @@ local function rotate(e, angle, ax, ay, az, length)
 end
 
 local temp_transform = love.math.newTransform()
+
+--- to temp transform object
 function mat4_mt:to_temp_transform_object()
 	local e = self.e
 	temp_transform:setMatrix('column',
@@ -138,6 +148,7 @@ function mat4_mt:to_temp_transform_object()
 	return temp_transform
 end
 
+--- to table
 function mat4_mt:to_table()
 	local t = {}
 	local e = self.e
@@ -160,31 +171,37 @@ function mat4_mt:to_table()
 	return t
 end
 
+--- clone
 function mat4_mt:clone()
 	return new(self)
 end
 
+--- copy
 function mat4_mt:copy(other)
 	copy(self.e, other.e)
 	return self
 end
 
+--- identity
 function mat4_mt:identity()
 	self._changed = true
 	identity(self.e)
 	return self
 end
 
+--- is identity
 function mat4_mt:is_identity()
 	return is_identity(self.e, 16)
 end
 
+--- multiply
 function mat4_mt:multiply(other)
 	self._changed = true
 	multiply(self.e, other.e)
 	return self
 end
 
+--- determinant
 function mat4_mt:determinant()
 	local e = self.e
 
@@ -200,6 +217,7 @@ function mat4_mt:determinant()
 	)
 end
 
+--- inverse
 function mat4_mt:inverse()
 	self._changed = true
 	local e = self.e
@@ -232,6 +250,7 @@ function mat4_mt:inverse()
 	return self
 end
 
+--- transpose
 function mat4_mt:transpose()
 	self._changed = true
 	local e = self.e
@@ -255,6 +274,7 @@ function mat4_mt:transpose()
 	return self
 end
 
+--- compose
 function mat4_mt:compose(position, rotation, scale)
 	self._changed = true
 	local e = self.e
@@ -288,6 +308,8 @@ function mat4_mt:compose(position, rotation, scale)
 end
 
 local tvec3 = vec3()
+
+--- decompose
 function mat4_mt:decompose(position, rotation, scale)
 	local e = self.e
 	if position then
@@ -329,6 +351,7 @@ function mat4_mt:decompose(position, rotation, scale)
 	end
 end
 
+--- set position and rotation
 function mat4_mt:set_position_and_rotation(position, angle, axis)
 	self._changed = true
 	if type(angle) == "table" then
@@ -355,6 +378,7 @@ function mat4_mt:set_position_and_rotation(position, angle, axis)
 	return self
 end
 
+--- scale
 function mat4_mt:scale(x, y, z)
 	self._changed = true
 	if type(x) == 'table' then
@@ -368,6 +392,7 @@ function mat4_mt:scale(x, y, z)
 	return self
 end
 
+--- translate
 function mat4_mt:translate(x, y, z)
 	self._changed = true
 	if type(x) == 'table' then
@@ -381,6 +406,7 @@ function mat4_mt:translate(x, y, z)
 	return self
 end
 
+--- shear
 function mat4_mt:shear(yx, xy, zx, zy, xz, yz)
 	self._changed = true
 	identity(temp_array)
@@ -395,6 +421,7 @@ function mat4_mt:shear(yx, xy, zx, zy, xz, yz)
 	return self
 end
 
+--- rotate
 function mat4_mt:rotate(angle, axis)
 	self._changed = true
 	if type(angle) == "table" then
@@ -410,6 +437,7 @@ function mat4_mt:rotate(angle, axis)
 	return self
 end
 
+--- reflect
 function mat4_mt:reflect(position, normal)
 	self._changed = true
 	local nx, ny, nz = normal:unpack()
@@ -516,6 +544,7 @@ local function look_at_np(self, eye, look_at, up)
 	return self
 end
 
+--- multiply vec4
 function mat4_mt:multiply_vec4(v, out)
 	out = out or v
 	local e = self.e
@@ -530,6 +559,7 @@ function mat4_mt:multiply_vec4(v, out)
 	return out
 end
 
+--- multiply vec3
 function mat4_mt:multiply_vec3(v, out)
 	out = out or v
 	local e = self.e
@@ -625,10 +655,12 @@ mat4_mt.perspective       = perspective_LH_NO
 mat4_mt.perspective_LH_NO = perspective_LH_NO
 mat4_mt.perspective_RH_NO = perspective_RH_NO
 
+--- is changed
 function mat4_mt:is_changed()
 	return self._changed == true
 end
 
+--- unpack
 function mat4_mt:unpack()
 	local e = self.e
 	return e[ 1], e[ 2], e[ 3], e[ 4],
@@ -681,6 +713,8 @@ mat4.multiply    = multiply
 mat4.copy        = copy
 mat4.is_identity = is_identity
 
+--- is mat4
+-- @static
 function mat4.is_mat4(a)
 	if type(a) ~= "table" then
 		return false
@@ -693,6 +727,8 @@ function mat4.is_mat4(a)
 	return true
 end
 
+--- unproject
+-- @static
 function mat4.unproject(win, model, proj, viewport)
 	local pos = vec4(win.x, win.y, win.z, 1)
 	pos.x = ((pos.x - viewport[1]) / viewport[3])

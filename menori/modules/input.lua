@@ -4,12 +4,8 @@
 	@author rozenmad
 	2021
 -------------------------------------------------------------------------------
---]]
-
---[[--
-Description.
 ]]
--- @module menori.Input
+
 local button_list = {}
 
 local input = {}
