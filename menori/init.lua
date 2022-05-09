@@ -6,9 +6,13 @@
 	2021
 -------------------------------------------------------------------------------
 --]]
+----
+-- @module menori
 
 local modules = (...) and (...):gsub('%.init$', '') .. ".modules." or ""
 
+--- Namespace for all modules in library.
+-- @table menori
 local menori = {
 	PerspectiveCamera = require(modules .. 'core3d.camera'),
 	Environment       = require(modules .. 'core3d.environment'),

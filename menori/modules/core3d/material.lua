@@ -1,14 +1,28 @@
+--[[
+-------------------------------------------------------------------------------
+	Menori
+	@author rozenmad
+	2022
+-------------------------------------------------------------------------------
+]]
+
+--[[--
+Base class for materials. A material describes the appearance of an object. (Inherited from UniformList)
+]]
+-- @classmod Material
+-- @see UniformList
+
 local modules = (...):match('(.*%menori.modules.)')
 
 local class = require (modules .. 'libs.class')
 local utils = require (modules .. 'libs.utils')
 local UniformList = require (modules .. 'core3d.uniform_list')
 
-local material = UniformList:extend('Material', {
+local Material = UniformList:extend('Material', {
       clone = utils.copy
 })
 
-material.default_shader = love.graphics.newShader([[
+Material.default_shader = love.graphics.newShader([[
 #ifdef VERTEX
       uniform mat4 m_model;
       uniform mat4 m_view;
@@ -31,11 +45,15 @@ material.default_shader = love.graphics.newShader([[
 #endif
 ]])
 
-function material:init(name, shader)
-      material.super.init(self)
+----
+-- The public constructor.
+-- @tparam string name Name of the material.
+-- @param[opt=Material.default_shader] shader [LOVE Shader](https://love2d.org/wiki/Shader)
+function Material:init(name, shader)
+      Material.super.init(self)
 
       self.name = name
-      self.shader = shader or material.default_shader
+      self.shader = shader or Material.default_shader
 
       self.depth_test = true
       self.depth_func = 'less'
@@ -43,8 +61,36 @@ function material:init(name, shader)
       self.wireframe = false
       self.mesh_cull_mode = 'back'
 
-      self.main_texture = nil -- in shader, uniform is called MainTex
+      self.main_texture = nil
 end
 
-material.default = material("Default")
-return material
+Material.default = Material("Default")
+return Material
+
+---
+-- Material name.
+-- @field name
+
+---
+-- The shader object that is bound to the material. (default_shader by default)
+-- @field shader
+
+---
+-- Depth test flag. (Enabled by default)
+-- @field depth_test
+
+---
+-- Depth comparison func (mode) used for depth testing.
+-- @field depth_func
+
+---
+-- Sets whether wireframe lines will be used when drawing.
+-- @field wireframe
+
+---
+-- Sets whether back-facing triangles in a Mesh are culled.
+-- @field mesh_cull_mode
+
+---
+-- The texture to be used in mesh:setTexture(). (uniform Image MainTex) in shader.
+-- @field main_texture

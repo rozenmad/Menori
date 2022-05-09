@@ -2,14 +2,14 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
 Camera for 2D scenes.
 ]]
--- @module menori.Camera
+-- @classmod Camera
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -23,7 +23,7 @@ local quat = ml.quat
 
 local camera = class('Camera')
 
---- init
+--- The public constructor.
 function camera:init()
 	self._update = true
 
@@ -143,6 +143,11 @@ function camera:get_position()
 	return self.x - self.ox, self.y - self.oy
 end
 
+--- Set camera bounding box.
+-- @tparam number w bounding box width.
+-- @tparam number h bounding box height.
+-- @tparam number pvx normalized center x inside bounding box.
+-- @tparam number pvy normalized center y inside bounding box.
 function camera:set_bounding_box(w, h, pvx, pvy)
 	self.bound_w = w
 	self.bound_h = h
@@ -153,7 +158,7 @@ function camera:set_bounding_box(w, h, pvx, pvy)
 	--self:set_adjust_to_screen()
 end
 
-function camera:set_adjust_to_screen()
+function camera:adjust_screen()
       local window_w, window_h = love.graphics.getDimensions()
 
       local sx = window_w / self.bound_w
@@ -219,6 +224,10 @@ function camera:get_position_from_normalize(nx, ny, sx, sy)
 	return nx, ny
 end
 
+
+--- Set camera position inside bounding box.
+-- @tparam number x position x
+-- @tparam number y position y
 function camera:set_position_inside_bound(x, y)
 	local x1 = self._edges.x1
 	local x2 = self._edges.x2

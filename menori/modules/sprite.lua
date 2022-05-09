@@ -2,14 +2,14 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
 Sprite class is a helper object for drawing textures that can contain a set of frames and play animations.
 ]]
--- @module menori.Sprite
+-- @classmod Sprite
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -17,7 +17,7 @@ local class = require (modules .. 'libs.class')
 
 local sprite = class('Sprite')
 
---- init
+--- The public constructor.
 -- @param quads table of [Quad](https://love2d.org/wiki/Quad) objects
 -- @param image [Image](https://love2d.org/wiki/Image)
 function sprite:init(quads, image)
@@ -77,10 +77,7 @@ end
 
 --- Get frame uv position [0 - 1]
 -- @tparam number i frame index
--- @treturn number x1
--- @treturn number x2
--- @treturn number y1
--- @treturn number y2
+-- @treturn table {x1=, y1=, x2=, y2=}
 function sprite:get_frame_uv(i)
 	i = i or self.index
 	local quad = self.quads[i]
@@ -122,6 +119,14 @@ function sprite:update(dt)
 end
 
 --- Sprite draw function.
+-- See [love.graphics.draw](https://love2d.org/wiki/love.graphics.draw).
+-- @tparam number x
+-- @tparam number y
+-- @tparam number angle
+-- @tparam number sx
+-- @tparam number sy
+-- @tparam number ox
+-- @tparam number oy
 function sprite:draw(x, y, angle, sx, sy, ox, oy, ...)
 	ox = (ox or 0) + self.ox
 	oy = (oy or 0) + self.oy

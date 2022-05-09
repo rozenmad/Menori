@@ -2,14 +2,16 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
 Tree structure that is used when drawing scenes imported from the *gltf format.
+(Inherited from menori.Node class)
 ]]
--- @module menori.ModelNodeTree
+-- @classmod ModelNodeTree
+-- @see Node
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -41,9 +43,9 @@ local function set_transform(node, v)
       node:set_scale(s)
 end
 
---- init. Takes as arguments a list of nodes and scenes loaded with glTFLoader.
--- @tparam table nodes
--- @tparam table scenes
+--- The public constructor. Takes as arguments a list of nodes and scenes loaded with glTFLoader.
+-- @tparam table gltf
+-- @param shader
 function ModelNodeTree:init(gltf, shader)
       ModelNodeTree.super.init(self)
       self.meshes = {}
@@ -100,10 +102,6 @@ function ModelNodeTree:init(gltf, shader)
       end
 end
 
-function ModelNodeTree:foreach(fn)
-      self.current_scene:foreach(fn)
-end
-
 --- Set scene by name.
 -- @tparam string name
 function ModelNodeTree:set_scene_by_name(name)
@@ -112,16 +110,6 @@ function ModelNodeTree:set_scene_by_name(name)
             if v.name == name then
                   self:attach(v)
                   self.current_scene = v
-            end
-      end
-end
-
---- Find a node by name.
--- @tparam string name
-function ModelNodeTree:find_node(name)
-      for _, v in ipairs(self.nodes) do
-            if v.name == name then
-                  return v.node
             end
       end
 end

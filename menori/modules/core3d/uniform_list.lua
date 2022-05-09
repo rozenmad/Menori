@@ -2,14 +2,14 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
-Description.
+A class that stores a list of Uniform variables and implements their sending to the shader.
 ]]
--- @module menori.UniformList
+--- @classmod UniformList
 
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
@@ -17,13 +17,13 @@ local class = require (modules .. 'libs.class')
 local UniformList = class('UniformList')
 
 local uniform_types = {
-	'any', 'color', 'vector', 'matrix',
+	'any', 'color', 'matrix', 'vector',
 }
 
 local function locate_uniform(list, name, constant, type)
 	local uniform = list[name]
 	if uniform == nil then
-		uniform = { type = type, constant = constant, delete = false }
+		uniform = { type = type, constant = constant }
 		list[name] = uniform
 	elseif constant then
 		error(string.format('set_uniform: attempt to assign a new value to a constant - "%s" type - "type"', name, type))
@@ -31,12 +31,12 @@ local function locate_uniform(list, name, constant, type)
 	return uniform
 end
 
---- init.
+--- The public constructor.
 function UniformList:init()
 	self.list = {}
 end
 
---- Set one or more values to a uniform variable into list.
+--- Set one or more any values to a Uniform variable into list.
 -- @tparam string name
 -- @param ... See shader:send(name, ...)
 function UniformList:set(name, ...)
@@ -44,7 +44,7 @@ function UniformList:set(name, ...)
 	uniform.value = {...}
 end
 
---- Set one or more color values to uniform variable into list.
+--- Set one or more color values to Uniform variable into list.
 -- @tparam string name
 -- @param ... See shader:sendColor(name, ...)
 function UniformList:set_color(name, ...)
@@ -52,30 +52,38 @@ function UniformList:set_color(name, ...)
 	uniform.value = {...}
 end
 
---- Set menori.ml.matrix object to uniform variable into list.
+--- Set matrix object to Uniform variable into list.
 -- @tparam string name
--- @param object ml.mat4
+-- @tparam ml.mat4 object
 function UniformList:set_matrix(name, object)
 	local uniform = locate_uniform(self.list, name, false, 3)
 	uniform.value = object
 end
 
---- Set menori.ml.vector object to uniform variable into list.
+--- Set vector object to Uniform variable into list.
 -- @tparam string name
--- @param object ml.vec
+-- @tparam ml.vec object Any vector of the menori.ml.
 function UniformList:set_vector(name, object)
 	local uniform = locate_uniform(self.list, name, false, 4)
 	uniform.value = object
 end
 
---- Remove uniform variable from list.
+--- Get Uniform variable from list.
 -- @tparam string name
--- @param object ml.vec
+-- @treturn table {[constant]=boolean,[type]=number,[value]=table}
+function UniformList:get(name)
+	return self.list[name]
+end
+
+--- Remove Uniform variable from list.
+-- @tparam string name
 function UniformList:remove(name)
 	self.list[name] = nil
 end
 
---- Sends all uniform values from the list to the shader.
+--- Send all Uniform values from the list to the Shader.
+-- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
+-- @param[opt=''] concat_str A string to be added before each Uniform name.
 function UniformList:send_to(shader, concat_str)
 	concat_str = concat_str or ''
 	for k, v in pairs(self.list) do

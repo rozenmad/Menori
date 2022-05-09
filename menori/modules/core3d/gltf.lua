@@ -2,14 +2,15 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
-Module for import/export the *gltf format.
+Module for load the *gltf format.
+Separated GLTF (.gltf+.bin+textures) or (.gltf+textures) is supported now.
 ]]
--- @module menori.glTFLoader
+-- @module glTFLoader
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -20,6 +21,7 @@ if type(jit) == 'table' and jit.status() then
 	ffi = require 'ffi'
 end
 
+local glTFLoader = {}
 local buffers, images, materials
 local data
 
@@ -379,12 +381,12 @@ local function parse_wrap(value)
 	end
 end
 
---- Load model by filename
+--- Load model by filename.
 -- @function load
--- @tparam string filename The filepath to the gltf file (must be separated (.gltf+.bin+textures) or (.gltf+textures)
--- @tparam function io_read Callback to read the file (Optional) = love.filesystem.read
+-- @tparam string filename The filepath to the gltf file (GLTF must be separated (.gltf+.bin+textures) or (.gltf+textures)
+-- @tparam[opt=love.filesystem.read] function io_read Callback to read the file.
 -- @treturn table
-local function load(filename, io_read)
+function glTFLoader.load(filename, io_read)
 	local path, name = filename:match("(.*/)(.+)%.gltf$")
 	io_read = io_read or love.filesystem.read
 
@@ -462,6 +464,4 @@ local function load(filename, io_read)
 	}
 end
 
-return {
-	load = load,
-}
+return glTFLoader

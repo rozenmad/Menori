@@ -2,10 +2,16 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
-	this module based on CPML - Cirno's Perfect Math Library
 --]]
+
+--[[--
+Quaternion.
+menori.ml.quat
+]]
+-- @classmod quat
+-- @alias quat_mt
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3 = require(modules .. "vec3")
@@ -39,10 +45,12 @@ local temp_v = vec3()
 quat.unit = new(0, 0, 0, 1)
 quat.zero = new(0, 0, 0, 0)
 
+--- clone
 function quat_mt:clone()
     	return new(self.x, self.y, self.z, self.w)
 end
 
+--- set
 function quat_mt:set(x, y, z, w)
 	if type(x) == 'table' then
 		x, y, z, w = x.x or x[1], x.y or x[2], x.z or x[3], x.w or x[4]
@@ -54,6 +62,7 @@ function quat_mt:set(x, y, z, w)
 	return self
 end
 
+--- add
 function quat_mt:add(other)
 	self.x = self.x + other.x
 	self.y = self.y + other.y
@@ -62,6 +71,7 @@ function quat_mt:add(other)
 	return self
 end
 
+--- sub
 function quat_mt:sub(other)
 	self.x = self.x - other.x
 	self.y = self.y - other.y
@@ -70,6 +80,7 @@ function quat_mt:sub(other)
 	return self
 end
 
+--- mul
 function quat_mt:mul(other)
 	temp_q.x = self.x * other.w + self.w * other.x + self.y * other.z - self.z * other.y
 	temp_q.y = self.y * other.w + self.w * other.y + self.z * other.x - self.x * other.z
@@ -82,7 +93,9 @@ function quat_mt:mul(other)
 	return self
 end
 
+
 -- http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+--- set from matrix rotation
 function quat_mt:set_from_matrix_rotation(m)
 	local e = m.e or m
 	local m11, m12, m13 = e[1], e[ 2], e[ 3]
@@ -123,6 +136,7 @@ function quat_mt:set_from_matrix_rotation(m)
 	return self
 end
 
+--- multiply vec3
 function quat_mt:multiply_vec3(v3)
 	temp_v.x = self.x
 	temp_v.y = self.y
@@ -132,6 +146,7 @@ function quat_mt:multiply_vec3(v3)
 	return v3 + ((v1 * self.w) + v2) * 2
 end
 
+--- scale
 function quat_mt:scale(s)
 	self.x = self.x * s
 	self.y = self.y * s
@@ -140,6 +155,7 @@ function quat_mt:scale(s)
 	return self
 end
 
+--- pow
 function quat_mt:pow(s)
 	if self.w < 0 then
 		self:scale(-1)
@@ -154,6 +170,7 @@ function quat_mt:pow(s)
 	return c
 end
 
+--- conjugate
 function quat_mt:conjugate()
 	self.x = -self.x
 	self.y = -self.y
@@ -161,6 +178,7 @@ function quat_mt:conjugate()
 	return self
 end
 
+--- inverse
 function quat_mt:inverse()
 	temp_q.x = -self.x
 	temp_q.y = -self.y
@@ -169,6 +187,7 @@ function quat_mt:inverse()
 	return temp_q:clone():normalize()
 end
 
+--- normalize
 function quat_mt:normalize()
 	if self:is_zero() then
 		return new(0, 0, 0, 0)
@@ -176,6 +195,7 @@ function quat_mt:normalize()
 	return self:scale(1 / self:length())
 end
 
+--- reciprocal
 function quat_mt:reciprocal()
 	if self:is_zero() then
 		error("Cannot reciprocate a zero quaternion")
@@ -195,17 +215,22 @@ function quat_mt:reciprocal()
 	return self
 end
 
+--- length
 function quat_mt:length()
 	return sqrt(self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w)
 end
+
+--- length2
 function quat_mt:length2()
 	return self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w
 end
 
+--- unpack
 function quat_mt:unpack(a)
 	return a.x, a.y, a.z, a.w
 end
 
+--- is zero
 function quat_mt:is_zero()
 	return
 		self.x == 0 and
@@ -214,6 +239,7 @@ function quat_mt:is_zero()
 		self.w == 0
 end
 
+--- is real
 function quat_mt:is_real()
 	return
 		self.x == 0 and
@@ -221,10 +247,12 @@ function quat_mt:is_real()
 		self.z == 0
 end
 
+--- is imaginary
 function quat_mt:is_imaginary()
 	return self.w == 0
 end
 
+--- to angle axis unpack
 function quat_mt:to_angle_axis_unpack()
 	local q = self
 	if math.abs(q.w) > 1 then
@@ -244,15 +272,18 @@ function quat_mt:to_angle_axis_unpack()
 	return angle, x, y, z
 end
 
+--- to angle axis
 function quat_mt:to_angle_axis()
 	local angle, x, y, z = self:to_angle_axis_unpack()
 	return angle, vec3(x, y, z)
 end
 
+--- clamp
 local function clamp( value, _min, _max )
 	return math.max( _min, math.min( _max, value ) )
 end
 
+--- to euler angles
 function quat_mt:to_euler(order)
 	order = order or 'XYZ'
       local m = mat4():rotate(self)
@@ -382,6 +413,8 @@ end
 
 -- quat --
 
+--- from euler angles
+-- @static
 function quat.from_euler_angles(y, p, r)
 	local cy = cos(y * 0.5)
 	local sy = sin(y * 0.5)
@@ -398,6 +431,8 @@ function quat.from_euler_angles(y, p, r)
 	return q
 end
 
+--- from angle axis
+-- @static
 function quat.from_angle_axis(angle, axis, a3, a4)
 	if axis and a3 and a4 then
 		local x, y, z = axis, a3, a4
@@ -409,6 +444,8 @@ function quat.from_angle_axis(angle, axis, a3, a4)
 	end
 end
 
+--- from direction
+-- @static
 function quat.from_direction(forward, up)
 	up = up or vec3.unit_y
 	forward = forward:clone():normalize()
@@ -422,14 +459,20 @@ function quat.from_direction(forward, up)
 	return new():set_from_matrix_rotation(m)
 end
 
+--- dot
+-- @static
 function quat.dot(a, b)
 	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
 end
 
+--- lerp
+-- @static
 function quat.lerp(a, b, s)
 	return (a + (b - a) * s):clone():normalize()
 end
 
+--- slerp
+-- @static
 function quat.slerp(a, b, s)
 	local dot = quat.dot(a, b)
 
@@ -449,6 +492,8 @@ function quat.slerp(a, b, s)
 	return a * cos(theta) + c * sin(theta)
 end
 
+--- is quat
+-- @static
 function quat.is_quat(a)
 	return
 		type(a)   == "table"  and

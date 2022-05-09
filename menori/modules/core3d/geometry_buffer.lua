@@ -4,7 +4,7 @@
 	@author rozenmad
 	2020
 -------------------------------------------------------------------------------
---]]
+]]
 
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')

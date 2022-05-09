@@ -2,9 +2,16 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
 --]]
+
+--[[--
+Vector3.
+menori.ml.vec3
+]]
+-- @classmod vec3
+-- @alias vec3_mt
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local utils = require(modules .. "utils")
@@ -26,10 +33,12 @@ vec3.unit_x = new(1, 0, 0)
 vec3.unit_y = new(0, 1, 0)
 vec3.unit_z = new(0, 0, 1)
 
+--- clone
 function vec3_mt:clone()
 	return new(self.x, self.y, self.z)
 end
 
+--- set
 function vec3_mt:set(x, y, z)
 	if type(x) == 'table' then
 		x, y, z = x.x or x[1], x.y or x[2], x.z or x[3]
@@ -40,6 +49,7 @@ function vec3_mt:set(x, y, z)
 	return self
 end
 
+--- add
 function vec3_mt:add(a, b)
 	self.x = a.x + b.x
 	self.y = a.y + b.y
@@ -47,6 +57,7 @@ function vec3_mt:add(a, b)
 	return self
 end
 
+--- sub
 function vec3_mt:sub(a, b)
 	self.x = a.x - b.x
 	self.y = a.y - b.y
@@ -54,6 +65,7 @@ function vec3_mt:sub(a, b)
 	return self
 end
 
+--- mul
 function vec3_mt:mul(a, b)
 	self.x = a.x * b.x
 	self.y = a.y * b.y
@@ -61,6 +73,7 @@ function vec3_mt:mul(a, b)
 	return self
 end
 
+--- div
 function vec3_mt:div(a, b)
 	self.x = a.x / b.x
 	self.y = a.y / b.y
@@ -68,6 +81,7 @@ function vec3_mt:div(a, b)
 	return self
 end
 
+--- scale
 function vec3_mt:scale(scalar)
 	self.x = self.x * scalar
 	self.y = self.y * scalar
@@ -75,14 +89,17 @@ function vec3_mt:scale(scalar)
 	return self
 end
 
+--- length
 function vec3_mt:length()
 	return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
 end
 
+--- length2
 function vec3_mt:length2()
 	return self.x * self.x + self.y * self.y + self.z * self.z
 end
 
+--- normalize
 function vec3_mt:normalize()
 	local length = self:length()
 	if length ~= 0 then
@@ -93,16 +110,19 @@ function vec3_mt:normalize()
 	return self
 end
 
+--- round
 function vec3_mt:round()
 	self.x = utils.round(self.x)
 	self.y = utils.round(self.y)
 	self.z = utils.round(self.z)
 end
 
+--- unpack
 function vec3_mt:unpack()
 	return self.x, self.y, self.z
 end
 
+--- set from matrix position
 function vec3_mt:set_from_matrix_position(m)
 	self.x = m.e[13]
 	self.y = m.e[14]
@@ -186,6 +206,8 @@ end
 
 vec3._mt = vec3_mt
 
+--- is vec3
+-- @static
 function vec3.is_vec3(a)
 	return type(a) == "table" and
 		type(a.x) == "number" and
@@ -194,14 +216,20 @@ function vec3.is_vec3(a)
 		type(a.w) == "nil"
 end
 
+--- dot
+-- @static
 function vec3.dot(a, b)
 	return a.x * b.x + a.y * b.y + a.z * b.z
 end
 
+--- distance
+-- @static
 function vec3.distance(p0, p1)
 	return (p0 - p1):length()
 end
 
+--- fract
+-- @static
 function vec3.fract(a)
 	return new(
 		a.x - math.floor(a.x),
@@ -210,6 +238,8 @@ function vec3.fract(a)
 	)
 end
 
+--- cross
+-- @static
 function vec3.cross(a, b)
 	return new(
 		a.y * b.z - a.z * b.y,
@@ -218,22 +248,31 @@ function vec3.cross(a, b)
 	)
 end
 
+--- min
+-- @static
 function vec3.min(a, b)
 	return new(math.min(a.x, b.x), math.min(a.y, b.y), math.min(a.z, b.z))
 end
 
+--- max
 function vec3.max(a, b)
 	return new(math.max(a.x, b.x), math.max(a.y, b.y), math.max(a.z, b.z))
 end
 
+--- abs
+-- @static
 function vec3.abs(a)
 	return new(math.abs(a.x), math.abs(a.y), math.abs(a.z))
 end
 
+--- lessThan
+-- @static
 function vec3.lessThan(a, b)
 	return { a.x < b.x, a.y < b.y, a.z < b.z }
 end
 
+--- pow
+-- @static
 function vec3.pow(a, b)
 	return new(
 		math.pow(a.x, b.x),

@@ -2,14 +2,15 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
-Сlass for drawing models.
+Class for drawing Mesh objects. (Inherited from menori.Node class)
 ]]
--- @module menori.ModelNode
+-- @classmod ModelNode
+-- @see Node
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -21,9 +22,9 @@ local bound3   = ml.bound3
 
 local ModelNode = Node:extend('ModelNode')
 
---- init
--- @param mesh Mesh object
--- @param shader (Optional) ShaderObject which will be used for drawing
+--- The public constructor.
+-- @tparam menori.Mesh mesh object
+-- @tparam[opt=Material.default] menori.Material material object. (A new copy will be created for the material)
 function ModelNode:init(mesh, material)
 	ModelNode.super.init(self)
       self.material = material or Material.default
@@ -33,12 +34,17 @@ function ModelNode:init(mesh, material)
       self.color = ml.vec4(1)
 end
 
+--- Clone an object.
+-- @treturn menori.ModelNode object
 function ModelNode:clone()
-      local t = ModelNode(self.mesh, self.shader, false)
+      local t = ModelNode(self.mesh, self.material, false)
       ModelNode.super.clone(self, t)
       return t
 end
 
+--- Calculate AABB by applying the current transformations.
+-- @tparam[opt=1] number index The index of the primitive in the mesh.
+-- @treturn menori.ml.bound3 object
 function ModelNode:calculate_aabb(index)
       index = index or 1
       local bound = self.mesh.primitives[index].bound
@@ -76,10 +82,10 @@ function ModelNode:set_color(r, g, b, a)
       self.color:set(r, g, b, a)
 end
 
---- Render function.
--- @param scene Scene that draws this object
--- @param environment Environment that is used when drawing the current object
--- @param shader ShaderObject that can replace the shader that is used for the current object
+--- Draw a ModelNode object on the screen.
+-- This function will be called implicitly in the hierarchy when a node is drawn with scene:render_nodes()
+-- @tparam menori.Scene scene object that is used when drawing the model
+-- @tparam menori.Environment environment object that is used when drawing the model
 function ModelNode:render(scene, environment)
 	local shader = self.material.shader
 
@@ -92,3 +98,15 @@ function ModelNode:render(scene, environment)
 end
 
 return ModelNode
+
+---
+-- Own copy of the Material that is bound to the model.
+-- @field material
+
+---
+-- The menori.Mesh object that is bound to the model.
+-- @field mesh
+
+---
+-- Model color. (Deprecated)
+-- @field color

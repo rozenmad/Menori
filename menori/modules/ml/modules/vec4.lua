@@ -2,9 +2,16 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
 --]]
+
+--[[--
+Vector4.
+menori.ml.vec4
+]]
+-- @classmod vec4
+-- @alias vec4_mt
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local utils = require(modules .. "utils")
@@ -28,10 +35,12 @@ vec4.unit_y = new(0, 1, 0, 0)
 vec4.unit_z = new(0, 0, 1, 0)
 vec4.unit_w = new(0, 0, 0, 1)
 
+--- clone
 function vec4_mt:clone()
     	return new(self.x, self.y, self.z, self.w)
 end
 
+--- set
 function vec4_mt:set(x, y, z, w)
 	if type(x) == 'table' then
 		x, y, z, w = x.x or x[1], x.y or x[2], x.z or x[3], x.w or x[4]
@@ -43,6 +52,7 @@ function vec4_mt:set(x, y, z, w)
 	return self
 end
 
+--- add
 function vec4_mt:add(a, b)
 	self.x = a.x + b.x
 	self.y = a.y + b.y
@@ -51,6 +61,7 @@ function vec4_mt:add(a, b)
 	return self
 end
 
+--- sub
 function vec4_mt:sub(a, b)
 	self.x = a.x - b.x
 	self.y = a.y - b.y
@@ -59,6 +70,7 @@ function vec4_mt:sub(a, b)
 	return self
 end
 
+--- mul
 function vec4_mt:mul(a, b)
 	self.x = a.x * b.x
 	self.y = a.y * b.y
@@ -67,6 +79,7 @@ function vec4_mt:mul(a, b)
 	return self
 end
 
+--- div
 function vec4_mt:div(a, b)
 	self.x = a.x / b.x
 	self.y = a.y / b.y
@@ -75,6 +88,7 @@ function vec4_mt:div(a, b)
 	return self
 end
 
+--- scale
 function vec4_mt:scale(scalar)
 	self.x = self.x * scalar
 	self.y = self.y * scalar
@@ -83,10 +97,12 @@ function vec4_mt:scale(scalar)
 	return self
 end
 
+--- length
 function vec4_mt:length()
     	return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w)
 end
 
+--- normalize
 function vec4_mt:normalize()
 	local length = self:length()
 	if length ~= 0 then
@@ -98,6 +114,7 @@ function vec4_mt:normalize()
 	return self
 end
 
+--- round
 function vec4_mt:round()
 	self.x = utils.round(self.x)
 	self.y = utils.round(self.y)
@@ -105,6 +122,7 @@ function vec4_mt:round()
 	self.w = utils.round(self.w)
 end
 
+--- unpack
 function vec4_mt:unpack()
 	return self.x, self.y, self.z, self.w
 end
@@ -184,6 +202,8 @@ end
 
 -- vec3 --
 
+--- is vec4
+-- @static
 function vec4.is_vec4(a)
 	return type(a) == "table" and
 		type(a.x) == "number" and
@@ -192,10 +212,14 @@ function vec4.is_vec4(a)
 		type(a.w) == "number"
 end
 
+--- dot
+-- @static
 function vec4.dot(a, b)
     	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
 end
 
+--- fract
+-- @static
 function vec4.fract(a)
 	return new(
 		a.x - math.floor(a.x),
@@ -205,22 +229,32 @@ function vec4.fract(a)
 	)
 end
 
+--- min
+-- @static
 function vec4.min(a, b)
 	return new(math.min(a.x, b.x), math.min(a.y, b.y), math.min(a.z, b.z), math.min(a.w, b.w))
 end
 
+--- max
+-- @static
 function vec4.max(a, b)
 	return new(math.max(a.x, b.x), math.max(a.y, b.y), math.max(a.z, b.z), math.max(a.w, b.w))
 end
 
+--- abs
+-- @static
 function vec4.abs(a)
 	return new(math.abs(a.x), math.abs(a.y), math.abs(a.z), math.abs(a.w))
 end
 
+--- lessThan
+-- @static
 function vec4.lessThan(a, b)
 	return { a.x < b.x, a.y < b.y, a.z < b.z, a.w < b.w }
 end
 
+--- pow
+-- @static
 function vec4.pow(a, b)
 	return new(
 		math.pow(a.x, b.x),

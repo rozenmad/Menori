@@ -1,3 +1,18 @@
+--[[
+-------------------------------------------------------------------------------
+	Menori
+	@author rozenmad
+	2022
+-------------------------------------------------------------------------------
+--]]
+
+--[[--
+Bound3.
+menori.ml.bound3
+]]
+-- @classmod bound3
+-- @alias bound3_mt
+
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3    = require(modules .. "vec3")
 
@@ -12,21 +27,32 @@ local function new(min, max)
       }, bound3_mt)
 end
 
+--- clone
+function bound3_mt:clone()
+      return new(self.min, self.max)
+end
+
+--- with size
+-- @static
 function bound3.with_size(min, size)
       return new(min, min + size)
 end
 
+--- scale
 function bound3_mt:scale(v)
       self.min:scale(v)
       self.max:scale(v)
+      return self
 end
 
+--- move
 function bound3_mt:move(x, y, z)
       self.min:set(self.min.x + x, self.min.y + y, self.min.z + z)
       self.max:set(self.max.x + x, self.max.y + y, self.max.z + z)
+      return self
 end
 
--- contain by XZ axis
+--- contain by XZ axis
 function bound3_mt:contain(b)
       local a = self
       local ax1 = a.min.x
@@ -44,16 +70,14 @@ function bound3_mt:contain(b)
        end
 end
 
+--- center
 function bound3_mt:center()
       return (self.min + self.max) / 2
 end
 
+--- size
 function bound3_mt:size()
       return self.max - self.min
-end
-
-function bound3_mt:clone()
-      return new(self.min, self.max)
 end
 
 function bound3_mt.__tostring(self)

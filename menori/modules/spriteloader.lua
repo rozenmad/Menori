@@ -2,21 +2,21 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2021
+	2022
 -------------------------------------------------------------------------------
---]]
+]]
 
 --[[--
-Description.
+Helper class for loading aseprite spritesheet animations. Also it contains other useful functions.
 ]]
--- @module menori.SpriteLoader
+-- @module SpriteLoader
 
 local json = require 'libs.rxijson.json'
 
 local modules     = (...):gsub('%.[^%.]+$', '') .. "."
 local Sprite      = require(modules .. 'sprite')
 
-local spriteloader = {}
+local SpriteLoader = {}
 local list = setmetatable({}, {__mode = 'v'})
 
 local function load_aseprite_sprite_sheet(filename)
@@ -76,12 +76,12 @@ end
 
 --- Create a tileset from an image.
 -- @param image [Image](https://love2d.org/wiki/Image)
--- @tparam number offsetx
--- @tparam number offsety
--- @tparam number w
--- @tparam number h
--- @treturn table List of [Quad](https://love2d.org/wiki/Quad) objects
-function spriteloader.create_tileset_from_image(image, offsetx, offsety, w, h)
+-- @tparam number offsetx Offset from beginnig of image by x.
+-- @tparam number offsety Offset from beginnig of image by y.
+-- @tparam number w Tile width.
+-- @tparam number h Tile height.
+-- @treturn table Array of [Quad](https://love2d.org/wiki/Quad) objects
+function SpriteLoader.create_tileset_from_image(image, offsetx, offsety, w, h)
 	local image_w, image_h = image:getDimensions()
 	local quads = {}
 	local iws = math.floor((image_w - offsetx) / w)
@@ -98,8 +98,8 @@ end
 
 --- Create sprite from image.
 -- @param image [Image](https://love2d.org/wiki/Image)
--- @return New sprite
-function spriteloader.from_image(image)
+-- @treturn menori.Sprite object
+function SpriteLoader.from_image(image)
 	local w, h = image:getDimensions()
 	return Sprite({love.graphics.newQuad(0, 0, w, h, w, h)}, image)
 end
@@ -110,26 +110,24 @@ end
 -- @tparam number offsety
 -- @tparam number w
 -- @tparam number h
--- @return Sprite object
-function spriteloader.from_tileset_image(image, offsetx, offsety, w, h)
-	return Sprite(spriteloader.create_tileset_from_image(image, offsetx, offsety, w, h), image)
+-- @treturn menori.Sprite object
+function SpriteLoader.from_tileset_image(image, offsetx, offsety, w, h)
+	return Sprite(SpriteLoader.create_tileset_from_image(image, offsetx, offsety, w, h), image)
 end
 
---- Load sprite from Aseprite Sprite Sheet using sprite cache list.
--- @tparam string path
--- @tparam string name
--- @return Sprite object
-function spriteloader.from_aseprite_sprite_sheet(filename)
+--- Load sprite from aseprite spritesheet using sprite cache list.
+-- @tparam string filename
+-- @treturn menori.Sprite object
+function SpriteLoader.from_aseprite_sprite_sheet(filename)
 	if not list[filename] then list[filename] = load_aseprite_sprite_sheet(filename) end
 	return list[filename]
 end
 
---- Find Aseprite Sprite Sheet in cache list.
+--- Find aseprite spritesheet in cache list.
 -- @tparam string name
--- @return Sprite object
-function spriteloader.find_sprite_sheet(name)
+-- @treturn menori.Sprite object
+function SpriteLoader.find_sprite_sheet(name)
 	return list[name]
 end
 
-return
-spriteloader
+return SpriteLoader
