@@ -27,7 +27,7 @@ function NewScene:init()
 	self.camera = menori.PerspectiveCamera(60, aspect, 0.5, 1024)
 	self.environment = menori.Environment(self.camera)
 
-	local gltf = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
+	local gltf = menori.glTFLoader.load('example_assets/players_room_model/scene.gltf')
 	local model_node_tree = menori.ModelNodeTree(gltf)
 
 	self.root_node = menori.Node()
@@ -36,12 +36,9 @@ function NewScene:init()
 	self.y_angle = 0
 end
 
+local rstate = {clear = true, colors = {{0.2, 0.15, 0.1, 1}}}
 function NewScene:render()
-	love.graphics.clear(0.3, 0.25, 0.2)
-
-	love.graphics.setDepthMode('less', true)
-	self:render_nodes(self.root_node, self.environment)
-	love.graphics.setDepthMode()
+	self:render_nodes(self.root_node, self.environment, rstate)
 end
 
 function NewScene:update_camera()
