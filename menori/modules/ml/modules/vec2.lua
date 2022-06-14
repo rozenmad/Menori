@@ -239,6 +239,18 @@ function vec2.abs(a)
 	return new(math.abs(a.x), math.abs(a.y))
 end
 
+--- equal
+-- @static
+function vec2.equal(a, b)
+	return { a.x == b.x, a.y == b.y }
+end
+
+--- notEqual
+-- @static
+function vec2.notEqual(a, b)
+	return { a.x ~= b.x, a.y ~= b.y }
+end
+
 --- lessThan
 -- @static
 function vec2.lessThan(a, b)

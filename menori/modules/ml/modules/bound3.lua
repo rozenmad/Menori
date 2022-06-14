@@ -32,6 +32,12 @@ function bound3_mt:clone()
       return new(self.min, self.max)
 end
 
+--- set
+function bound3_mt:set(other)
+      self.min:set(other.min)
+      self.max:set(other.max)
+end
+
 --- with size
 -- @static
 function bound3.with_size(min, size)

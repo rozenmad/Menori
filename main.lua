@@ -121,11 +121,15 @@ function NewScene:init()
 		v.source:setFilter('nearest', 'nearest')
 	end
 
-	local model_node_tree = menori.ModelNodeTree(gltf, shader_lighting)
+	local model_node_tree = menori.ModelNodeTree(gltf, function (mesh, material)
+		local model = menori.ModelNode(mesh, material)
+		model.material.shader = shader_lighting
+		return model
+	end)
 
 	-- Search for a node by name in the hierarchy
 	local n = model_node_tree:find('Sketchfab_Scene/Sketchfab_model/fireRed_room.fbx/')
-	print(n.name)
+	if n then print(n.name) end
 
 	-- Creating a root node and adding the loaded model and other nodes to it.
 	self.root_node_3d = menori.Node()

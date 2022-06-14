@@ -65,6 +65,22 @@ function vec3_mt:sub(a, b)
 	return self
 end
 
+--- add_scalar
+function vec3_mt:add_scalar(scalar)
+	self.x = self.x + scalar
+	self.y = self.y + scalar
+	self.z = self.z + scalar
+	return self
+end
+
+--- add_scalar
+function vec3_mt:sub_scalar(scalar)
+	self.x = self.x - scalar
+	self.y = self.y - scalar
+	self.z = self.z - scalar
+	return self
+end
+
 --- mul
 function vec3_mt:mul(a, b)
 	self.x = a.x * b.x
@@ -265,10 +281,40 @@ function vec3.abs(a)
 	return new(math.abs(a.x), math.abs(a.y), math.abs(a.z))
 end
 
+--- equal
+-- @static
+function vec3.equal(a, b)
+	return { a.x == b.x, a.y == b.y, a.z == b.z }
+end
+
+--- notEqual
+-- @static
+function vec3.notEqual(a, b)
+	return { a.x ~= b.x, a.y ~= b.y, a.z ~= b.z  }
+end
+
 --- lessThan
 -- @static
 function vec3.lessThan(a, b)
 	return { a.x < b.x, a.y < b.y, a.z < b.z }
+end
+
+--- lessThanEqual
+-- @static
+function vec3.lessThanEqual(a, b)
+	return { a.x <= b.x, a.y <= b.y, a.z <= b.z }
+end
+
+--- greaterThan
+-- @static
+function vec3.greaterThan(a, b)
+	return { a.x > b.x, a.y > b.y, a.z > b.z }
+end
+
+--- greaterThanEqual
+-- @static
+function vec3.greaterThanEqual(a, b)
+	return { a.x >= b.x, a.y >= b.y, a.z >= b.z }
 end
 
 --- pow

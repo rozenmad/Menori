@@ -14,7 +14,6 @@ Base class for materials. A material describes the appearance of an object. (Inh
 
 local modules = (...):match('(.*%menori.modules.)')
 
-local class = require (modules .. 'libs.class')
 local utils = require (modules .. 'libs.utils')
 local UniformList = require (modules .. 'core3d.uniform_list')
 
@@ -65,6 +64,7 @@ function Material:init(name, shader)
 end
 
 Material.default = Material("Default")
+Material.default:set('baseColor', {1, 1, 1, 1})
 return Material
 
 ---

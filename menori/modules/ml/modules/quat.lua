@@ -4,6 +4,12 @@
 	@author rozenmad
 	2022
 -------------------------------------------------------------------------------
+	this module based on CPML - Cirno's Perfect Math Library
+	-- @author Colby Klein
+	-- @author Landon Manning
+	-- @copyright 2016
+	-- @license MIT/X11
+	https://github.com/excessive/cpml/blob/master/modules/quat.lua
 --]]
 
 --[[--

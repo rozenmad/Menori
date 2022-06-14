@@ -49,7 +49,6 @@ end
 function Environment:send_uniforms_to(shader)
 	self.uniform_list:send_to(shader)
 
-	love.graphics.setShader(shader)
 	local camera = self.camera
 	shader:send("m_view", camera.m_view.data)
 	shader:send("m_projection", camera.m_projection.data)

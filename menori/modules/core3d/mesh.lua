@@ -23,11 +23,19 @@ local Mesh = class('Mesh')
 
 local default_template = {1, 2, 3, 2, 4, 3}
 
-Mesh.default_vertexformat = {
-	{"VertexPosition", "float", 3},
-	{"VertexTexCoord", "float", 2},
-	{"VertexNormal"  , "float", 3},
-}
+if love._version_major > 11 then
+	Mesh.default_vertexformat = {
+		{name = "VertexPosition", format = "floatvec3"},
+		{name = "VertexTexCoord", format = "floatvec2"},
+		{name = "VertexNormal"  , format = "floatvec3"},
+	}
+else
+	Mesh.default_vertexformat = {
+		{"VertexPosition", "float", 3},
+		{"VertexTexCoord", "float", 2},
+		{"VertexNormal"  , "float", 3},
+	}
+end
 
 local function create_mesh_from_primitive(primitive, texture)
 	local count = primitive.count or #primitive.vertices
@@ -187,15 +195,48 @@ function Mesh:get_triangles()
 	return self.triangles
 end
 
+
+function Mesh:get_vertex_count(iprimitive)
+	iprimitive = iprimitive or 1
+	return self.primitives[iprimitive].mesh:getVertexCount()
+end
+
+--[[
+function Mesh:get_triangles(matrix)
+	if not self.triangles then
+		local mesh = self.primitives[1].mesh
+		self.triangles = {}
+		local attribute_index = Mesh.get_attribute_index('VertexPosition', mesh:getVertexFormat())
+		local map = mesh:getVertexMap()
+
+		if map then
+			for i = 1, #map, 3 do
+				local v1 = vec3(mesh:getVertexAttribute(map[i + 0], attribute_index))
+				local v2 = vec3(mesh:getVertexAttribute(map[i + 1], attribute_index))
+				local v3 = vec3(mesh:getVertexAttribute(map[i + 2], attribute_index))
+				matrix:multiply_vec3(v1, v1)
+				matrix:multiply_vec3(v2, v2)
+				matrix:multiply_vec3(v3, v3)
+				table.insert(self.triangles, {
+					{v1:unpack()}, {v2:unpack()}, {v3:unpack()}
+				})
+			end
+		end
+	end
+	return self.triangles
+end]]
+
 --- Get an array of all mesh vertices.
 -- @tparam[opt=1] int iprimitive The index of the primitive.
 -- @treturn table The table in the form of {vertex, ...} where each vertex is a table in the form of {attributecomponent, ...}.
-function Mesh:get_vertices(iprimitive)
+function Mesh:get_vertices(iprimitive, start, count)
 	iprimitive = iprimitive or 1
 	local mesh = self.primitives[iprimitive].mesh
-	local count = mesh:getVertexCount()
+	start = start or 1
+	count = count or mesh:getVertexCount()
+
 	local vertices = {}
-	for i = 1, count do
+	for i = start, start + count - 1 do
 		table.insert(vertices, {mesh:getVertex(i)})
 	end
 	return vertices

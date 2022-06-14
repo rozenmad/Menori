@@ -28,13 +28,18 @@ intersect.__index = intersect
 -- ray.position  is a vec3;
 -- ray.direction is a vec3.
 -- @tparam table triangle
--- triangle[1]   is a vec3;
--- triangle[2]   is a vec3;
--- triangle[3]   is a vec3.
+-- triangle[1]   is a vec3 or array;
+-- triangle[2]   is a vec3 or array;
+-- triangle[3]   is a vec3 or array.
 -- @bool[opt] backface_cull
 function intersect.ray_triangle(ray, triangle, backface_cull)
-	local e1 = triangle[2] - triangle[1]
-	local e2 = triangle[3] - triangle[1]
+	local t1 = vec3(triangle[1])
+	local t2 = vec3(triangle[2])
+	local t3 = vec3(triangle[3])
+
+	local e1 = t2:sub(t2, t1)
+	local e2 = t3:sub(t3, t1)
+
 	local h = vec3.cross(ray.direction, e2)
 	local a = vec3.dot(h, e1)
 
@@ -49,7 +54,7 @@ function intersect.ray_triangle(ray, triangle, backface_cull)
 	end
 
 	local f = 1 / a
-	local s = ray.position - triangle[1]
+	local s = ray.position - t1
 	local u = vec3.dot(s, h) * f
 
 	-- ray does not intersect triangle
@@ -72,14 +77,24 @@ function intersect.ray_triangle(ray, triangle, backface_cull)
 	-- return rayhit (point, distance, triangle normal)
 	if t >= DBL_EPSILON then
 		return {
-                  point = h:set(ray.direction):scale(t):add(ray.position),
+                  point = h:set(ray.direction):scale(t):add(h, ray.position),
                   distance = t,
-                  normal = vec3.cross(e1, e2),
+                  normal = vec3.cross(e1, e2):normalize(),
             }
 	end
 
 	-- ray does not intersect triangle
 	return false
+end
+
+function intersect.aabb_aabb(a, b)
+	return
+		a.min.x <= b.max.x and
+		a.max.x >= b.min.x and
+		a.min.y <= b.max.y and
+		a.max.y >= b.min.y and
+		a.min.z <= b.max.z and
+		a.max.z >= b.min.z
 end
 
 return intersect
