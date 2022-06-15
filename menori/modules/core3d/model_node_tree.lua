@@ -71,7 +71,11 @@ function ModelNodeTree:init(gltf, callback)
             local node
             if v.mesh then
                   local mesh = self.meshes[v.mesh + 1]
-                  local material = self.materials[mesh.primitives[1].material_index + 1]
+                  local material = Material.default
+                  local material_index = mesh.primitives[1].material_index
+                  if material_index then
+                        material = self.materials[material_index + 1]
+                  end
                   node = callback(mesh, material)
                   set_transform(node, v)
             else
