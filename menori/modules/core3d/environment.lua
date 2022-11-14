@@ -17,15 +17,15 @@ local class = require (modules .. 'libs.class')
 local utils = require (modules .. 'libs.utils')
 local UniformList = require (modules .. 'core3d.uniform_list')
 
-local Environment = class('Environment')
+local Environment = UniformList:extend('Environment')
 
 ----
 -- The public constructor.
 -- @param camera Camera that will be associated with this environment.
 function Environment:init(camera)
-	self.camera = camera
+	Environment.super.init(self)
 
-	self.uniform_list = UniformList()
+	self.camera = camera
 	self.lights = {}
 
 	self._shader_object_cache = nil
@@ -47,9 +47,8 @@ end
 -- This method is called automatically when the environment is used in scene:render_nodes()
 -- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
 function Environment:send_uniforms_to(shader)
-	self.uniform_list:send_to(shader)
+	self:send_to(shader)
 
-	love.graphics.setShader(shader)
 	local camera = self.camera
 	shader:send("m_view", camera.m_view.data)
 	shader:send("m_projection", camera.m_projection.data)

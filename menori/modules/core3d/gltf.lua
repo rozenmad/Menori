@@ -21,6 +21,10 @@ if type(jit) == 'table' and jit.status() then
 	ffi = require 'ffi'
 end
 
+local function getFFIPointer(data)
+	if data.getFFIPointer then return data:getFFIPointer() else return data:getPointer() end
+end
+
 local glTFLoader = {}
 local buffers, images, materials
 local data
@@ -44,22 +48,47 @@ local component_type_constants = {
 	[5126] = 4,
 }
 
-local datatypes = {
-	'byte',
-	'unorm16',
-	'',
-	'float',
-}
+local add_vertex_format
+if love._version_major > 11 then
+	local types = {
+		['SCALAR'] = '',
+		['VEC2'] = 'vec2',
+		['VEC3'] = 'vec3',
+		['VEC4'] = 'vec4',
+		['MAT2'] = 'mat2x2',
+		['MAT3'] = 'mat3x3',
+		['MAT4'] = 'mat4x4',
+	}
 
-local function get_component_type_value(typename)
-	if typename == 'byte' then
-		return 5120
-	elseif typename == 'unorm16' then
-		return 5123
-	elseif typename == 'float' then
-		return 5126
+	local component_types = {
+		[5120] = 'int8',
+		[5121] = 'uint8',
+		[5122] = 'int16',
+		[5123] = 'uint16',
+		[5125] = 'uint32',
+		[5126] = 'float',
+	}
+	function add_vertex_format(vertexformat, attribute_name, buffer)
+		local format = component_types[buffer.component_type] .. types[buffer.type]
+		table.insert(vertexformat, {
+			name = attribute_name, format = format
+		})
+	end
+else
+	local types = {
+		'byte',
+		'unorm16',
+		'',
+		'float',
+	}
+
+	function add_vertex_format(vertexformat, attribute_name, buffer)
+		table.insert(vertexformat, {
+			attribute_name, types[buffer.component_size], buffer.type_elements_count
+		})
 	end
 end
+
 
 local attribute_aliases = {
 	['POSITION'] = 'VertexPosition',
@@ -70,14 +99,6 @@ local attribute_aliases = {
 	['WEIGHTS']  = 'VertexWeights',
 	['TANGENT']  = 'VertexTangent',
 }
-
-local function get_key_from_value(t, value)
-	for k, v in pairs(t) do
-		if v == value then
-			return k
-		end
-	end
-end
 
 local function get_primitive_modes_constants(mode)
 	if mode == 0 then
@@ -93,7 +114,7 @@ local function get_primitive_modes_constants(mode)
 	return 'triangles'
 end
 
-local function unpack_type(component_type)
+local function get_unpack_type(component_type)
 	if
 	component_type == 5120 then
 		return 'b'
@@ -135,7 +156,6 @@ local function get_buffer(accessor_index)
 	local length = buffer_view.byteLength
 
 	local component_size = component_type_constants[accessor.componentType]
-	local component_type = unpack_type(accessor.componentType)
 
 	local type_elements_count = type_constants[accessor.type]
 	return {
@@ -145,7 +165,8 @@ local function get_buffer(accessor_index)
 
 		stride = buffer_view.byteStride or (component_size * type_elements_count),
 		component_size = component_size,
-		component_type = component_type,
+		component_type = accessor.componentType,
+		type = accessor.type,
 
 		type_elements_count = type_elements_count,
 		count = accessor.count,
@@ -159,8 +180,8 @@ local function get_indices_content(v)
 	local temp_data
 	if ffi then
 		temp_data = love.data.newByteData(buffer.count * element_size)
-		local temp_data_pointer = ffi.cast('char*', temp_data:getFFIPointer())
-		local data = ffi.cast('char*', buffer.data:getFFIPointer()) + buffer.offset
+		local temp_data_pointer = ffi.cast('char*', getFFIPointer(temp_data))
+		local data = ffi.cast('char*', getFFIPointer(buffer.data)) + buffer.offset
 
 		for i = 0, buffer.count - 1 do
 			ffi.copy(temp_data_pointer + i * element_size, data + i * buffer.stride, element_size)
@@ -168,11 +189,11 @@ local function get_indices_content(v)
 	else
 		temp_data = {}
 		local data_string = buffer.data:getString()
+		local unpack_type = get_unpack_type(buffer.component_type)
 
 		for i = 0, buffer.count - 1 do
 			local pos =  buffer.offset + i * element_size + 1
-			local v = love.data.unpack(buffer.component_type, data_string, pos) + 1
-			table.insert(temp_data, v)
+			table.insert(temp_data, love.data.unpack(unpack_type, data_string, pos) + 1)
 		end
 	end
 	return temp_data, element_size
@@ -184,13 +205,13 @@ local function get_vertices_content(attribute_buffers, components_stride, length
 
 	if ffi then
 		temp_data = love.data.newByteData(length)
-		local temp_data_pointer = ffi.cast('char*', temp_data:getFFIPointer())
+		local temp_data_pointer = ffi.cast('char*', getFFIPointer(temp_data))
 
 		for _, buffer in ipairs(attribute_buffers) do
 			local element_size = buffer.component_size * buffer.type_elements_count
 			for i = 0, buffer.count - 1 do
 				local p1 = buffer.offset + i * buffer.stride
-				local data = ffi.cast('char*', buffer.data:getFFIPointer()) + p1
+				local data = ffi.cast('char*', getFFIPointer(buffer.data)) + p1
 
 				local p2 = start_offset + i * components_stride
 
@@ -201,6 +222,7 @@ local function get_vertices_content(attribute_buffers, components_stride, length
 	else
 		temp_data = {}
 		for _, buffer in ipairs(attribute_buffers) do
+			local unpack_type = get_unpack_type(buffer.component_type)
 			local data_string = buffer.data:getString()
 			for i = 0, buffer.count - 1 do
 				local vertex = temp_data[i + 1] or {}
@@ -209,7 +231,7 @@ local function get_vertices_content(attribute_buffers, components_stride, length
 				local pos = buffer.offset + i * buffer.stride
 				for k = 0, buffer.type_elements_count - 1 do
 					local element_pos = pos + k * buffer.component_size + 1
-					local attr = love.data.unpack(buffer.component_type, data_string, element_pos)
+					local attr = love.data.unpack(unpack_type, data_string, element_pos)
 					vertex[start_offset + k + 1] = attr
 				end
 			end
@@ -254,9 +276,7 @@ local function init_mesh(mesh)
 			length = length + buffer.count * element_size
 			components_stride = components_stride + element_size
 
-			table.insert(vertexformat, {
-				attribute_name, datatypes[buffer.component_size], buffer.type_elements_count
-			})
+			add_vertex_format(vertexformat, attribute_name, buffer)
 		end
 
 		local vertices = get_vertices_content(attribute_buffers, components_stride, length)
@@ -348,22 +368,14 @@ local function create_material(textures, material)
 	}
 end
 
-local function parse_mag_filter(value)
+local function parse_filter(value)
 	if
 	value == 9728 then
 		return 'nearest'
 	elseif
 	value == 9729 then
 		return 'linear'
-	end
-end
-
-local function parse_min_filter(value)
-	if
-	value == 9728 then
-		return 'nearest'
-	elseif
-	value == 9729 then
+	else
 		return 'linear'
 	end
 end
@@ -378,6 +390,8 @@ local function parse_wrap(value)
 	elseif
 	value == 10497 then
 		return 'repeat'
+	else
+		return 'clamp'
 	end
 end
 
@@ -409,13 +423,19 @@ function glTFLoader.load(filename, io_read)
 	images = {}
 	if data.images then
 		for i, v in ipairs(data.images) do
-			local image_filename = path .. v.uri
-			local image_filedata = love.filesystem.newFileData(io_read(image_filename), image_filename)
-			local imageData = love.image.newImageData(image_filedata)
+			local data = v.uri:match('^data:image/%w+;base64,(.+)')
+			local image_data
+			if data then
+				image_data = love.data.decode('data', 'base64', data)
+			else
+				local image_filename = path .. v.uri
+				image_data = love.filesystem.newFileData(io_read(image_filename), image_filename)
+			end
+			local imageData = love.image.newImageData(image_data)
 			local image = love.graphics.newImage(imageData)
 			imageData:release()
 			images[i] = {
-				source = image, name = v.uri, path = path, filedata = image_filedata
+				source = image, name = v.uri, path = path, filedata = image_data
 			}
 		end
 	end
@@ -424,8 +444,8 @@ function glTFLoader.load(filename, io_read)
 	if data.samplers then
 		for _, v in ipairs(data.samplers) do
 			table.insert(samplers, {
-				magFilter = parse_mag_filter(v.magFilter),
-				minFilter = parse_min_filter(v.minFilter),
+				magFilter = parse_filter(v.magFilter),
+				minFilter = parse_filter(v.minFilter),
 				wrapS = parse_wrap(v.wrapS),
 				wrapT = parse_wrap(v.wrapT),
 			})
@@ -435,9 +455,16 @@ function glTFLoader.load(filename, io_read)
 	local textures = {}
 	if data.textures then
 		for _, v in ipairs(data.textures) do
+			local sampler = samplers[v.sampler + 1]
+			local image = images[v.source + 1]
 			table.insert(textures, {
-				image = images[v.source + 1], sampler = samplers[v.sampler]
+				image = image, sampler = sampler
 			})
+
+			if sampler then
+				image.source:setFilter(sampler.magFilter, sampler.minFilter)
+				image.source:setWrap(sampler.wrapS, sampler.wrapT)
+			end
 		end
 	end
 

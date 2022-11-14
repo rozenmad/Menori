@@ -247,10 +247,40 @@ function vec4.abs(a)
 	return new(math.abs(a.x), math.abs(a.y), math.abs(a.z), math.abs(a.w))
 end
 
+--- equal
+-- @static
+function vec4.equal(a, b)
+	return { a.x == b.x, a.y == b.y, a.z == b.z, a.w == b.w }
+end
+
+--- notEqual
+-- @static
+function vec4.notEqual(a, b)
+	return { a.x ~= b.x, a.y ~= b.y, a.z ~= b.z, a.w ~= b.w }
+end
+
 --- lessThan
 -- @static
 function vec4.lessThan(a, b)
 	return { a.x < b.x, a.y < b.y, a.z < b.z, a.w < b.w }
+end
+
+--- lessThanEqual
+-- @static
+function vec4.lessThanEqual(a, b)
+	return { a.x <= b.x, a.y <= b.y, a.z <= b.z, a.w <= b.w  }
+end
+
+--- greaterThan
+-- @static
+function vec4.greaterThan(a, b)
+	return { a.x > b.x, a.y > b.y, a.z > b.z, a.w > b.w  }
+end
+
+--- greaterThanEqual
+-- @static
+function vec4.greaterThanEqual(a, b)
+	return { a.x >= b.x, a.y >= b.y, a.z >= b.z, a.w >= b.w  }
 end
 
 --- pow

@@ -14,7 +14,7 @@ Perspective camera class.
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
 local ml = require (modules .. 'ml')
-local app = require (modules .. 'application')
+local app = require (modules .. 'app')
 
 local mat4 = ml.mat4
 local vec2 = ml.vec2
@@ -48,7 +48,7 @@ end
 -- Updating the view matrix.
 function PerspectiveCamera:update_view_matrix()
 	self.m_view:identity()
-	self.m_view:look_at(self.eye, self.center, self.up)
+	self.m_view:look_at_LH(self.eye, self.center, self.up)
 end
 
 ----
@@ -62,8 +62,9 @@ function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
 
 	local m_pos = vec3(mat4.unproject(vec3(x, y, 1), self.m_view, self.m_projection, viewport))
 	local c_pos = self.eye:clone()
+	local direction = vec3():sub(m_pos, self.eye):normalize()
 	return {
-		position = c_pos, direction = m_pos - self.eye
+		position = c_pos, direction = direction
 	}
 end
 

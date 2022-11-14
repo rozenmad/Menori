@@ -24,8 +24,8 @@ function sprite:init(quads, image)
 	self.quads = quads
 	self.image = image
 	self.index = 1
-	self.ox = 0
-	self.oy = 0
+	self.px = 0
+	self.py = 0
 
 	self.stop = false
 	self.duration_accumulator = 0
@@ -64,9 +64,8 @@ end
 -- @tparam number px
 -- @tparam number py
 function sprite:set_pivot(px, py)
-	local x, y, w, h = self:get_frame_viewport()
-	self.ox = px * w
-	self.oy = py * h
+	self.px = px
+	self.py = py
 end
 
 --- Get frame count.
@@ -127,10 +126,51 @@ end
 -- @tparam number sy
 -- @tparam number ox
 -- @tparam number oy
-function sprite:draw(x, y, angle, sx, sy, ox, oy, ...)
-	ox = (ox or 0) + self.ox
-	oy = (oy or 0) + self.oy
-	love.graphics.draw(self.image, self.quads[self.index], x, y, angle, sx, sy, ox, oy, ...)
+-- @tparam number kx
+-- @tparam number ky
+function sprite:draw(x, y, angle, sx, sy, ox, oy, kx, ky)
+	local _, _, w, h = self:get_frame_viewport()
+	ox = (ox or 0) + self.px * w
+	oy = (oy or 0) + self.py * h
+	love.graphics.draw(self.image, self.quads[self.index], x, y, angle, sx, sy, ox, oy, kx, ky)
+end
+
+--- Sprite draw_ex function.
+-- @tparam number x
+-- @tparam number y
+-- @tparam string fit
+-- @tparam number bound_w
+-- @tparam number bound_h
+-- @tparam number onx
+-- @tparam number ony
+-- @tparam number angle
+-- @tparam number kx
+-- @tparam number ky
+function sprite:draw_ex(x, y, fit, bound_w, bound_h, onx, ony, angle, kx, ky)
+      local _, _, w, h = self:get_frame_viewport()
+
+	local sx = 1
+	local sy = 1
+
+	if
+	fit == 'max' then
+		local f = math.max(bound_w / w, bound_h / h)
+		sx = f*sx
+		sy = f*sy
+	elseif
+	fit == 'min' then
+ 		local f = math.min(bound_w / w, bound_h / h)
+		sx = f*sx
+		sy = f*sy
+	end
+
+	local ox = self.px * w
+	local oy = self.py * h
+
+      x = x - w * sx * ((onx or 0) - self.px)
+      y = y - h * sy * ((ony or 0) - self.py)
+
+	love.graphics.draw(self.image, self.quads[self.index], x, y, angle, sx, sy, ox, oy, kx, ky)
 end
 
 return sprite

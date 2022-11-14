@@ -13,12 +13,13 @@ Camera for 2D scenes.
 
 local modules = (...):match('(.*%menori.modules.)')
 
---local Application = require (modules .. 'application')
+local app   = require (modules .. 'app')
 local class = require (modules .. 'libs.class')
 local ml    = require (modules .. 'ml')
 
 local mat4 = ml.mat4
 local vec3 = ml.vec3
+local vec2 = ml.vec2
 local quat = ml.quat
 
 local camera = class('Camera')
@@ -38,11 +39,15 @@ function camera:init()
 	self.sy = 1
 	self.ox = 0
 	self.oy = 0
+
+	self.px = 0.5
+	self.py = 0.5
 	self.matrix = mat4()
 
 	self._camera_2d_mode = true
 
-	self:set_bounding_box(0, 0, 0, 0)
+	local _, _, viewport_w, viewport_h = self:get_viewport()
+	self:set_bounding_box(viewport_w, viewport_h)
 end
 
 --- Set camera pivot.
@@ -61,6 +66,8 @@ function camera:_apply_transform()
 	--local sx = 1 / self.sx
 	--local sy = 1 / self.sy
 	if self._update then
+		local _, _, dw, dh = self:get_viewport()
+
 		local sx = 1 / self.sx
 		local sy = 1 / self.sy
 
@@ -70,7 +77,12 @@ function camera:_apply_transform()
 		self._q.z = s
 		self._q.w = c
 
-		self._p:set(-self.x, -self.y, 0)
+		local rox = dw * self.sx
+		local roy = dh * self.sy
+		local ox = (self.bound_w-rox) * (0.5 - self.px)
+		local oy = (self.bound_h-roy) * (0.5 - self.py)
+
+		self._p:set(-self.x+ox, -self.y+oy, 0)
 		self._s:set(sx, sy, 1)
 
 		--self.matrix:compose(self._p, self._q, self._s)
@@ -88,15 +100,16 @@ function camera:_apply_transform()
 	love.graphics.applyTransform(self.matrix:to_temp_transform_object())
 end
 
+
 --- Get viewport.
 -- @treturn number x
 -- @treturn number y
 -- @treturn number w
 -- @treturn number h
 function camera:get_viewport()
-	local w, h = love.graphics.getDimensions()
+	local _, _, w, h = app:get_viewport()
 	local x, y = self:get_position()
-	return x, y, w, h
+	return 0, 0, w, h
 end
 
 --- Move camera.
@@ -143,6 +156,10 @@ function camera:get_position()
 	return self.x - self.ox, self.y - self.oy
 end
 
+function camera:get_bound()
+	return self.bound_w , self.bound_h
+end
+
 --- Set camera bounding box.
 -- @tparam number w bounding box width.
 -- @tparam number h bounding box height.
@@ -151,99 +168,6 @@ end
 function camera:set_bounding_box(w, h, pvx, pvy)
 	self.bound_w = w
 	self.bound_h = h
-	self.bound_pvx = pvx
-	self.bound_pvy = pvy
-	self._edges = self:calculate_distance_to_edge(self.sx, self.sy)
-
-	--self:set_adjust_to_screen()
-end
-
-function camera:adjust_screen()
-      local window_w, window_h = love.graphics.getDimensions()
-
-      local sx = window_w / self.bound_w
-      local sy = window_h / self.bound_h
-      local min, max = math.min(sx, sy), math.max(sx, sy)
-	self.sx = 1/max
-	self.sy = 1/max
-end
-
-function camera:calculate_distance_to_edge(sx, sy)
-	local _, _, viewport_w, viewport_h = self:get_viewport()
-
-	local w = self.bound_w
-	local h = self.bound_h
-	local bound_oxs = self.bound_pvx
-	local bound_oys = self.bound_pvy
-
-	local oxs = (self.ox / viewport_w)
-	local oys = (self.oy / viewport_h)
-	local ixs = 1 - oxs
-	local iys = 1 - oys
-
-	local bound_ixs = 1 - bound_oxs
-	local bound_iys = 1 - bound_oys
-
-	viewport_w = viewport_w * sx
-	viewport_h = viewport_h * sy
-
-	local x1 = (viewport_w * oxs) - (w * bound_oxs)
-	local x2 = (w * bound_ixs) - (viewport_w * ixs)
-
-	local y1 = (viewport_h * oys) - (h * bound_oys)
-	local y2 = (h * bound_iys) - (viewport_h * iys)
-
-	return {
-		x1 = x1,
-		x2 = x2,
-		y1 = y1,
-		y2 = y2,
-	}
-end
-
-function camera:get_distance_to_edge(position_apply)
-	if position_apply then
-		local d = self._edges
-		return {
-			x1 = self.x - d.x1,
-			x2 = d.x2 - self.x,
-			y1 = self.y - d.y1,
-			y2 = d.y2 - self.y,
-		}
-	else
-		return self._edges
-	end
-end
-
-function camera:get_position_from_normalize(nx, ny, sx, sy)
-	local edges = self:calculate_distance_to_edge(sx, sy)
-
-	local w, h = edges.x2 - edges.x1, edges.y2 - edges.y1
-	nx = edges.x1 + nx * w
-	ny = edges.y1 + ny * h
-	return nx, ny
-end
-
-
---- Set camera position inside bounding box.
--- @tparam number x position x
--- @tparam number y position y
-function camera:set_position_inside_bound(x, y)
-	local x1 = self._edges.x1
-	local x2 = self._edges.x2
-	local y1 = self._edges.y1
-	local y2 = self._edges.y2
-
-	local px = x
-	local py = y
-
-	if py > y2 then py = y2 end if py < y1 then py = y1 end
-	if px > x2 then px = x2 end if px < x1 then px = x1 end
-
-	if x1 >= x2 then px = 0 end
-	if y1 >= y2 then py = 0 end
-
-	self:set_position(px, py)
 end
 
 return camera

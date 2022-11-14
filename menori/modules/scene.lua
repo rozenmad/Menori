@@ -14,7 +14,6 @@ You need to inherit from the Scene class to create your own scene object.
 --- @classmod Scene
 
 local modules = (...):match('(.*%menori.modules.)')
-
 local class = require (modules .. 'libs.class')
 
 local lovg = love.graphics
@@ -35,7 +34,6 @@ local scene = class('Scene')
 --- The public constructor.
 function scene:init()
 	self.list_drawable_nodes = {}
-	self.instance_list = {}
 end
 
 --- Recursively call render function for every node.
@@ -78,14 +76,6 @@ function scene:render_nodes(node, environment, renderstates, filter)
 	for _, v in ipairs(self.list_drawable_nodes) do
 		filter(v, self, environment)
 	end
-
-	for k, v in pairs(self.instance_list) do
-		if v ~= false then
-			v:draw(environment)
-		end
-		self.instance_list[k] = false
-	end
-
 	lovg.pop()
 
 	local count = #self.list_drawable_nodes

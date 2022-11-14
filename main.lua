@@ -121,15 +121,20 @@ function NewScene:init()
 		v.source:setFilter('nearest', 'nearest')
 	end
 
-	local model_node_tree = menori.ModelNodeTree(gltf, shader_lighting)
+	local scenes = menori.NodeTreeBuilder.traverse(gltf, function (node)
+		if node.material then
+			node.material.shader = shader_lighting
+		end
+		return node
+	end)
 
 	-- Search for a node by name in the hierarchy
-	local n = model_node_tree:find('Sketchfab_Scene/Sketchfab_model/fireRed_room.fbx/')
-	print(n.name)
+	local n = scenes[1]:find('/Sketchfab_model/fireRed_room.fbx')
+	print(scenes[1].name, n.name)
 
 	-- Creating a root node and adding the loaded model and other nodes to it.
 	self.root_node_3d = menori.Node()
-	self.root_node_3d:attach(model_node_tree, quadmesh1, quadmesh2)
+	self.root_node_3d:attach(scenes[1], quadmesh1, quadmesh2)
 
 	self.root_node_2d = menori.Node()
 	self.root_node_2d:attach(sprite_node)
@@ -169,8 +174,7 @@ function NewScene:update_camera()
 	self.camera_3d.center = vec3(0)
 	self.camera_3d:update_view_matrix()
 
-	local uniform_list = self.environment_3d.uniform_list
-	uniform_list:set_vector('view_position', self.camera_3d.eye)
+	self.environment_3d:set_vector('view_position', self.camera_3d.eye)
 end
 
 function NewScene:update()

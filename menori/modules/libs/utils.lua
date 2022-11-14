@@ -44,7 +44,9 @@ end
 function utils.copy(value)
       if type(value) ~= 'table' then return value end
       local t = setmetatable({}, getmetatable(value))
-      for k, v in pairs(value) do t[utils.copy(k)] = utils.copy(v) end
+      for k, v in pairs(value) do
+		t[utils.copy(k)] = utils.copy(v)
+	end
       return t
 end
 

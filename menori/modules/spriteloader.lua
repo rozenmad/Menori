@@ -20,8 +20,7 @@ local SpriteLoader = {}
 local list = setmetatable({}, {__mode = 'v'})
 
 local function load_aseprite_sprite_sheet(filename)
-	local path, name = filename:match("(.*/)(.+)%.json$")
-	print(filename, path, name)
+	local path = filename:match("(.*/).+%.json$")
 	local data = json.decode(love.filesystem.read(filename))
 	local meta = data.meta
 

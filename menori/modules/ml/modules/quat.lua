@@ -4,6 +4,12 @@
 	@author rozenmad
 	2022
 -------------------------------------------------------------------------------
+	this module based on CPML - Cirno's Perfect Math Library
+	-- @author Colby Klein
+	-- @author Landon Manning
+	-- @copyright 2016
+	-- @license MIT/X11
+	https://github.com/excessive/cpml/blob/master/modules/quat.lua
 --]]
 
 --[[--
@@ -98,9 +104,12 @@ end
 --- set from matrix rotation
 function quat_mt:set_from_matrix_rotation(m)
 	local e = m.e or m
-	local m11, m12, m13 = e[1], e[ 2], e[ 3]
-	local m21, m22, m23 = e[5], e[ 6], e[ 7]
-	local m31, m32, m33 = e[9], e[10], e[11]
+	--local m11, m12, m13 = e[1], e[ 2], e[ 3]
+	--local m21, m22, m23 = e[5], e[ 6], e[ 7]
+	--local m31, m32, m33 = e[9], e[10], e[11]
+	local m11, m12, m13 = e[1], e[ 5], e[ 9]
+	local m21, m22, m23 = e[2], e[ 6], e[10]
+	local m31, m32, m33 = e[3], e[ 7], e[11]
 
 	local tr = (m11 + m22) + m33
 

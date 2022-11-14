@@ -16,6 +16,7 @@ local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
 local ml = require (modules .. 'ml')
 local vec3 = ml.vec3
+local mat4 = ml.mat4
 local bound3 = ml.bound3
 local lg = love.graphics
 
@@ -23,11 +24,18 @@ local Mesh = class('Mesh')
 
 local default_template = {1, 2, 3, 2, 4, 3}
 
-Mesh.default_vertexformat = {
+local vertexformat12 = {
+	{name = "VertexPosition", format = "floatvec3"},
+	{name = "VertexTexCoord", format = "floatvec2"},
+	{name = "VertexNormal"  , format = "floatvec3"},
+}
+local vertexformat11 = {
 	{"VertexPosition", "float", 3},
 	{"VertexTexCoord", "float", 2},
 	{"VertexNormal"  , "float", 3},
 }
+
+Mesh.default_vertexformat = (love._version_major > 11) and vertexformat12 or vertexformat11
 
 local function create_mesh_from_primitive(primitive, texture)
 	local count = primitive.count or #primitive.vertices
@@ -65,7 +73,7 @@ local function calculate_bound(lg_mesh_obj)
 		t.z1, t.z2 = z, z
 
 		for i = 2, lg_mesh_obj:getVertexCount() do
-			local x, y, z = lg_mesh_obj:getVertexAttribute(i, pindex)
+			x, y, z = lg_mesh_obj:getVertexAttribute(i, pindex)
 			if x < t.x1 then t.x1 = x elseif x > t.x2 then t.x2 = x end
 			if y < t.y1 then t.y1 = y elseif y > t.y2 then t.y2 = y end
 			if z < t.z1 then t.z1 = z elseif z > t.z2 then t.z2 = z end
@@ -165,40 +173,67 @@ function Mesh:draw(material)
 	end
 end
 
+function Mesh:get_bound(iprimitive)
+	iprimitive = iprimitive or 1
+	return self.primitives[iprimitive].bound
+end
+
+
+function Mesh:get_vertex_count(iprimitive)
+	iprimitive = iprimitive or 1
+	return self.primitives[iprimitive].mesh:getVertexCount()
+end
+
+function Mesh:get_triangles_transform(matrix)
+	local triangles = {}
+	local mesh = self.primitives[1].mesh
+	local attribute_index = Mesh.get_attribute_index('VertexPosition', mesh:getVertexFormat())
+	local map = mesh:getVertexMap()
+	if map then
+		for i = 1, #map, 3 do
+			local v1 = vec3(mesh:getVertexAttribute(map[i + 0], attribute_index))
+			local v2 = vec3(mesh:getVertexAttribute(map[i + 1], attribute_index))
+			local v3 = vec3(mesh:getVertexAttribute(map[i + 2], attribute_index))
+			v1 = matrix:multiply_vec3(v1, v1)
+			v2 = matrix:multiply_vec3(v2, v2)
+			v3 = matrix:multiply_vec3(v3, v3)
+			table.insert(triangles, {
+				{v1:unpack()},
+				{v2:unpack()},
+				{v3:unpack()},
+			})
+		end
+	end
+
+	return triangles
+end
+
 --- Create a cached array of triangles from the mesh vertices and return it.
 -- @treturn table Triangles { {{x, y, z}, {x, y, z}, {x, y, z}}, ...}
 function Mesh:get_triangles()
-	if not self.triangles then
-		local mesh = self.primitives[1].mesh
-		self.triangles = {}
-		local attribute_index = Mesh.get_attribute_index('VertexPosition', mesh:getVertexFormat())
-		local map = mesh:getVertexMap()
-
-		if map then
-			for i = 1, #map, 3 do
-				table.insert(self.triangles, {
-					{mesh:getVertexAttribute(map[i + 0], attribute_index)},
-					{mesh:getVertexAttribute(map[i + 1], attribute_index)},
-					{mesh:getVertexAttribute(map[i + 2], attribute_index)},
-				})
-			end
-		end
-	end
+	self.triangles = self.triangles or self:get_triangles_transform(mat4())
 	return self.triangles
 end
+
 
 --- Get an array of all mesh vertices.
 -- @tparam[opt=1] int iprimitive The index of the primitive.
 -- @treturn table The table in the form of {vertex, ...} where each vertex is a table in the form of {attributecomponent, ...}.
-function Mesh:get_vertices(iprimitive)
+function Mesh:get_vertices(iprimitive, start, count)
 	iprimitive = iprimitive or 1
 	local mesh = self.primitives[iprimitive].mesh
-	local count = mesh:getVertexCount()
+	start = start or 1
+	count = count or mesh:getVertexCount()
+
 	local vertices = {}
-	for i = 1, count do
+	for i = start, start + count - 1 do
 		table.insert(vertices, {mesh:getVertex(i)})
 	end
 	return vertices
+end
+
+function Mesh:get_vertex_map(iprimitive)
+	return self.primitives[iprimitive or 1].mesh:getVertexMap()
 end
 
 --- Get an array of all mesh vertices.

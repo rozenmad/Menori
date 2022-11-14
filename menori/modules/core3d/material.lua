@@ -14,7 +14,6 @@ Base class for materials. A material describes the appearance of an object. (Inh
 
 local modules = (...):match('(.*%menori.modules.)')
 
-local class = require (modules .. 'libs.class')
 local utils = require (modules .. 'libs.utils')
 local UniformList = require (modules .. 'core3d.uniform_list')
 
@@ -23,24 +22,38 @@ local Material = UniformList:extend('Material', {
 })
 
 Material.default_shader = love.graphics.newShader([[
+varying vec4 pos;
+
 #ifdef VERTEX
       uniform mat4 m_model;
       uniform mat4 m_view;
       uniform mat4 m_projection;
 
-      // love2d use row major matrices by default, we have column major and need transpose it.
-      // 11.3 love has bug with matrix layout in shader:send().
       vec4 position(mat4 transform_projection, vec4 vertex_position) {
-            return vertex_position * m_model * m_view * m_projection;
+            pos = vertex_position * m_model;
+            return pos * m_view * m_projection;
       }
 #endif
 #ifdef PIXEL
       uniform vec4 baseColor;
+      uniform vec4 fog_color;
+      uniform vec3 camera_position;
+      
+      float fogFactorExp2(const float dist, const float density) {
+            const float LOG2 = -1.442695;
+            float d = density * dist;
+            return clamp(exp2(d * d * LOG2), 0.0, 1.0);
+      }
+      
       vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords)
       {
             vec4 texcolor = Texel(t, texture_coords);
             if( texcolor.a <= 0.0f ) discard;
-            return baseColor * texcolor * color;
+            float distance_to_fragment = distance(pos.xyz, camera_position);
+            float fog_factor = fogFactorExp2(distance_to_fragment, 0.02);
+            vec4 result = texcolor * color;
+            vec4 albedo = mix(fog_color, result, fog_factor);
+            return albedo;
       }
 #endif
 ]])
@@ -65,6 +78,7 @@ function Material:init(name, shader)
 end
 
 Material.default = Material("Default")
+Material.default:set('baseColor', {1, 1, 1, 1})
 return Material
 
 ---

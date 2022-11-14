@@ -137,7 +137,7 @@ end
 -- @return vec3 object
 function Node:right(retvalue)
 	self:recursive_update_transform()
-	return (retvalue or vec3()):set( self.world_matrix[1], -self.world_matrix[5], -self.world_matrix[ 9])
+	return (retvalue or vec3()):set(self.world_matrix[1], self.world_matrix[5], self.world_matrix[ 9])
 end
 
 --- The green axis of the transform in world space.
@@ -145,7 +145,7 @@ end
 -- @return vec3 object
 function Node:up(retvalue)
 	self:recursive_update_transform()
-	return (retvalue or vec3()):set( self.world_matrix[2],  self.world_matrix[6],  self.world_matrix[10])
+	return (retvalue or vec3()):set(self.world_matrix[2], self.world_matrix[6], self.world_matrix[10])
 end
 
 --- The blue axis of the transform in world space.
@@ -153,7 +153,7 @@ end
 -- @treturn vec3 object
 function Node:forward(retvalue)
 	self:recursive_update_transform()
-	return (retvalue or vec3()):set( self.world_matrix[3], -self.world_matrix[7], -self.world_matrix[11])
+	return (retvalue or vec3()):set(self.world_matrix[3], self.world_matrix[7], self.world_matrix[11])
 end
 
 function Node:_recursive_get_aabb(t)
@@ -201,6 +201,7 @@ function Node:update_transform()
 
 	if self.update_transform_flag then
 		local_matrix:compose(self.position, self.rotation, self.scale)
+		--local_matrix:translate(self.pivot)
 	end
 
 	local parent = self.parent
@@ -316,7 +317,7 @@ end
 function Node:debug_print(node, tabs)
 	node = node or self
 	tabs = tabs or ''
-	print(tabs .. '-> ' .. string.format('Node: %s Child count: %i', node, #node.children))
+	print(string.format('%s -> Node: %s | Children: %i', tabs .. node.name, node, #node.children))
 	tabs = tabs .. '  '
 	for _, v in ipairs(node.children) do
 		self:debug_print(v, tabs)

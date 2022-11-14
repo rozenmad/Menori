@@ -97,7 +97,7 @@ function UniformList:send_to(shader, concat_str)
 				shader:sendColor(name, unpack(v.value))
 			elseif
 			v.type == 3 then
-				shader:send(name, v.value)
+				shader:send(name, v.value.data)
 			elseif
 			v.type == 4 then
 				shader:send(name, {v.value:unpack()})

@@ -46,7 +46,8 @@ end
 --- The public constructor. Takes as arguments a list of nodes and scenes loaded with glTFLoader.
 -- @tparam table gltf
 -- @param shader
-function ModelNodeTree:init(gltf, shader)
+function ModelNodeTree:init(gltf, callback)
+      callback = callback or ModelNode
       ModelNodeTree.super.init(self)
       self.meshes = {}
       for i, v in ipairs(gltf.meshes) do
@@ -55,8 +56,10 @@ function ModelNodeTree:init(gltf, shader)
 
       self.materials = {}
       for i, v in ipairs(gltf.materials) do
-            local material = Material(v.name, shader)
-            material.main_texture = v.main_texture.source
+            local material = Material(v.name)
+            if v.main_texture then
+                  material.main_texture = v.main_texture.source
+            end
             for name, uniform in pairs(v.uniforms) do
                   material:set(name, uniform)
             end
@@ -68,7 +71,12 @@ function ModelNodeTree:init(gltf, shader)
             local node
             if v.mesh then
                   local mesh = self.meshes[v.mesh + 1]
-                  node = ModelNode(mesh, self.materials[mesh.primitives[1].material_index + 1])
+                  local material = Material.default
+                  local material_index = mesh.primitives[1].material_index
+                  if material_index then
+                        material = self.materials[material_index + 1]
+                  end
+                  node = callback(mesh, material)
                   set_transform(node, v)
             else
                   node = Node()
