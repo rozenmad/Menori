@@ -17,7 +17,10 @@ local modules = (...):match('(.*%menori.modules.)')
 local Node     = require (modules .. 'node')
 local ml       = require (modules .. 'ml')
 local Material = require (modules .. 'core3d.material')
+local ffi      = require('ffi')
+
 local vec3     = ml.vec3
+local mat4     = ml.mat4
 local bound3   = ml.bound3
 
 local ModelNode = Node:extend('ModelNode')
@@ -28,7 +31,6 @@ local ModelNode = Node:extend('ModelNode')
 function ModelNode:init(mesh, material)
 	ModelNode.super.init(self)
       self.material = material or Material.default
-      self.material = self.material:clone()
 	self.mesh = mesh
 
       self.color = ml.vec4(1)
@@ -37,7 +39,7 @@ end
 --- Clone an object.
 -- @treturn menori.ModelNode object
 function ModelNode:clone()
-      local t = ModelNode(self.mesh, self.material, false)
+      local t = ModelNode(self.mesh, self.material)
       ModelNode.super.clone(self, t)
       return t
 end
@@ -45,9 +47,8 @@ end
 --- Calculate AABB by applying the current transformations.
 -- @tparam[opt=1] number index The index of the primitive in the mesh.
 -- @treturn menori.ml.bound3 object
-function ModelNode:calculate_aabb(index)
-      index = index or 1
-      local bound = self.mesh.primitives[index].bound
+function ModelNode:calculate_aabb()
+      local bound = self.mesh.bound
       local min = bound.min
       local max = bound.max
       self:recursive_update_transform()
@@ -82,15 +83,43 @@ function ModelNode:set_color(r, g, b, a)
       self.color:set(r, g, b, a)
 end
 
+local matrix_uniform_limit = 180
+local data = love.data.newByteData(matrix_uniform_limit * 16 * 4)
+local temp_mat = mat4()
+local root_mat = mat4()
 --- Draw a ModelNode object on the screen.
 -- This function will be called implicitly in the hierarchy when a node is drawn with scene:render_nodes()
 -- @tparam menori.Scene scene object that is used when drawing the model
 -- @tparam menori.Environment environment object that is used when drawing the model
 function ModelNode:render(scene, environment)
-	local shader = self.material.shader
-
+      local shader = self.material.shader
       environment:apply_shader(shader)
       shader:send('m_model', self.world_matrix.data)
+
+      if self.joints then
+            self:recursive_update_transform()
+            if self.skeleton_node then
+                  root_mat:copy(self.skeleton_node.world_matrix)
+            else
+                  root_mat:copy(self.world_matrix)
+            end
+            root_mat:inverse()
+
+            for i = 1, #self.joints do
+                  local node = self.joints[i]
+                  temp_mat:copy(node.world_matrix)
+                  temp_mat:multiply(node.inverse_bind_matrix)
+                  temp_mat:multiply(root_mat)
+
+                  local ptr = ffi.cast('char*', data:getFFIPointer()) + (i-1) * 16*4
+                  ffi.copy(ptr, temp_mat.e+1, 16*4)
+            end
+
+            shader:send('u_jointMat', data, 'column')
+            shader:send('use_joints', true)
+      else
+            shader:send('use_joints', false)
+      end
 
       local c = self.color
       love.graphics.setColor(c.x, c.y, c.z, c.w)

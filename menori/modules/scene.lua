@@ -21,8 +21,13 @@ local temp_environment
 
 local temp_renderstates = { clear = false }
 
-local function node_sort(a, b)
+local function layer_comp(a, b)
 	return a.layer < b.layer
+end
+
+local priorities = {OPAQUE = 0, BLEND = 1, MASK = 2}
+local function alpha_mode_comp(a, b)
+	return priorities[a.material.alpha_mode] < priorities[b.material.alpha_mode]
 end
 
 local function default_filter(node, scene, environment)
@@ -30,6 +35,9 @@ local function default_filter(node, scene, environment)
 end
 
 local scene = class('Scene')
+
+scene.alpha_mode_comp = alpha_mode_comp
+scene.layer_comp = layer_comp
 
 --- The public constructor.
 function scene:init()
@@ -52,7 +60,7 @@ function scene:render_nodes(node, environment, renderstates, filter)
 	renderstates = renderstates or temp_renderstates
 	filter = filter or default_filter
 	self:_recursive_render_nodes(node, false)
-	table.sort(self.list_drawable_nodes, node_sort)
+	table.sort(self.list_drawable_nodes, renderstates.node_sort_comp or layer_comp)
 
 	local camera = environment.camera
 	if camera._camera_2d_mode then

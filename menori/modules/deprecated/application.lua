@@ -64,11 +64,10 @@ function application:get_viewport()
 end
 
 function application:_update_viewport_position()
-	local dpi = love.window.getDPIScale()
 	local window_w, window_h = love.window.getMode()
 
-	local w = math.floor(window_w / dpi)
-	local h = math.floor(window_h / dpi)
+	local w = math.floor(window_w)
+	local h = math.floor(window_h)
 	if not self.x and not self.y then
 		local _sx = w / self.w
 		local _sy = h / self.h

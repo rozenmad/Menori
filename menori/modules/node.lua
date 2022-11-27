@@ -42,6 +42,8 @@ function Node:init(name)
 	self.local_matrix = mat4()
 	self.world_matrix = mat4()
 
+	self.joint_matrix = mat4()
+
 	self._transform_flag = true
 
 	self.position = vec3(0)
@@ -195,21 +197,25 @@ function Node:recursive_update_transform()
 end
 
 --- Update transformation matrix only for this node.
-function Node:update_transform()
+function Node:update_transform(parent_world_matrix)
 	local local_matrix = self.local_matrix
 	local world_matrix = self.world_matrix
 
 	if self.update_transform_flag then
 		local_matrix:compose(self.position, self.rotation, self.scale)
-		--local_matrix:translate(self.pivot)
 	end
 
 	local parent = self.parent
 	if parent then
-		world_matrix:copy(parent.world_matrix)
+		world_matrix:copy(parent_world_matrix or parent.world_matrix)
 		world_matrix:multiply(local_matrix)
 	else
 		world_matrix:copy(local_matrix)
+	end
+
+	if self.inverse_bind_matrix then
+		self.joint_matrix:copy(world_matrix)
+		self.joint_matrix:multiply(self.inverse_bind_matrix)
 	end
 end
 
@@ -251,6 +257,19 @@ function Node:detach(child)
 	end
 end
 
+
+function find_child_by_name(children, t, i)
+	for _, v in ipairs(children) do
+		if v.name == t[i] then
+			if t[i + 1] then
+				return find_child_by_name(v.children, t, i + 1)
+			else
+				return v
+			end
+		end
+	end
+end
+
 --- Find a child by name and returns it.
 -- @tparam string name If name contains a '/' character it will access
 -- the Node in the hierarchy like a path name.
@@ -263,24 +282,14 @@ function Node:find(name)
 	return find_child_by_name(self.children, t, 1)
 end
 
-find_child_by_name = function(children, t, i)
-	for _, v in ipairs(children) do
-		if v.name == t[i] then
-			if t[i + 1] then
-				return find_child_by_name(v.children, t, i + 1)
-			else
-				return v
-			end
-		end
-	end
-end
-
 --- Recursively traverse all nodes.
 -- @tparam function callback Function that is called for every child node with params (child, index)
-function Node:foreach(callback, _index)
+function Node:traverse(callback, _index)
 	callback(self, _index or 1)
 	for i, v in ipairs(self.children) do
-		v:foreach(callback, i)
+		if v:traverse(callback, i) then
+			return
+		end
 	end
 end
 

@@ -264,6 +264,12 @@ function vec3.cross(a, b)
 	)
 end
 
+--- lerp
+-- @static
+function vec3.lerp(a, b, s)
+	return a + (b - a) * s
+end
+
 --- min
 -- @static
 function vec3.min(a, b)

@@ -221,6 +221,12 @@ function vec2.fract(a)
 	)
 end
 
+--- lerp
+-- @static
+function vec2.lerp(a, b, s)
+	return a + (b - a) * s
+end
+
 --- min
 -- @static
 function vec2.min(a, b)

@@ -23,37 +23,43 @@ local Material = UniformList:extend('Material', {
 
 Material.default_shader = love.graphics.newShader([[
 varying vec4 pos;
-
 #ifdef VERTEX
       uniform mat4 m_model;
       uniform mat4 m_view;
       uniform mat4 m_projection;
 
+      uniform bool use_joints;
+      uniform mat4 u_jointMat[180];
+
+      attribute vec4 VertexJoints;
+      attribute vec4 VertexWeights;
+
       vec4 position(mat4 transform_projection, vec4 vertex_position) {
             pos = vertex_position * m_model;
-            return pos * m_view * m_projection;
+            vec4 worldPosition = vec4(pos.xyz, 1.0);
+            if (use_joints) {
+                  mat4 skinMat =
+                        VertexWeights.x * u_jointMat[int(VertexJoints.x*0xFFFF)] +
+                        VertexWeights.y * u_jointMat[int(VertexJoints.y*0xFFFF)] +
+                        VertexWeights.z * u_jointMat[int(VertexJoints.z*0xFFFF)] +
+                        VertexWeights.w * u_jointMat[int(VertexJoints.w*0xFFFF)];
+                  worldPosition = skinMat * worldPosition;
+            }
+            return worldPosition * m_view * m_projection;
       }
 #endif
 #ifdef PIXEL
       uniform vec4 baseColor;
       uniform vec4 fog_color;
       uniform vec3 camera_position;
-      
-      float fogFactorExp2(const float dist, const float density) {
-            const float LOG2 = -1.442695;
-            float d = density * dist;
-            return clamp(exp2(d * d * LOG2), 0.0, 1.0);
-      }
+      uniform Image emissiveTexture;
       
       vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords)
       {
             vec4 texcolor = Texel(t, texture_coords);
+            vec4 emissive_texcolor = Texel(emissiveTexture, texture_coords);
             if( texcolor.a <= 0.0f ) discard;
-            float distance_to_fragment = distance(pos.xyz, camera_position);
-            float fog_factor = fogFactorExp2(distance_to_fragment, 0.02);
-            vec4 result = texcolor * color;
-            vec4 albedo = mix(fog_color, result, fog_factor);
-            return albedo;
+            return texcolor * baseColor;
       }
 #endif
 ]])
@@ -74,6 +80,7 @@ function Material:init(name, shader)
       self.wireframe = false
       self.mesh_cull_mode = 'back'
 
+      self.alpha_mode = 'OPAQUE'
       self.main_texture = nil
 end
 

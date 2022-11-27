@@ -65,17 +65,15 @@ end
 
 function instanced_mesh:_attach_buffers()
 	local buffer = self.instanced_buffer
-	local primitive = self.mesh.primitives[1]
 	for i, v in ipairs(buffer.format) do
-		primitive.mesh:attachAttribute(v.name, buffer.mesh, "perinstance")
+		self.mesh:attachAttribute(v.name, buffer.mesh, "perinstance")
 	end
 end
 
 function instanced_mesh:_detach_buffers()
 	local buffer = self.instanced_buffer
-	local primitive = self.mesh.primitives[1]
 	for i, v in ipairs(buffer.format) do
-		primitive.mesh:detachAttribute(v.name)
+		self.mesh:detachAttribute(v.name)
 	end
 end
 
@@ -101,12 +99,9 @@ function instanced_mesh:draw(material)
 		lg.setMeshCullMode(material.mesh_cull_mode)
 	end
 
-	local primitives = self.mesh.primitives
-	for i = 1, #primitives do
-		local mesh = primitives[i].mesh
-		mesh:setTexture(material.main_texture)
-		lg.drawInstanced(mesh, self.count)
-	end
+	local mesh = self.mesh
+	mesh:setTexture(material.main_texture)
+	lg.drawInstanced(mesh, self.count)
 end
 
 return instanced_mesh

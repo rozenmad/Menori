@@ -24,18 +24,22 @@ local Mesh = class('Mesh')
 
 local default_template = {1, 2, 3, 2, 4, 3}
 
-local vertexformat12 = {
-	{name = "VertexPosition", format = "floatvec3"},
-	{name = "VertexTexCoord", format = "floatvec2"},
-	{name = "VertexNormal"  , format = "floatvec3"},
-}
-local vertexformat11 = {
-	{"VertexPosition", "float", 3},
-	{"VertexTexCoord", "float", 2},
-	{"VertexNormal"  , "float", 3},
-}
+local vertexformat
+if love._version_major > 11 then
+	vertexformat = {
+		{format = "floatvec3", name = "VertexPosition"},
+		{format = "floatvec2", name = "VertexTexCoord"},
+		{format = "floatvec3", name = "VertexNormal"  },
+	}
+else
+	vertexformat = {
+		{"VertexPosition", "float", 3},
+		{"VertexTexCoord", "float", 2},
+		{"VertexNormal"  , "float", 3},
+	}
+end
 
-Mesh.default_vertexformat = (love._version_major > 11) and vertexformat12 or vertexformat11
+Mesh.default_vertexformat = vertexformat
 
 local function create_mesh_from_primitive(primitive, texture)
 	local count = primitive.count or #primitive.vertices
@@ -122,29 +126,23 @@ end
 -- @tparam table vertices that contains vertex data. See [LOVE Mesh](https://love2d.org/wiki/love.graphics.newMesh)
 -- @tparam[opt] table opt that containing {mode=, vertexformat=, indices=, texture=}
 function Mesh.from_primitive(vertices, opt)
-	local primitive = {
+	return Mesh {
 		mode = opt.mode,
 		vertexformat = opt.vertexformat,
 		vertices = vertices,
 		indices = opt.indices,
 		texture = opt.texture
 	}
-	return Mesh{primitive}
 end
 
 --- The public constructor.
 -- @tparam table primitives List of primitives
 -- @tparam[opt] Image texture
-function Mesh:init(primitives, texture)
-	self.primitives = {}
-	for i, p in ipairs(primitives) do
-		local mesh = create_mesh_from_primitive(p, texture)
-		self.primitives[i] = {
-			mesh = mesh,
-			material_index = p.material_index,
-			bound = calculate_bound(mesh),
-		}
-	end
+function Mesh:init(primitive, texture)
+	local mesh = create_mesh_from_primitive(primitive, texture)
+	self.mesh = mesh
+	self.material_index = primitive.material_index
+	self.bound = calculate_bound(mesh)
 end
 
 --- Draw a Mesh object on the screen.
@@ -166,27 +164,22 @@ function Mesh:draw(material)
 		lg.setMeshCullMode(material.mesh_cull_mode)
 	end
 
-	for i = 1, #self.primitives do
-		local mesh = self.primitives[i].mesh
-		mesh:setTexture(material.main_texture)
-		lg.draw(mesh)
-	end
+	local mesh = self.mesh
+	mesh:setTexture(material.main_texture)
+	lg.draw(mesh)
 end
 
-function Mesh:get_bound(iprimitive)
-	iprimitive = iprimitive or 1
-	return self.primitives[iprimitive].bound
+function Mesh:get_bound()
+	return self.bound
 end
 
-
-function Mesh:get_vertex_count(iprimitive)
-	iprimitive = iprimitive or 1
-	return self.primitives[iprimitive].mesh:getVertexCount()
+function Mesh:get_vertex_count()
+	return self.mesh:getVertexCount()
 end
 
 function Mesh:get_triangles_transform(matrix)
 	local triangles = {}
-	local mesh = self.primitives[1].mesh
+	local mesh = self.mesh
 	local attribute_index = Mesh.get_attribute_index('VertexPosition', mesh:getVertexFormat())
 	local map = mesh:getVertexMap()
 	if map then
@@ -204,7 +197,7 @@ function Mesh:get_triangles_transform(matrix)
 			})
 		end
 	end
-
+	self.triangles = triangles
 	return triangles
 end
 
@@ -221,7 +214,7 @@ end
 -- @treturn table The table in the form of {vertex, ...} where each vertex is a table in the form of {attributecomponent, ...}.
 function Mesh:get_vertices(iprimitive, start, count)
 	iprimitive = iprimitive or 1
-	local mesh = self.primitives[iprimitive].mesh
+	local mesh = self.mesh
 	start = start or 1
 	count = count or mesh:getVertexCount()
 
@@ -232,17 +225,15 @@ function Mesh:get_vertices(iprimitive, start, count)
 	return vertices
 end
 
-function Mesh:get_vertex_map(iprimitive)
-	return self.primitives[iprimitive or 1].mesh:getVertexMap()
+function Mesh:get_vertex_map()
+	return self.mesh:getVertexMap()
 end
 
 --- Get an array of all mesh vertices.
 -- @tparam table vertices The table in the form of {vertex, ...} where each vertex is a table in the form of {attributecomponent, ...}.
 -- @tparam number startvertex The vertex from which the insertion will start.
--- @tparam[opt=1] int iprimitive The index of the primitive.
-function Mesh:set_vertices(vertices, startvertex, iprimitive)
-	iprimitive = iprimitive or 1
-	self.primitives[iprimitive].mesh:setVertices(vertices, startvertex)
+function Mesh:set_vertices(vertices, startvertex)
+	self.mesh:setVertices(vertices, startvertex)
 end
 
 --- Apply the transformation matrix to the mesh vertices.
@@ -250,18 +241,16 @@ end
 function Mesh:apply_matrix(matrix)
 	local temp_v3 = vec3(0, 0, 0)
 
-	for _, p in ipairs(self.primitives) do
-		local mesh = p.mesh
-		local format = mesh:getVertexFormat()
-		local pindex = Mesh.get_attribute_index('VertexPosition', format)
+	local mesh = self.mesh
+	local format = mesh:getVertexFormat()
+	local pindex = Mesh.get_attribute_index('VertexPosition', format)
 
-		for j = 1, mesh:getVertexCount() do
-			local x, y, z = mesh:getVertexAttribute(j, pindex)
-			temp_v3:set(x, y, z)
-			matrix:multiply_vec3(temp_v3, temp_v3)
+	for j = 1, mesh:getVertexCount() do
+		local x, y, z = mesh:getVertexAttribute(j, pindex)
+		temp_v3:set(x, y, z)
+		matrix:multiply_vec3(temp_v3, temp_v3)
 
-			mesh:setVertexAttribute(j, pindex, temp_v3.x, temp_v3.y, temp_v3.z)
-		end
+		mesh:setVertexAttribute(j, pindex, temp_v3.x, temp_v3.y, temp_v3.z)
 	end
 end
 

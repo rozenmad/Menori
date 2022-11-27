@@ -50,4 +50,23 @@ function utils.copy(value)
       return t
 end
 
+function utils.binsearch(array, value)
+	local l = 1
+	local r = #array
+
+	while r >= l do
+		local m = math.floor((l + r) / 2)
+
+		if array[m] < value then
+			l = m + 1
+		elseif array[m] > value then
+			r = m - 1
+		else
+			return m
+		end
+	end
+
+	return array[l] == value and l or l-1
+end
+
 return utils

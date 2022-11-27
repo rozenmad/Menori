@@ -17,6 +17,7 @@ local menori = {
 	PerspectiveCamera      = require(modules .. 'core3d.camera'),
 	Environment            = require(modules .. 'core3d.environment'),
 	UniformList            = require(modules .. 'core3d.uniform_list'),
+	glTFAnimations         = require(modules .. 'core3d.gltf_animations'),
 	glTFLoader             = require(modules .. 'core3d.gltf'),
 	Material               = require(modules .. 'core3d.material'),
 	BoxShape               = require(modules .. 'core3d.boxshape'),

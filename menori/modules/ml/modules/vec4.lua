@@ -229,6 +229,12 @@ function vec4.fract(a)
 	)
 end
 
+--- lerp
+-- @static
+function vec4.lerp(a, b, s)
+	return a + (b - a) * s
+end
+
 --- min
 -- @static
 function vec4.min(a, b)
