@@ -25,6 +25,29 @@ local bound3   = ml.bound3
 
 local ModelNode = Node:extend('ModelNode')
 
+local joints_uniform_limit = 150
+local temp_mat = mat4()
+local root_mat = mat4()
+local data = love.data.newByteData(joints_uniform_limit * 16 * 4)
+local instancebuffer
+local send_joints_matrices
+
+if love._version_major > 11 then
+      joints_uniform_limit = 256
+      local bufferformat = {
+            {format="floatvec4", name=""},
+      }
+      instancebuffer = love.graphics.newBuffer(bufferformat, joints_uniform_limit * 16, {texel = true})
+
+      send_joints_matrices = function(shader)
+            instancebuffer:setArrayData(data)
+            shader:send('joints_matrices_buffer', instancebuffer)
+      end
+else
+      send_joints_matrices = function(shader)
+            shader:send('joints_matrices', data, 'column')
+      end
+end
 --- The public constructor.
 -- @tparam menori.Mesh mesh object
 -- @tparam[opt=Material.default] menori.Material material object. (A new copy will be created for the material)
@@ -83,10 +106,6 @@ function ModelNode:set_color(r, g, b, a)
       self.color:set(r, g, b, a)
 end
 
-local matrix_uniform_limit = 180
-local data = love.data.newByteData(matrix_uniform_limit * 16 * 4)
-local temp_mat = mat4()
-local root_mat = mat4()
 --- Draw a ModelNode object on the screen.
 -- This function will be called implicitly in the hierarchy when a node is drawn with scene:render_nodes()
 -- @tparam menori.Scene scene object that is used when drawing the model
@@ -115,7 +134,7 @@ function ModelNode:render(scene, environment)
                   ffi.copy(ptr, temp_mat.e+1, 16*4)
             end
 
-            shader:send('u_jointMat', data, 'column')
+            send_joints_matrices(shader)
             shader:send('use_joints', true)
       else
             shader:send('use_joints', false)
