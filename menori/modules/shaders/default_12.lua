@@ -25,7 +25,7 @@ varying vec4 pos;
             pos = vertex_position * m_model;
             vec4 worldPosition = vec4(pos.xyz, 1.0);
             if (use_joints) {
-                  vec4 skinned = vec4( 0.0 );
+                  vec4 skinned = vec4(0.0);
                   skinned += getBoneMatrix(VertexJoints.x) * worldPosition * VertexWeights.x;
                   skinned += getBoneMatrix(VertexJoints.y) * worldPosition * VertexWeights.y;
                   skinned += getBoneMatrix(VertexJoints.z) * worldPosition * VertexWeights.z;

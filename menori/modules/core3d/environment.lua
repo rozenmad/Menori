@@ -16,8 +16,11 @@ local modules = (...):match('(.*%menori.modules.)')
 
 local utils       = require (modules .. 'libs.utils')
 local UniformList = require (modules .. 'core3d.uniform_list')
+local ml          = require (modules .. 'ml')
 
 local Environment = UniformList:extend('Environment')
+
+local temp_projection_m = ml.mat4()
 
 ----
 -- The public constructor.
@@ -49,9 +52,13 @@ end
 function Environment:send_uniforms_to(shader)
 	self:send_to(shader)
 
+	local render_to_canvas = love.graphics.getCanvas() ~= nil
 	local camera = self.camera
 	shader:send("m_view", camera.m_view.data)
-	shader:send("m_projection", camera.m_projection.data)
+
+	temp_projection_m:copy(camera.m_projection)
+	if render_to_canvas then temp_projection_m[6] = -temp_projection_m[6] end
+	shader:send("m_projection", temp_projection_m.data)
 
 	self:send_light_sources_to(shader)
 end

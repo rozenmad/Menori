@@ -35,20 +35,20 @@ function PerspectiveCamera:init(fov, aspect, nclip, fclip)
 	nclip = nclip or 0.1
 	fclip = fclip or 2048.0
 
-	self.m_projection = mat4():perspective_LH_NO(fov, aspect, nclip, fclip)
+	self.m_projection = mat4():perspective_RH_NO(fov, aspect, nclip, fclip)
 	self.m_inv_projection = self.m_projection:clone():inverse()
 	self.m_view = mat4()
 
-	self.center   = vec3( 0, 0, 0 )
-	self.eye 	  = vec3( 0, 0, 1 )
-	self.up 	  = vec3( 0,-1, 0 )
+	self.eye 	= vec3( 0, 0, 1 )
+	self.center = vec3( 0, 0, 0 )
+	self.up 	= vec3( 0, 1, 0 )
 end
 
 ----
 -- Updating the view matrix.
 function PerspectiveCamera:update_view_matrix()
 	self.m_view:identity()
-	self.m_view:look_at_LH(self.eye, self.center, self.up)
+	self.m_view:look_at_RH(self.eye, self.center, self.up)
 end
 
 ----
@@ -58,7 +58,7 @@ end
 -- @tparam table viewport (optional) viewport rectangle (x, y, w, h)
 -- @treturn table that containing {position = vec3, direction = vec3}
 function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
-	viewport = viewport or {app.ox, app.oy, app.w * app.sx, app.h * app.sy}
+	viewport = viewport or {app:get_viewport()}
 
 	local m_pos = vec3(mat4.unproject(vec3(x, y, 1), self.m_view, self.m_projection, viewport))
 	local c_pos = self.eye:clone()

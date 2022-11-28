@@ -1,22 +1,24 @@
 local menori = require 'menori'
 local application = menori.Application
+local app = menori.app
 
 local ml = menori.ml
 local vec3 = ml.vec3
 local quat = ml.quat
+local mat4 = ml.mat4
 
 local NewScene = menori.Scene:extend('NewScene')
 
 function NewScene:init()
 	NewScene.super.init(self)
 
-	local aspect = menori.Application.w/menori.Application.h
-	self.camera = menori.PerspectiveCamera(60, aspect, 0.5, 1024)
+	local _, _, w, h = menori.app:get_viewport()
+	self.camera = menori.PerspectiveCamera(60, w/h, 0.5, 1024)
 	self.environment = menori.Environment(self.camera)
 
 	self.root_node = menori.Node()
 
-	local gltf = menori.glTFLoader.load('example_assets/etrian_odyssey_3_monk/scene.gltf')
+	local gltf = menori.glTFLoader.load('example_assets/pokemon_rse_-_pokemon_center.glb')
 	local scenes = menori.NodeTreeBuilder.create(gltf, function (scene, builder)
 		self.animations = menori.glTFAnimations(builder.animations)
 		self.animations:set_action(1)
@@ -52,7 +54,8 @@ function NewScene:render()
 end
 
 function NewScene:update_camera()
-	local q = quat.from_euler_angles(0, math.rad(self.y_angle), math.rad(10)) * vec3.unit_z * 2.0
+	self.y_angle = self.y_angle + 0.2
+	local q = quat.from_euler_angles(0, math.rad(self.y_angle), math.rad(-30)) * vec3.unit_z * 3.0
 	local v = vec3(0, 0.6, 0)
 	self.camera.center = v
 	self.camera.eye = q + v
@@ -67,20 +70,27 @@ function NewScene:update()
 end
 
 function love.load()
-	local w, h = 960, 540
-	application:resize_viewport(w*2, h*2)
+	local w, h = 960, 480
+	app:add_scene('new_scene', NewScene())
+	app:set_scene('new_scene')
 
-	application:add_scene('new_scene', NewScene())
-	application:set_scene('new_scene')
+	canvas = love.graphics.newCanvas(w, h)
+	sprite = menori.SpriteLoader.from_image(canvas)
 end
 
 function love.draw()
-	application:render()
+	love.graphics.setCanvas({ canvas, depth = true })
+	app:render()
+	love.graphics.setCanvas()
+
+	local w, h = love.graphics.getDimensions()
+	sprite:draw_ex(w/2, h/2, 'min', w, h, 0.5, 0.5)
+
       love.graphics.print(love.timer.getFPS(), 10, 10)
 end
 
 function love.update(dt)
-	application:update(dt)
+	app:update(dt)
 
 	if love.keyboard.isDown('escape') then
 		love.event.quit()

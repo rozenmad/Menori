@@ -13,6 +13,7 @@ Separated GLTF (.gltf+.bin+textures) or (.gltf+textures) is supported now.
 -- @module glTFLoader
 
 local json = require 'libs.rxijson.json'
+local inspect = require 'libs.inspect'
 
 local ffi
 if type(jit) == 'table' and jit.status() then
@@ -480,21 +481,31 @@ local function load_image(io_read, path, images, texture)
 	end
 
 	local image = images[source]
-	local data = image.uri:match('^data:image/.*;base64,(.+)')
-
-	local image_file
-	if data then
-		image_file = love.data.decode('data', 'base64', data)
+	local image_raw_data
+	if image.uri then
+		data = image.uri:match('^data:image/.*;base64,(.+)')
+		if data then
+			image_raw_data = love.data.decode('data', 'base64', data)
+		else
+			local image_filename = path .. image.uri
+			image_raw_data = love.filesystem.newFileData(io_read(image_filename), image_filename)
+		end
 	else
-		local image_filename = path .. image.uri
-		image_file = love.filesystem.newFileData(io_read(image_filename), image_filename)
+		local buffer_view = data.bufferViews[image.bufferView + 1]
+
+		local data = buffers[buffer_view.buffer + 1]
+	
+		local offset = buffer_view.byteOffset or 0
+		local length = buffer_view.byteLength
+
+		image_raw_data = love.data.newDataView(data, offset, length)
 	end
 
 	local image_data
 	if not MSFT_texture_dds then
-		image_data = love.image.newImageData(image_file)
+		image_data = love.image.newImageData(image_raw_data)
 	else
-		image_data = love.image.newCompressedData(image_file)
+		image_data = love.image.newCompressedData(image_raw_data)
 	end
 
 	local image_source = love.graphics.newImage(image_data)
@@ -504,29 +515,71 @@ local function load_image(io_read, path, images, texture)
 	}
 end
 
+local function unpack_data(format, data, iterator)
+	local pos = iterator.position
+	iterator.position	= iterator.position + love.data.getPackedSize(format)
+	return love.data.unpack(format, data, pos + 1)
+end
+
+local function glb_parser(glb_data)
+	local iterator = {
+		position = 0
+	}
+	local magic, version = unpack_data('<I4I4', glb_data, iterator)
+	assert(magic == 0x46546C67, 'GLB: wrong magic!')
+	assert(version == 0x2, 'Supported only GLTF 2.0!')
+
+	local length = unpack_data('<I4', glb_data, iterator)
+
+	local json_data
+	local buffers = {}
+	local bufferi = 1
+
+	while iterator.position < length do
+		local chunk_length, chunk_type = unpack_data('<I4I4', glb_data, iterator)
+		local start_position = iterator.position
+		if
+		chunk_type == 0x4E4F534A then
+			local data_view = love.data.newDataView(glb_data, iterator.position, chunk_length)
+			json_data = json.decode(data_view:getString())
+		elseif
+		chunk_type == 0x004E4942 then
+			local data_view = love.data.newDataView(glb_data, iterator.position, chunk_length)
+			buffers[bufferi] = data_view
+			bufferi = bufferi + 1
+		end
+
+		iterator.position = start_position + chunk_length
+	end
+
+	return json_data, buffers
+end
+
 --- Load model by filename.
 -- @function load
 -- @tparam string filename The filepath to the gltf file (GLTF must be separated (.gltf+.bin+textures) or (.gltf+textures)
 -- @tparam[opt=love.filesystem.read] function io_read Callback to read the file.
 -- @treturn table
-function glTFLoader.load(filename, io_read)
-	local path, name = filename:match("(.*/)(.+)%.gltf$")
-	io_read = io_read or love.filesystem.read
-
-	local filepath = path .. name .. '.gltf'
+function glTFLoader.load(filename)
+	local path, name, extension = filename:match("(.*/)(.+)%.(.+)$")
+	local io_read = love.filesystem.read
 	--assert(love.filesystem.getInfo(filepath), 'in function <glTFLoader.load> file "' .. filepath .. '" not found.')
 
-	local gltf_filedata = io_read(filepath)
-	data = json.decode(gltf_filedata)
-
-	buffers = {}
-	for i, v in ipairs(data.buffers) do
-		local data = v.uri:match('^data:application/.*;base64,(.+)')
-		if data then
-			buffers[i] = love.data.decode('data', 'base64', data)
-		else
-			buffers[i] = love.data.newByteData(io_read(path .. v.uri))
+	if extension == 'gltf' then
+		local gltf_data = io_read(filename)
+		data = json.decode(gltf_data)
+		buffers = {}
+		for i, v in ipairs(data.buffers) do
+			local base64data = v.uri:match('^data:application/.*;base64,(.+)')
+			if base64data then
+				buffers[i] = love.data.decode('data', 'base64', base64data)
+			else
+				buffers[i] = love.data.newByteData(io_read(path .. v.uri))
+			end
 		end
+	elseif extension == 'glb' then
+		local gltf_data = io_read('data', filename)
+		data, buffers = glb_parser(gltf_data)
 	end
 
 	local samplers = {}
