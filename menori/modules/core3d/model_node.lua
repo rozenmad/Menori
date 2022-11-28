@@ -16,6 +16,7 @@ local modules = (...):match('(.*%menori.modules.)')
 
 local Node     = require (modules .. 'node')
 local ml       = require (modules .. 'ml')
+local utils    = require (modules .. 'libs.utils')
 local Material = require (modules .. 'core3d.material')
 local ffi      = require('ffi')
 
@@ -113,7 +114,7 @@ end
 function ModelNode:render(scene, environment)
       local shader = self.material.shader
       environment:apply_shader(shader)
-      shader:send('m_model', self.world_matrix.data)
+      shader:send('m_model', self.world_matrix.data, 'column')
 
       if self.joints then
             self:recursive_update_transform()
@@ -135,9 +136,9 @@ function ModelNode:render(scene, environment)
             end
 
             send_joints_matrices(shader)
-            shader:send('use_joints', true)
+            utils.noexcept_send_uniform(shader, 'use_joints', true)
       else
-            shader:send('use_joints', false)
+            utils.noexcept_send_uniform(shader, 'use_joints', false)
       end
 
       local c = self.color

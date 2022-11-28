@@ -1,6 +1,8 @@
 # Menori
 
-LÖVE library for simple 3D and 2D rendering based on scene graph. Loading of 3D models in .gltf (JSON) format is also supported.
+LÖVE library for 3D rendering based on scene graph. Support glTF 2.0 (implemented: meshes, materials, textures, skins, skeletons, animations). Assets may be provided either in JSON (.gltf) or binary (.glb) format.
+
+Works on LÖVE 11.4 and higher.
 
 ![preview_example](preview.png)
 
@@ -12,65 +14,61 @@ You can generate documentation using `ldoc -c menori/docs/config.ld -o index .`
 
 ``` lua
 local menori = require 'menori'
-local application = menori.Application
 
 local ml = menori.ml
 local vec3 = ml.vec3
 local quat = ml.quat
 
-local NewScene = menori.Scene:extend('NewScene')
-
-function NewScene:init()
-	NewScene.super.init(self)
-
-	local aspect = menori.Application.w/menori.Application.h
-	self.camera = menori.PerspectiveCamera(60, aspect, 0.5, 1024)
-	self.environment = menori.Environment(self.camera)
-
-	local gltf = menori.glTFLoader.load('example_assets/players_room_model/', 'scene')
-	local model_node_tree = menori.ModelNodeTree(gltf)
-
-	self.root_node = menori.Node()
-	self.root_node:attach(model_node_tree)
-
-	self.y_angle = 0
-end
-
-function NewScene:render()
-	love.graphics.clear(0.3, 0.25, 0.2)
-
-	love.graphics.setDepthMode('less', true)
-	self:render_nodes(self.root_node, self.environment)
-	love.graphics.setDepthMode()
-end
-
-function NewScene:update_camera()
-	self.y_angle = self.y_angle + 0.5
-	local q = quat.from_euler_angles(0, math.rad(self.y_angle), math.rad(-45))
-	local v = vec3(0, 0, 8)
-	self.camera.eye = q * v
-	self.camera:update_view_matrix()
-end
-
-function NewScene:update()
-	self:update_camera()
-	self:update_nodes(self.root_node, self.environment)
-end
-
 function love.load()
-	local w, h = 960, 480
-	application:resize_viewport(w, h)
+	local _, _, w, h = menori.app:get_viewport()
+	camera = menori.PerspectiveCamera(60, w/h, 0.5, 1024)
+	environment = menori.Environment(camera)
 
-	application:add_scene('new_scene', NewScene())
-	application:set_scene('new_scene')
+	root_node = menori.Node()
+
+	local gltf = menori.glTFLoader.load('example_assets/etrian_odyssey_3_monk/scene.gltf')
+	local scenes = menori.NodeTreeBuilder.create(gltf, function (scene, builder)
+		animations = menori.glTFAnimations(builder.animations)
+		animations:set_action(1)
+
+		scene:traverse(function (node)
+			if node.mesh then
+				node.material:set("baseColor", {0.85, 0.95, 1.0, 1})
+			end
+		end)
+      end)
+
+	root_node:attach(scenes[1])
+
+	canvas = love.graphics.newCanvas(w, h)
+	sprite = menori.SpriteLoader.from_image(canvas)
 end
+
+local scene = menori.Scene()
 
 function love.draw()
-	application:render()
+	love.graphics.clear(0.3, 0.25, 0.2)
+	scene:render_nodes(root_node, environment, {
+		node_sort_comp = menori.Scene.alpha_mode_comp
+	})
+
+      love.graphics.print(love.timer.getFPS(), 10, 10)
 end
 
 function love.update(dt)
-	application:update(dt)
+	scene:update_nodes(root_node, environment)
+
+	local q = quat.from_euler_angles(0, math.rad(20), math.rad(10)) * vec3.unit_z * 2.0
+	local v = vec3(0, 0.5, 0)
+	camera.center = v
+	camera.eye = q + v
+	camera:update_view_matrix()
+
+	animations:update(dt)
+
+	if love.keyboard.isDown('escape') then
+		love.event.quit()
+	end
 end
 ```
 

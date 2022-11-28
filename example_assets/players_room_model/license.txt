@@ -1,0 +1,11 @@
+Model Information:
+* title:	Pokemon FireRed - Player's Room
+* source:	https://sketchfab.com/3d-models/pokemon-firered-players-room-b23b6b253207463c97db2a7092adff74
+* author:	Wesai (https://sketchfab.com/Wesai)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Pokemon FireRed - Player's Room" (https://sketchfab.com/3d-models/pokemon-firered-players-room-b23b6b253207463c97db2a7092adff74) by Wesai (https://sketchfab.com/Wesai) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

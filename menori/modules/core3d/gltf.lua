@@ -13,7 +13,6 @@ Separated GLTF (.gltf+.bin+textures) or (.gltf+textures) is supported now.
 -- @module glTFLoader
 
 local json = require 'libs.rxijson.json'
-local inspect = require 'libs.inspect'
 
 local ffi
 if type(jit) == 'table' and jit.status() then
@@ -483,9 +482,9 @@ local function load_image(io_read, path, images, texture)
 	local image = images[source]
 	local image_raw_data
 	if image.uri then
-		data = image.uri:match('^data:image/.*;base64,(.+)')
-		if data then
-			image_raw_data = love.data.decode('data', 'base64', data)
+		local base64data = image.uri:match('^data:image/.*;base64,(.+)')
+		if base64data then
+			image_raw_data = love.data.decode('data', 'base64', base64data)
 		else
 			local image_filename = path .. image.uri
 			image_raw_data = love.filesystem.newFileData(io_read(image_filename), image_filename)
@@ -494,7 +493,7 @@ local function load_image(io_read, path, images, texture)
 		local buffer_view = data.bufferViews[image.bufferView + 1]
 
 		local data = buffers[buffer_view.buffer + 1]
-	
+
 		local offset = buffer_view.byteOffset or 0
 		local length = buffer_view.byteLength
 
@@ -566,8 +565,8 @@ function glTFLoader.load(filename)
 	--assert(love.filesystem.getInfo(filepath), 'in function <glTFLoader.load> file "' .. filepath .. '" not found.')
 
 	if extension == 'gltf' then
-		local gltf_data = io_read(filename)
-		data = json.decode(gltf_data)
+		local filedata = io_read(filename)
+		data = json.decode(filedata)
 		buffers = {}
 		for i, v in ipairs(data.buffers) do
 			local base64data = v.uri:match('^data:application/.*;base64,(.+)')
@@ -578,8 +577,8 @@ function glTFLoader.load(filename)
 			end
 		end
 	elseif extension == 'glb' then
-		local gltf_data = io_read('data', filename)
-		data, buffers = glb_parser(gltf_data)
+		local filedata = io_read('data', filename)
+		data, buffers = glb_parser(filedata)
 	end
 
 	local samplers = {}

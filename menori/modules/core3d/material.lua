@@ -20,11 +20,19 @@ local UniformList = require (modules .. 'core3d.uniform_list')
 local Material = UniformList:extend('Material', {
       clone = utils.copy
 })
+local vert, frag
 if love._version_major > 11 then
-      Material.default_shader = love.graphics.newShader(require(modules .. 'shaders.default_12'))
+      vert = require(modules .. 'shaders.default_12_vert')
+      frag = require(modules .. 'shaders.default_12_frag')
+      Material.default_shader = love.graphics.newShader(vert, frag)
 else
-      Material.default_shader = love.graphics.newShader(require(modules .. 'shaders.default_11'))
+      vert = require(modules .. 'shaders.default_11_vert')
+      frag = require(modules .. 'shaders.default_11_frag')
+      Material.default_shader = love.graphics.newShader(vert, frag)
 end
+
+Material.default_vert = vert
+Material.default_frag = frag
 
 ----
 -- The public constructor.

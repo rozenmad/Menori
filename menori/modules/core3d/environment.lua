@@ -50,15 +50,15 @@ end
 -- This method is called automatically when the environment is used in scene:render_nodes()
 -- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
 function Environment:send_uniforms_to(shader)
+	local camera = self.camera
 	self:send_to(shader)
 
 	local render_to_canvas = love.graphics.getCanvas() ~= nil
-	local camera = self.camera
-	shader:send("m_view", camera.m_view.data)
-
 	temp_projection_m:copy(camera.m_projection)
 	if render_to_canvas then temp_projection_m[6] = -temp_projection_m[6] end
-	shader:send("m_projection", temp_projection_m.data)
+
+	shader:send("m_view", camera.m_view.data, 'column')
+	shader:send("m_projection", temp_projection_m.data, 'column')
 
 	self:send_light_sources_to(shader)
 end

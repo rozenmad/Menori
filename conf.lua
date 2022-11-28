@@ -7,5 +7,5 @@ function love.conf(t)
     t.window.title = "Menori Example"
     t.window.vsync = true
     t.highdpi = true
-    t.window.fullscreen = true
+    t.window.fullscreen = false
 end
