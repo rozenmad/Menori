@@ -25,7 +25,7 @@ local function layer_comp(a, b)
 	return a.layer < b.layer
 end
 
-local priorities = {OPAQUE = 0, BLEND = 1, MASK = 2}
+local priorities = {OPAQUE = 0, MASK = 1, BLEND = 2}
 local function alpha_mode_comp(a, b)
 	return priorities[a.material.alpha_mode] < priorities[b.material.alpha_mode]
 end

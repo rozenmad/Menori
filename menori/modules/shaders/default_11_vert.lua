@@ -1,5 +1,6 @@
 return [[
 #pragma language glsl3
+
 varying vec3 normal;
 varying vec3 frag_position;
 

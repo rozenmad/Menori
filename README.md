@@ -39,9 +39,6 @@ function love.load()
       end)
 
 	root_node:attach(scenes[1])
-
-	canvas = love.graphics.newCanvas(w, h)
-	sprite = menori.SpriteLoader.from_image(canvas)
 end
 
 local scene = menori.Scene()

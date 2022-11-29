@@ -37,6 +37,7 @@ local type_constants = {
 }
 
 local ffi_indices_types = {
+	[5121] = 'unsigned char*',
 	[5123] = 'unsigned short*',
 	[5125] = 'unsigned int*',
 }
@@ -184,8 +185,10 @@ local function get_indices_content(v)
 	local min = buffer.min and buffer.min[1] or 0
 	local max = buffer.max and buffer.max[1] or 0
 
+	local uint8 = element_size < 2
+
 	local temp_data
-	if ffi then
+	if ffi and not uint8 then
 		temp_data = love.data.newByteData(buffer.count * element_size)
 		local temp_data_pointer = ffi.cast('char*', getFFIPointer(temp_data))
 		local data = ffi.cast('char*', getFFIPointer(buffer.data)) + buffer.offset
@@ -388,6 +391,12 @@ local function create_material(textures, material)
 		uniforms.occlusionTextureCoord = emissiveTexture.tcoord
 	end
 	uniforms.emissiveColor = material.emissiveFactor
+	uniforms.opaque = material.alphaMode == 'OPAQUE' or not material.alphaMode
+	if material.alphaMode == 'MASK' then
+		uniforms.alphaCutoff = material.alphaCutoff or 0.5
+	else
+		uniforms.alphaCutoff = 0.0
+	end
 
 	return {
 		name = material.name,
@@ -395,7 +404,6 @@ local function create_material(textures, material)
 		uniforms = uniforms,
 		double_sided = material.doubleSided,
 		alpha_mode = material.alphaMode or 'OPAQUE',
-		alpha_cutoff = material.alphaCutoff,
 	}
 end
 

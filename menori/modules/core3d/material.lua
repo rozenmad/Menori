@@ -27,7 +27,7 @@ if love._version_major > 11 then
       Material.default_shader = love.graphics.newShader(vert, frag)
 else
       vert = require(modules .. 'shaders.default_11_vert')
-      frag = require(modules .. 'shaders.default_11_frag')
+      frag = require(modules .. 'shaders.default_12_frag')
       Material.default_shader = love.graphics.newShader(vert, frag)
 end
 
