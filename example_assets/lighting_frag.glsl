@@ -1,5 +1,4 @@
 #pragma language glsl3
-
 varying vec3 normal;
 varying vec3 frag_position;
 uniform vec3 view_position;

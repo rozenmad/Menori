@@ -20,6 +20,8 @@ local ModelNode = require (modules .. 'core3d.model_node')
 local Mesh = require (modules .. 'core3d.mesh')
 local Material = require (modules .. 'core3d.material')
 
+local ShaderUtils = require (modules .. 'shaders.utils')
+
 local ml = require (modules .. 'ml')
 local mat4 = ml.mat4
 local vec3 = ml.vec3
@@ -27,7 +29,7 @@ local quat = ml.quat
 
 local NodeTreeBuilder = {}
 
-local function create_nodes(builder, nodes, i, parent)
+local function create_nodes(builder, nodes, i)
       local exist = builder.nodes[i]
       if exist then
             return exist
@@ -53,7 +55,13 @@ local function create_nodes(builder, nodes, i, parent)
                   if m.material_index then
                         material = builder.materials[m.material_index + 1]
                   end
-                  array_nodes[j] = ModelNode(m, material)
+                  local model_node = ModelNode(m, material)
+                  if v.skin then
+                        model_node.material.shader = ShaderUtils.shaders['default_mesh_skinning']
+                  else
+                        model_node.material.shader = ShaderUtils.shaders['default_mesh']
+                  end
+                  array_nodes[j] = model_node
             end
             if #array_nodes > 1 then
                   node = Node()
@@ -74,14 +82,13 @@ local function create_nodes(builder, nodes, i, parent)
       node:set_scale(s)
       node:recursive_update_transform()
       node.name = v.name or node.name
-      if parent then
-            parent:attach(node)
-      end
 
       builder.nodes[i] = node
+
       if v.children then
             for _, child_index in ipairs(v.children) do
-                  create_nodes(builder, nodes, child_index + 1, node)
+                  local child = create_nodes(builder, nodes, child_index + 1)
+                  node:attach(child)
             end
       end
 
@@ -118,21 +125,20 @@ function NodeTreeBuilder.create(gltf, callback)
       end
 
       for node_index = 1, #gltf.nodes do
-            local m_node = create_nodes(builder, gltf.nodes, node_index)
+            local node = create_nodes(builder, gltf.nodes, node_index)
             local skin = gltf.nodes[node_index].skin
-
             if skin then
                   skin = gltf.skins[skin+1]
-                  m_node.joints = {}
+                  node.joints = {}
                   if skin.skeleton then
-                        m_node.skeleton_node = create_nodes(builder, gltf.nodes, skin.skeleton + 1)
+                        node.skeleton_node = create_nodes(builder, gltf.nodes, skin.skeleton + 1)
                   end
 
                   local matrices = skin.inverse_bind_matrices
                   for i, joint in ipairs(skin.joints) do
                         local joint_node = create_nodes(builder, gltf.nodes, joint + 1)
                         joint_node.inverse_bind_matrix = mat4(matrices[i])
-                        m_node.joints[i] = joint_node
+                        node.joints[i] = joint_node
                   end
             end
       end

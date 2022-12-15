@@ -286,8 +286,9 @@ end
 -- @tparam function callback Function that is called for every child node with params (child, index)
 function Node:traverse(callback, _index)
 	callback(self, _index or 1)
-	for i, v in ipairs(self.children) do
-		if v:traverse(callback, i) then
+	local children = self.children
+	for i = #children, 1, -1 do
+		if children[i]:traverse(callback, i) then
 			return
 		end
 	end

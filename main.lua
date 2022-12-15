@@ -37,7 +37,8 @@ function NewScene:init()
 
 	-- Loading the fragment shader code for lighting.
 	local lighting_frag = menori.utils.shader_preprocess(love.filesystem.read('example_assets/lighting_frag.glsl'))
-	local lighting_shader = love.graphics.newShader(menori.Material.default_vert, lighting_frag)
+	local lighting_shader = love.graphics.newShader(menori.ShaderUtils.cache['default_mesh_vert'], lighting_frag)
+	local lighting_skinning_shader = love.graphics.newShader(menori.ShaderUtils.cache['default_mesh_skinning_vert'], lighting_frag)
 
 	-- Loading models from a GLTF.
 	local gltf1 = menori.glTFLoader.load('example_assets/etrian_odyssey_3_monk/scene.gltf')
@@ -51,8 +52,11 @@ function NewScene:init()
 		-- Traverse each node in the scene.
 		scene:traverse(function (node)
 			if node.mesh then
-				-- Changing the material shader.
-				node.material.shader = lighting_shader
+				if node.joints then
+					node.material.shader = lighting_skinning_shader
+				else
+					node.material.shader = lighting_shader
+				end
 			end
 		end)
       end)

@@ -17,22 +17,17 @@ local modules = (...):match('(.*%menori.modules.)')
 local utils = require (modules .. 'libs.utils')
 local UniformList = require (modules .. 'core3d.uniform_list')
 
+local ShaderUtils = require (modules .. 'shaders.utils')
+
 local Material = UniformList:extend('Material', {
       clone = utils.copy
 })
-local vert, frag
-if love._version_major > 11 then
-      vert = require(modules .. 'shaders.default_12_vert')
-      frag = require(modules .. 'shaders.default_12_frag')
-      Material.default_shader = love.graphics.newShader(vert, frag)
-else
-      vert = require(modules .. 'shaders.default_11_vert')
-      frag = require(modules .. 'shaders.default_12_frag')
-      Material.default_shader = love.graphics.newShader(vert, frag)
-end
 
-Material.default_vert = vert
-Material.default_frag = frag
+if love._version_major > 11 then
+      Material.default_shader = ShaderUtils.shaders['default_mesh']
+else
+      Material.default_shader = ShaderUtils.shaders['default_mesh']
+end
 
 ----
 -- The public constructor.

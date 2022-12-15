@@ -29,12 +29,13 @@ local ModelNode = Node:extend('ModelNode')
 local joints_uniform_limit = 150
 local temp_mat = mat4()
 local root_mat = mat4()
-local data = love.data.newByteData(joints_uniform_limit * 16 * 4)
+local data
 local instancebuffer
 local send_joints_matrices
 
 if love._version_major > 11 then
       joints_uniform_limit = 256
+      data = love.data.newByteData(joints_uniform_limit * 16 * 4)
       local bufferformat = {
             {format="floatvec4", name=""},
       }
@@ -45,6 +46,7 @@ if love._version_major > 11 then
             shader:send('joints_matrices_buffer', instancebuffer)
       end
 else
+      data = love.data.newByteData(joints_uniform_limit * 16 * 4)
       send_joints_matrices = function(shader)
             shader:send('joints_matrices', data, 'column')
       end
@@ -54,7 +56,8 @@ end
 -- @tparam[opt=Material.default] menori.Material material object. (A new copy will be created for the material)
 function ModelNode:init(mesh, material)
 	ModelNode.super.init(self)
-      self.material = material or Material.default
+      material = material or Material.default
+      self.material = material:clone()
 	self.mesh = mesh
 
       self.color = ml.vec4(1)
@@ -136,9 +139,6 @@ function ModelNode:render(scene, environment)
             end
 
             send_joints_matrices(shader)
-            utils.noexcept_send_uniform(shader, 'use_joints', true)
-      else
-            utils.noexcept_send_uniform(shader, 'use_joints', false)
       end
 
       local c = self.color

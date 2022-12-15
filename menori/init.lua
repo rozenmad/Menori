@@ -32,6 +32,8 @@ local menori = {
 	Sprite                 = require(modules .. 'sprite'),
 	SpriteLoader           = require(modules .. 'spriteloader'),
 
+	ShaderUtils            = require(modules .. 'shaders.utils'),
+
 	app                    = require(modules .. 'app'),
 	utils                  = require(modules .. 'libs.utils'),
 	class                  = require(modules .. 'libs.class'),

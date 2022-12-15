@@ -351,7 +351,7 @@ local function create_material(textures, material)
 
 	local main_texture
 	local pbr = material.pbrMetallicRoughness
-	uniforms.baseColor = pbr.baseColorFactor or {1, 1, 1, 1}
+	uniforms.baseColor = (pbr and pbr.baseColorFactor) or {1, 1, 1, 1}
 	if pbr then
 		local _pbrBaseColorTexture = pbr.baseColorTexture
 		local _pbrMetallicRoughnessTexture = pbr.metallicRoughnessTexture
@@ -390,7 +390,7 @@ local function create_material(textures, material)
 		uniforms.emissiveTexture = emissiveTexture.source
 		uniforms.occlusionTextureCoord = emissiveTexture.tcoord
 	end
-	uniforms.emissiveColor = material.emissiveFactor
+	uniforms.emissiveFactor = material.emissiveFactor or {0, 0, 0}
 	uniforms.opaque = material.alphaMode == 'OPAQUE' or not material.alphaMode
 	if material.alphaMode == 'MASK' then
 		uniforms.alphaCutoff = material.alphaCutoff or 0.5
