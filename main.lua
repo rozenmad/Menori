@@ -23,6 +23,7 @@ function love.draw()
 	love.graphics.setColor(1, 1, 1, 1)
 	local prev_str = "Prev scene (press A)"
 	local next_str = "Next scene (press D)"
+	love.graphics.print("Example: " .. example_list[scene_iterator].title, 10, 25)
 	love.graphics.print(prev_str, 10, h-30)
 	love.graphics.print(next_str, w - font:getWidth(next_str) - 10, h-30)
 end
@@ -33,6 +34,7 @@ function love.update(dt)
 	if love.keyboard.isDown('escape') then
 		love.event.quit()
 	end
+	love.mouse.setRelativeMode(love.mouse.isDown(2))
 end
 
 local function set_scene()

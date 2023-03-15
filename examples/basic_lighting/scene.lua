@@ -101,7 +101,6 @@ end
 -- camera control
 function scene:mousemoved(x, y, dx, dy)
 	if love.mouse.isDown(2) then
-		love.mouse.setRelativeMode(true)
       	self.y_angle = self.y_angle - dx * 0.2
 
 		if dy > 0 and self.x_angle < 45 then
@@ -110,8 +109,6 @@ function scene:mousemoved(x, y, dx, dy)
             if dy < 0 and self.x_angle >-45 then
                   self.x_angle = self.x_angle + dy * 0.1
             end
-	else
-		love.mouse.setRelativeMode(false)
 	end
 end
 
