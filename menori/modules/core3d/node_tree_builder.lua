@@ -162,7 +162,7 @@ function NodeTreeBuilder.create(gltf, callback)
             for _, inode in ipairs(v.nodes) do
                   scene_node:attach(builder.nodes[inode + 1])
             end
-            callback(scene_node, builder)
+            if callback then callback(scene_node, builder) end
             scenes[i] = scene_node
       end
 

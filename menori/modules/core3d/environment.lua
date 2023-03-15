@@ -21,6 +21,7 @@ local ml          = require (modules .. 'ml')
 local Environment = UniformList:extend('Environment')
 
 local temp_projection_m = ml.mat4()
+local temp_int_view_m = ml.mat4()
 
 ----
 -- The public constructor.
@@ -57,8 +58,14 @@ function Environment:send_uniforms_to(shader)
 	temp_projection_m:copy(camera.m_projection)
 	if render_to_canvas then temp_projection_m[6] = -temp_projection_m[6] end
 
-	shader:send("m_view", camera.m_view.data, 'column')
-	shader:send("m_projection", temp_projection_m.data, 'column')
+	shader:send("m_view", 'column', camera.m_view.data)
+	shader:send("m_projection", 'column', temp_projection_m.data)
+
+	if shader:hasUniform("m_inv_view") then
+		temp_int_view_m:copy(camera.m_view)
+		temp_int_view_m:inverse()
+		shader:send("m_inv_view", "column", temp_int_view_m.data)
+	end
 
 	self:send_light_sources_to(shader)
 end
@@ -69,12 +76,12 @@ end
 -- This method is called automatically when the environment is used in scene:render_nodes()
 -- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
 function Environment:apply_shader(shader)
-	if self._shader_object_cache ~= shader then
+	--if self._shader_object_cache ~= shader then
             love.graphics.setShader(shader)
 
 	      self:send_uniforms_to(shader)
             self._shader_object_cache = shader
-      end
+      --end
 end
 
 ----

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Choco Bunny
+* source:	https://sketchfab.com/3d-models/choco-bunny-583deedf74ab4df4a3f102b123d3382e
+* author:	Ergoni (https://sketchfab.com/Ergoni)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Choco Bunny" (https://sketchfab.com/3d-models/choco-bunny-583deedf74ab4df4a3f102b123d3382e) by Ergoni (https://sketchfab.com/Ergoni) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

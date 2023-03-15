@@ -1,5 +1,5 @@
 varying vec3 normal;
-varying vec4 frag_position;
+varying vec3 frag_position;
 
 uniform vec4 baseColor;
 uniform vec4 fog_color;
@@ -22,7 +22,7 @@ void effect() {
       if (opaque) {
             texcolor.a = 1.0;
       }
-      love_Canvases[0] = texcolor;
-      love_Canvases[1] = vec4(normal, 1.0);
-      love_Canvases[2] = vec4(frag_position.xyz, 1.0);
+      love_Canvases[0] = vec4(0.0, 0.0, 0.0, 1.0);
+      love_Canvases[1] = vec4((normal+1.0)*0.5, 1.0);
+      love_Canvases[2] = vec4(frag_position, 1.0);
 }

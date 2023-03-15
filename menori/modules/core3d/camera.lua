@@ -39,8 +39,8 @@ function PerspectiveCamera:init(fov, aspect, nclip, fclip)
 	self.m_inv_projection = self.m_projection:clone():inverse()
 	self.m_view = mat4()
 
-	self.eye 	= vec3( 0, 0, 1 )
-	self.center = vec3( 0, 0, 0 )
+	self.eye 	= vec3( 0, 0, 0 )
+	self.center = vec3( 0, 0, 1 )
 	self.up 	= vec3( 0, 1, 0 )
 end
 

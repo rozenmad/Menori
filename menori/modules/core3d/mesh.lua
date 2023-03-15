@@ -140,7 +140,7 @@ end
 -- @tparam[opt] Image texture
 function Mesh:init(primitive, texture)
 	local mesh = create_mesh_from_primitive(primitive, texture)
-	self.mesh = mesh
+	self.lg_mesh = mesh
 	self.material_index = primitive.material_index
 	self.bound = calculate_bound(mesh)
 end
@@ -164,7 +164,7 @@ function Mesh:draw(material)
 		lg.setMeshCullMode(material.mesh_cull_mode)
 	end
 
-	local mesh = self.mesh
+	local mesh = self.lg_mesh
 	mesh:setTexture(material.main_texture)
 	lg.draw(mesh)
 end
@@ -174,12 +174,12 @@ function Mesh:get_bound()
 end
 
 function Mesh:get_vertex_count()
-	return self.mesh:getVertexCount()
+	return self.lg_mesh:getVertexCount()
 end
 
 function Mesh:get_triangles_transform(matrix)
 	local triangles = {}
-	local mesh = self.mesh
+	local mesh = self.lg_mesh
 	local attribute_index = Mesh.get_attribute_index('VertexPosition', mesh:getVertexFormat())
 	local map = mesh:getVertexMap()
 	if map then
@@ -212,9 +212,8 @@ end
 --- Get an array of all mesh vertices.
 -- @tparam[opt=1] int iprimitive The index of the primitive.
 -- @treturn table The table in the form of {vertex, ...} where each vertex is a table in the form of {attributecomponent, ...}.
-function Mesh:get_vertices(iprimitive, start, count)
-	iprimitive = iprimitive or 1
-	local mesh = self.mesh
+function Mesh:get_vertices(start, count)
+	local mesh = self.lg_mesh
 	start = start or 1
 	count = count or mesh:getVertexCount()
 
@@ -226,14 +225,14 @@ function Mesh:get_vertices(iprimitive, start, count)
 end
 
 function Mesh:get_vertex_map()
-	return self.mesh:getVertexMap()
+	return self.lg_mesh:getVertexMap()
 end
 
 --- Get an array of all mesh vertices.
 -- @tparam table vertices The table in the form of {vertex, ...} where each vertex is a table in the form of {attributecomponent, ...}.
 -- @tparam number startvertex The vertex from which the insertion will start.
 function Mesh:set_vertices(vertices, startvertex)
-	self.mesh:setVertices(vertices, startvertex)
+	self.lg_mesh:setVertices(vertices, startvertex)
 end
 
 --- Apply the transformation matrix to the mesh vertices.
@@ -241,7 +240,7 @@ end
 function Mesh:apply_matrix(matrix)
 	local temp_v3 = vec3(0, 0, 0)
 
-	local mesh = self.mesh
+	local mesh = self.lg_mesh
 	local format = mesh:getVertexFormat()
 	local pindex = Mesh.get_attribute_index('VertexPosition', format)
 

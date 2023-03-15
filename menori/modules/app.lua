@@ -55,7 +55,7 @@ function app_mt:update(dt)
 	self.accumulator = self.accumulator + dt
 	while self.accumulator >= self.tick_period do
 		update_count = update_count + 1
-		if self.current_scene and self.current_scene.update then self.current_scene:update(dt) end
+		if self.current_scene and self.current_scene.update then self.current_scene:update(self.tick_period) end
 
 		self.accumulator = self.accumulator - self.tick_period
 		if update_count > 3 then

@@ -1,7 +1,9 @@
 #pragma language glsl3
 varying vec3 normal;
-varying vec3 frag_position;
+varying vec4 frag_position;
 uniform vec3 view_position;
+
+uniform mat4 m_inv_view;
 
 uniform vec4 baseColor;
 
@@ -35,12 +37,13 @@ vec3 calculate_point_light(in PointLight light, vec3 normal, vec3 fragPos, vec3 
 } 
 
 vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords) {
-      vec3 view_direction = normalize(view_position - frag_position);
+      vec3 frag_p = (m_inv_view * frag_position).xyz;
+      vec3 view_direction = normalize(view_position - frag_p.xyz);
 
       vec3 result = vec3(0.0);
       for(int i = 0; i < point_lights_count; i++) {
             if( point_lights[i].constant != 0.0 ) {
-                  result += calculate_point_light(point_lights[i], normal, frag_position, view_direction);
+                  result += calculate_point_light(point_lights[i], normal, frag_p, view_direction);
             }
       }
 

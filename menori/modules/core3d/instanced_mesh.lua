@@ -24,8 +24,8 @@ local default_format = {
       {name = "instance_position", format = "floatvec3"},
 }
 
-function instanced_mesh:init(mesh, instanced_format)
-	self.mesh = mesh
+function instanced_mesh:init(lg_mesh, instanced_format)
+	self.lg_mesh = lg_mesh
 	self.instanced_buffer = GeometryBuffer(16, instanced_format or default_format)
 
 	self.count = 0
@@ -66,14 +66,14 @@ end
 function instanced_mesh:_attach_buffers()
 	local buffer = self.instanced_buffer
 	for i, v in ipairs(buffer.format) do
-		self.mesh:attachAttribute(v.name, buffer.mesh, "perinstance")
+		self.lg_mesh:attachAttribute(v.name, buffer.mesh, "perinstance")
 	end
 end
 
 function instanced_mesh:_detach_buffers()
 	local buffer = self.instanced_buffer
 	for i, v in ipairs(buffer.format) do
-		self.mesh:detachAttribute(v.name)
+		self.lg_mesh:detachAttribute(v.name)
 	end
 end
 
@@ -99,7 +99,7 @@ function instanced_mesh:draw(material)
 		lg.setMeshCullMode(material.mesh_cull_mode)
 	end
 
-	local mesh = self.mesh
+	local mesh = self.lg_mesh
 	mesh:setTexture(material.main_texture)
 	lg.drawInstanced(mesh, self.count)
 end

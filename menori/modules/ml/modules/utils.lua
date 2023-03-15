@@ -33,6 +33,10 @@ function utils.any(t)
     return true
 end
 
+function utils.lerp(a, b, t)
+	return a + (b - a) * t
+end
+
 --- round
 -- @static
 function utils.round(v)

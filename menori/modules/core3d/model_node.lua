@@ -48,7 +48,7 @@ if love._version_major > 11 then
 else
       data = love.data.newByteData(joints_uniform_limit * 16 * 4)
       send_joints_matrices = function(shader)
-            shader:send('joints_matrices', data, 'column')
+            shader:send('joints_matrices', 'column', data)
       end
 end
 --- The public constructor.
@@ -117,7 +117,7 @@ end
 function ModelNode:render(scene, environment)
       local shader = self.material.shader
       environment:apply_shader(shader)
-      shader:send('m_model', self.world_matrix.data, 'column')
+      shader:send('m_model', 'column', self.world_matrix.data)
 
       if self.joints then
             self:recursive_update_transform()

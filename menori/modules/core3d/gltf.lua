@@ -568,7 +568,8 @@ end
 -- @tparam[opt=love.filesystem.read] function io_read Callback to read the file.
 -- @treturn table
 function glTFLoader.load(filename)
-	local path, name, extension = filename:match("(.*/)(.+)%.(.+)$")
+	local path = filename:match(".+/")
+	local name, extension = filename:match("([^/]+)%.(.+)$")
 	local io_read = love.filesystem.read
 	--assert(love.filesystem.getInfo(filepath), 'in function <glTFLoader.load> file "' .. filepath .. '" not found.')
 
