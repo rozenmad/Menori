@@ -224,6 +224,20 @@ function Mesh:get_vertices(start, count)
 	return vertices
 end
 
+function Mesh:get_vertices_transform(matrix, start, count)
+	local mesh = self.lg_mesh
+	start = start or 1
+	count = count or mesh:getVertexCount()
+
+	local vertices = {}
+	for i = start, start + count - 1 do
+		local v = vec3(mesh:getVertex(i))
+		v = matrix:multiply_vec3(v, v)
+		table.insert(vertices, {v:unpack()})
+	end
+	return vertices
+end
+
 function Mesh:get_vertex_map()
 	return self.lg_mesh:getVertexMap()
 end

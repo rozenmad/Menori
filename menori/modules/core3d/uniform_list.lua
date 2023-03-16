@@ -17,7 +17,7 @@ local class = require (modules .. 'libs.class')
 local UniformList = class('UniformList')
 
 local uniform_types = {
-	'any', 'color', 'matrix', 'vector',
+	[1] = 'any', [2] = 'color', [3] = 'matrix', [4] = 'vector',
 }
 
 local function locate_uniform(list, name, constant, type)
@@ -26,7 +26,7 @@ local function locate_uniform(list, name, constant, type)
 		uniform = { type = type, constant = constant }
 		list[name] = uniform
 	elseif constant then
-		error(string.format('set_uniform: attempt to assign a new value to a constant - "%s" type - "type"', name, type))
+		error(string.format('set_uniform: attempt to assign a new value to a constant - "%s" type - "type"', name, uniform_types[type]))
 	end
 	return uniform
 end
@@ -36,7 +36,7 @@ function UniformList:init()
 	self.list = {}
 end
 
---- Set one or more any values to a Uniform variable into list.
+--- Set one or more any type values into uniform list.
 -- @tparam string name
 -- @param ... See shader:send(name, ...)
 function UniformList:set(name, ...)
@@ -44,7 +44,7 @@ function UniformList:set(name, ...)
 	uniform.value = {...}
 end
 
---- Set one or more color values to Uniform variable into list.
+--- Set one or more color values into uniform list.
 -- @tparam string name
 -- @param ... See shader:sendColor(name, ...)
 function UniformList:set_color(name, ...)
@@ -52,17 +52,17 @@ function UniformList:set_color(name, ...)
 	uniform.value = {...}
 end
 
---- Set matrix object to Uniform variable into list.
+--- Set matrix object into uniform list.
 -- @tparam string name
--- @tparam ml.mat4 object
+-- @tparam ml.mat4 object Matrix of the menori.ml
 function UniformList:set_matrix(name, object)
 	local uniform = locate_uniform(self.list, name, false, 3)
 	uniform.value = object
 end
 
---- Set vector object to Uniform variable into list.
+--- Set vector object into uniform list.
 -- @tparam string name
--- @tparam ml.vec object Any vector of the menori.ml.
+-- @tparam ml.vec object Vector of the menori.ml.
 function UniformList:set_vector(name, object)
 	local uniform = locate_uniform(self.list, name, false, 4)
 	uniform.value = object

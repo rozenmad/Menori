@@ -15,7 +15,7 @@ Separated GLTF (.gltf+.bin+textures) or (.gltf+textures) is supported now.
 local json = require 'libs.rxijson.json'
 
 local ffi
-if type(jit) == 'table' and jit.status() then
+if type(jit) == 'table' or jit.status() then
 	ffi = require 'ffi'
 end
 

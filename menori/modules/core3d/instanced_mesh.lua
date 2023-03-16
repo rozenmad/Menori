@@ -14,7 +14,7 @@ local GeometryBuffer = require (modules .. 'core3d.geometry_buffer')
 local lg = love.graphics
 
 local ffi
-if type(jit) == 'table' and jit.status() then
+if type(jit) == 'table' or jit.status() then
 	ffi = require 'ffi'
 end
 

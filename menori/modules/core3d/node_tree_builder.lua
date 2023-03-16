@@ -80,7 +80,6 @@ local function create_nodes(builder, nodes, i)
       node:set_position(t)
       node:set_rotation(r)
       node:set_scale(s)
-      node:recursive_update_transform()
       node.name = v.name or node.name
 
       builder.nodes[i] = node
@@ -93,6 +92,10 @@ local function create_nodes(builder, nodes, i)
       end
 
       return node
+end
+
+local function update_transform_callback(node)
+      node:update_transform()
 end
 
 function NodeTreeBuilder.create(gltf, callback)
@@ -162,6 +165,7 @@ function NodeTreeBuilder.create(gltf, callback)
             for _, inode in ipairs(v.nodes) do
                   scene_node:attach(builder.nodes[inode + 1])
             end
+            scene_node:traverse(update_transform_callback)
             if callback then callback(scene_node, builder) end
             scenes[i] = scene_node
       end

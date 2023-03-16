@@ -10,7 +10,7 @@ local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
 
 local ffi
-if type(jit) == 'table' and jit.status() then
+if type(jit) == 'table' or jit.status() then
 	ffi = require 'ffi'
 end
 

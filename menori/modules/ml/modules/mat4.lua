@@ -24,7 +24,7 @@ local vec3 = require(modules .. "vec3")
 local vec4 = require(modules .. "vec4")
 
 local ffi, bytesize
-if type(jit) == 'table' and jit.status() then
+if type(jit) == 'table' or jit.status() then
 	ffi = require 'ffi'
 	bytesize = ffi.sizeof('float[16]')
 end

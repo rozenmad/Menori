@@ -51,22 +51,34 @@ function app_mt:set_scene(name)
 end
 
 function app_mt:update(dt)
-	local update_count = 0
-	self.accumulator = self.accumulator + dt
-	while self.accumulator >= self.tick_period do
-		update_count = update_count + 1
-		if self.current_scene and self.current_scene.update then self.current_scene:update(self.tick_period) end
+      self.accumulator = self.accumulator + dt
 
-		self.accumulator = self.accumulator - self.tick_period
-		if update_count > 3 then
-			self.accumulator = 0
-			break
-		end
-	end
+      local target_dt = self.tick_period
+
+      local steps = math.floor(self.accumulator / target_dt)
+
+      if steps > 0 then
+            self.accumulator = self.accumulator - steps * target_dt
+      end
+
+      local interpolation_dt = self.accumulator / target_dt
+      local scene = self.current_scene
+
+      if scene and scene.update then
+            self.current_scene.interpolation_dt = interpolation_dt
+            self.current_scene.dt = target_dt
+
+            while steps > 0 do
+                  self.current_scene:update(target_dt)
+                  steps = steps - 1
+            end
+      end
 end
 
-function app_mt:render(dt)
-      if self.current_scene and self.current_scene.render then self.current_scene:render(dt) end
+function app_mt:render()
+      if self.current_scene and self.current_scene.render then
+            self.current_scene:render()
+      end
 end
 
 function app_mt:handle_event(eventname, ...)

@@ -70,7 +70,7 @@ function scene:init()
 	self.ssao_blur_c = love.graphics.newCanvas(w, h)
 	self.albedo_c    = love.graphics.newCanvas(w, h)
 	self.normal_c    = love.graphics.newCanvas(w, h, { format = 'rgba16f' })
-	self.depth24_c   = love.graphics.newCanvas(w, h, { readable = true, format = 'depth32f' })
+	self.depth24_c   = love.graphics.newCanvas(w, h, { readable = true, format = 'depth24' })
 
 	self.view_scale = 4
 	self.x_angle = -30

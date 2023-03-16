@@ -146,11 +146,11 @@ end
 -- @tparam number angle
 -- @tparam number kx
 -- @tparam number ky
-function sprite:draw_ex(x, y, fit, bound_w, bound_h, onx, ony, angle, kx, ky)
+function sprite:draw_ex(x, y, fit, bound_w, bound_h, onx, ony, angle, kx, ky, sx, sy)
       local _, _, w, h = self:get_frame_viewport()
 
-	local sx = 1
-	local sy = 1
+	sx = (1 * (sx or 1))
+	sy = (1 * (sy or 1))
 
 	if
 	fit == 'max' then

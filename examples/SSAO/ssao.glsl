@@ -11,7 +11,6 @@ uniform float radius;
 uniform float bias;
 uniform bool range_check_enable;
 
-vec2 noiseScale = love_ScreenSize.xy / 4.0;
 uniform mat4 projection;
 uniform mat4 inv_projection;
 
@@ -27,6 +26,7 @@ vec3 get_position(vec2 uv) {
 
 void effect()
 {
+    vec2 noiseScale = love_ScreenSize.xy / 4.0;
     vec2 uv = love_PixelCoord / love_ScreenSize.xy;
     float occlusion = 0.0;
 
@@ -57,7 +57,7 @@ void effect()
             occlusion += (sample_depth >= sample_position.z + bias ? 1.0 : 0.0);
         }
     }
-    occlusion = (occlusion / kernel_size);
+    occlusion = (occlusion / float(kernel_size));
     occlusion = pow(1.0 - occlusion, power);
     
     love_Canvases[0] = vec4(occlusion, occlusion, occlusion, 1.0);

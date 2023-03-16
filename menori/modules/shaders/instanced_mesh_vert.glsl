@@ -17,7 +17,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
       #include <billboard.glsl>
       #include <normal.glsl>
 
-      vert_position += vec4(instance_position.xyz, 0);
+      vert_position += vec4(instance_position.xyz, 0.0);
 
       normal = vert_normal;
       frag_position = m_view * m_model * vert_position;

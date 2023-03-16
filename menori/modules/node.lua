@@ -37,7 +37,7 @@ function Node:init(name)
 	self.detach_flag = false
 	self.update_flag = true
 	self.render_flag = true
-	self.update_transform_flag = true
+	self.calculate_local_transform_flag = true
 
 	self.local_matrix = mat4()
 	self.world_matrix = mat4()
@@ -61,7 +61,7 @@ function Node:clone(new_object)
 	new_object.detach_flag = self.detach_flag
 	new_object.update_flag = self.update_flag
 	new_object.render_flag = self.render_flag
-	new_object.update_transform_flag = self.update_transform_flag
+	new_object.calculate_local_transform_flag = self.calculate_local_transform_flag
 
 	new_object.local_matrix:copy(self.local_matrix)
 	new_object.world_matrix:copy(self.world_matrix)
@@ -190,19 +190,18 @@ end
 
 --- Update all transform up the hierarchy to the root node.
 function Node:recursive_update_transform()
-	if self.parent then self.parent:recursive_update_transform() end
-	if self.update_transform_flag and self._transform_flag then
-		self:update_transform()
-	end
+	if self.parent then self.parent:recursive_update_transform(self) end
+	self:update_transform()
 end
 
---- Update transformation matrix only for this node.
+--- Update transform only for this node.
 function Node:update_transform(parent_world_matrix)
 	local local_matrix = self.local_matrix
 	local world_matrix = self.world_matrix
 
-	if self.update_transform_flag then
+	if self.calculate_local_transform_flag then
 		local_matrix:compose(self.position, self.rotation, self.scale)
+		self._transform_flag = false
 	end
 
 	local parent = self.parent

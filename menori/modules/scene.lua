@@ -96,7 +96,7 @@ function scene:_recursive_render_nodes(node, transform_flag)
 	if not node.render_flag then
 		return
 	end
-	if node.update_transform_flag and (node._transform_flag or transform_flag) then
+	if node._transform_flag or transform_flag then
 		node:update_transform()
 		transform_flag = true
 	end
