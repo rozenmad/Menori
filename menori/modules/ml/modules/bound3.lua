@@ -22,8 +22,8 @@ bound3_mt.__index = bound3_mt
 
 local function new(min, max)
       return setmetatable({
-            min = min and min:clone() or vec3(0),
-            max = max and max:clone() or vec3(0),
+            min = min and vec3(min.x, min.y, min.z) or vec3(0),
+            max = max and vec3(max.x, max.y, max.z) or vec3(0),
       }, bound3_mt)
 end
 

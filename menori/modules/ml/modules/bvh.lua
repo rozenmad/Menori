@@ -27,24 +27,15 @@ local Node
 BVH.__index     = BVH
 BVHNode.__index = BVHNode
 
-local function new(triangles, max_triangles_per_node)
+local temp_vec = vec3()
+
+local function new(mesh, max_triangles_per_node, matrix)
 	local tree = setmetatable({}, BVH)
-	local triangle_array = {}
 
-	for i, triangle in ipairs(triangles) do
-		local p1 = triangle[1]
-		local p2 = triangle[2]
-		local p3 = triangle[3]
-
-		triangle_array[i] = {
-			{p1.x or p1[1], p1.y or p1[2], p1.z or p1[3]},
-			{p2.x or p2[1], p2.y or p2[2], p2.z or p2[3]},
-			{p3.x or p3[1], p3.y or p3[2], p3.z or p3[3]}
-		}
-	end
-
-	tree._triangles_array = triangle_array
+	tree._mesh = mesh
+	tree._mesh_indices = mesh:get_vertex_map()
 	tree._max_triangles_per_node = max_triangles_per_node or 10
+	tree._matrix = matrix
 
 	local p1x, p1y, p1z
 	local p2x, p2y, p2z
@@ -53,24 +44,40 @@ local function new(triangles, max_triangles_per_node)
 
 	tree._bbox_array = {}
 
+	local triangle_array = mesh:get_triangles()
 	for i = 1, #triangle_array do
 		triangle = triangle_array[i]
-		p1x = triangle[1][1]
-		p1y = triangle[1][2]
-		p1z = triangle[1][3]
-		p2x = triangle[2][1]
-		p2y = triangle[2][2]
-		p2z = triangle[2][3]
-		p3x = triangle[3][1]
-		p3y = triangle[3][2]
-		p3z = triangle[3][3]
+
+		local tri_1 = temp_vec:set(triangle[1])
+		matrix:multiply_vec3(tri_1, tri_1)
+		p1x = tri_1.x
+		p1y = tri_1.y
+		p1z = tri_1.z
+
+		local tri_2 = temp_vec:set(triangle[2])
+		matrix:multiply_vec3(tri_2, tri_2)
+		p2x = tri_2.x
+		p2y = tri_2.y
+		p2z = tri_2.z
+
+		local tri_3 = temp_vec:set(triangle[3])
+		matrix:multiply_vec3(tri_3, tri_3)
+		p3x = tri_3.x
+		p3y = tri_3.y
+		p3z = tri_3.z
+
+		local indices_i = (i - 1) * 3
 
 		tree._bbox_array[i] = {
 			bound = bound3(
 				vec3(math.min(p1x, p2x, p3x), math.min(p1y, p2y, p3y), math.min(p1z, p2z, p3z)),
 				vec3(math.max(p1x, p2x, p3x), math.max(p1y, p2y, p3y), math.max(p1z, p2z, p3z))
 			),
-			index = i,
+			vertex_indices = {
+				tree._mesh_indices[indices_i + 1],
+				tree._mesh_indices[indices_i + 2],
+				tree._mesh_indices[indices_i + 3],
+			}
 		}
 	end
 
@@ -80,12 +87,11 @@ local function new(triangles, max_triangles_per_node)
 		local src = tree._bbox_array[i]
 		local dst = {
 			bound = src.bound:clone(),
-			index = src.index
 		}
 		tree._bbox_helper[i] = dst
 	end
 
-	local count = #triangles
+	local count = #triangle_array
 	local extents = tree:calculate_extents(1, count, EPSILON)
 	tree.root_node = Node(extents, 1, count, 1)
 
@@ -95,6 +101,16 @@ local function new(triangles, max_triangles_per_node)
 		tree:split_node(node)
 	end
 	return tree
+end
+
+function BVH:_extract_triangle(bbox)
+	local triangle = {}
+	local vertex_indices = bbox.vertex_indices
+	for i = 1, 3 do
+		self._mesh:get_vertex_attribute("VertexPosition", vertex_indices[i], triangle)
+		self._matrix:multiply_vec3_array(triangle[i], triangle[i])
+	end
+	return triangle
 end
 
 function BVH:intersect_aabb(aabb)
@@ -114,10 +130,8 @@ function BVH:intersect_aabb(aabb)
 			end
 
 			for i = node._start_index, node._end_index do
-				local triangle_index = self._bbox_array[i].index
 				table.insert(intersecting, {
-					triangle = self._triangles_array[triangle_index],
-					triangle_index = triangle_index
+					triangle = self:_extract_triangle(self._bbox_array[i])
 				})
 			end
 		end
@@ -145,13 +159,11 @@ function BVH:intersect_ray(ray, backfaceCulling)
 			end
 
 			for i = node._start_index, node._end_index do
-				local triangle_index = self._bbox_array[i].index
-				local triangle = self._triangles_array[triangle_index]
+				local triangle = self:_extract_triangle(self._bbox_array[i])
 
 				local rayhit = intersect.ray_triangle(ray, triangle, backfaceCulling)
 				if rayhit then
 					rayhit.triangle = triangle
-					rayhit.triangle_index = triangle_index
 					table.insert(intersecting, rayhit)
 				end
 			end
@@ -278,7 +290,7 @@ function BVH:split_node(node)
 		dst = self._bbox_helper[helper_pos]
 		src = self._bbox_array[current_element]
 		dst.bound:set(src.bound)
-		dst.index = src.index
+		dst.vertex_indices = src.vertex_indices
 		helper_pos = helper_pos + 1
 	end
 
@@ -287,7 +299,7 @@ function BVH:split_node(node)
 		dst = self._bbox_array[i]
 		src = self._bbox_helper[i]
 		dst.bound:set(src.bound)
-		dst.index = src.index
+		dst.vertex_indices = src.vertex_indices
 	end
 
 	-- create 2 new nodes for the node we just split, and add links to them from the parent node

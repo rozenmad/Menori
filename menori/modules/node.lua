@@ -189,9 +189,11 @@ function Node:get_aabb()
 end
 
 --- Update all transform up the hierarchy to the root node.
-function Node:recursive_update_transform()
-	if self.parent then self.parent:recursive_update_transform(self) end
-	self:update_transform()
+function Node:recursive_update_transform(force)
+	if self.parent then self.parent:recursive_update_transform(self, force) end
+	if force or self._transform_flag then
+		self:update_transform()
+	end
 end
 
 --- Update transform only for this node.

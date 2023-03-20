@@ -27,29 +27,46 @@ local app = {
       tick_period = 1.0 / 60.0,
 }
 
+--- Get current scene.
+-- @return Scene object
 function app_mt:get_current_scene()
 	return self.current_scene
 end
 
+--- Get viewport dimensions.
+-- @treturn number x
+-- @treturn number y
+-- @treturn number w
+-- @treturn number h
 function app_mt:get_viewport()
       return self.ox, self.oy, self.w or graphics_w, self.h or graphics_h
 end
 
+--- Get viewport width.
 function app_mt:get_viewport_w()
       return self.w or graphics_w
 end
+--- Get viewport height.
 function app_mt:get_viewport_h()
       return self.h or graphics_h
 end
 
+--- Add scene to the scene list.
+-- @tparam string name
 function app_mt:add_scene(name, scene)
       self.scenes[name] = scene
 end
 
+--- Get scene from the scene list by the name.
+-- @tparam string name
+-- @return Scene object
 function app_mt:set_scene(name)
       self.current_scene = self.scenes[name]
 end
 
+
+--- Main update function.
+-- @tparam number dt
 function app_mt:update(dt)
       self.accumulator = self.accumulator + dt
 
@@ -75,17 +92,23 @@ function app_mt:update(dt)
       end
 end
 
+--- Main render function.
 function app_mt:render()
       if self.current_scene and self.current_scene.render then
             self.current_scene:render()
       end
 end
 
+
+--- Handling any LOVE event. Redirects an event call to an overridden function in the active scene.
+-- @tparam string eventname
 function app_mt:handle_event(eventname, ...)
       local current_scene = self.current_scene
-      local event = current_scene[eventname]
-      if current_scene and event then
-            event(current_scene, ...)
+      if current_scene then
+            local event = current_scene[eventname]
+            if current_scene and event then
+                  event(current_scene, ...)
+            end
       end
 end
 

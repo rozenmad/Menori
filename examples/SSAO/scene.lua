@@ -12,6 +12,7 @@ local menori = require ('menori')
 local ml = menori.ml
 local vec3 = ml.vec3
 local quat = ml.quat
+local ml_utils = ml.utils
 
 local function generate_hemisphere_kernels(size)
 	local samples = {}
@@ -73,8 +74,8 @@ function scene:init()
 	self.depth24_c   = love.graphics.newCanvas(w, h, { readable = true, format = 'depth24' })
 
 	self.view_scale = 4
-	self.x_angle = -30
-	self.y_angle = -60
+	self.x_angle = -60
+	self.y_angle = -30
 
 	self.render_state = {
 		self.albedo_c, self.normal_c, -- in deferred shader love_Canvases[0] - albedo; love_Canvases[1] - normal;
@@ -201,14 +202,9 @@ end
 -- camera control
 function scene:mousemoved(x, y, dx, dy)
 	if love.mouse.isDown(2) then
-      	self.y_angle = self.y_angle - dx * 0.2
-
-		if dy > 0 and self.x_angle < 45 then
-                  self.x_angle = self.x_angle + dy * 0.1
-            end
-            if dy < 0 and self.x_angle >-45 then
-                  self.x_angle = self.x_angle + dy * 0.1
-            end
+      	self.y_angle = self.y_angle - dy * 0.2
+      	self.x_angle = self.x_angle - dx * 0.2
+		self.y_angle = ml_utils.clamp(self.y_angle, -45, 45)
 	end
 end
 
@@ -227,8 +223,8 @@ function scene:update(dt)
 	end
 
 	-- rotate the camera
-	local q = quat.from_euler_angles(0, math.rad(self.y_angle), math.rad(self.x_angle)) * vec3.unit_z * self.view_scale
-	local v = vec3(0)
+	local q = quat.from_euler_angles(0, math.rad(self.x_angle), math.rad(self.y_angle)) * vec3.unit_z * self.view_scale
+	local v = vec3(0, 0, 0)
 	self.camera.center = v
 	self.camera.eye = q + v
 	self.camera:update_view_matrix()

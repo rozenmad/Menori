@@ -12,6 +12,7 @@ local menori = require 'menori'
 local ml = menori.ml
 local vec3 = ml.vec3
 local quat = ml.quat
+local ml_utils = ml.utils
 
 -- class inherited from UniformList for a light source.
 local PointLight = menori.UniformList:extend('PointLight')
@@ -72,8 +73,8 @@ function scene:init()
 
 	self.root_node:attach(scenes[1])
 
-	self.x_angle = -30
-	self.y_angle = 0
+	self.x_angle = 0
+	self.y_angle = -30
 	self.view_scale = 10
 end
 
@@ -88,8 +89,7 @@ function scene:render()
 end
 
 function scene:update_camera()
-	self.y_angle = self.y_angle + 0.0
-	local q = quat.from_euler_angles(0, math.rad(self.y_angle), math.rad(self.x_angle)) * vec3.unit_z * self.view_scale
+	local q = quat.from_euler_angles(0, math.rad(self.x_angle), math.rad(self.y_angle)) * vec3.unit_z * self.view_scale
 	local v = vec3(0, 0.5, 0)
 	self.camera.center = v
 	self.camera.eye = q + v
@@ -101,14 +101,9 @@ end
 -- camera control
 function scene:mousemoved(x, y, dx, dy)
 	if love.mouse.isDown(2) then
-      	self.y_angle = self.y_angle - dx * 0.2
-
-		if dy > 0 and self.x_angle < 45 then
-                  self.x_angle = self.x_angle + dy * 0.1
-            end
-            if dy < 0 and self.x_angle >-45 then
-                  self.x_angle = self.x_angle + dy * 0.1
-            end
+      	self.y_angle = self.y_angle - dy * 0.2
+      	self.x_angle = self.x_angle - dx * 0.2
+		self.y_angle = ml_utils.clamp(self.y_angle, -45, 45)
 	end
 end
 

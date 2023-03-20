@@ -550,7 +550,7 @@ end
 
 --- multiply vec4
 function mat4_mt:multiply_vec4(v, out)
-	out = out or v
+	out = out or vec4()
 	local e = self.e
 	temp_a4[1] = v.x * e[1] + v.y * e[5] + v.z * e[9]  + v.w * e[13]
 	temp_a4[2] = v.x * e[2] + v.y * e[6] + v.z * e[10] + v.w * e[14]
@@ -565,7 +565,7 @@ end
 
 --- multiply vec3
 function mat4_mt:multiply_vec3(v, out)
-	out = out or v
+	out = out or vec3()
 	local e = self.e
 	temp_a4[1] = v.x * e[1] + v.y * e[5] + v.z * e[9]  + e[13]
 	temp_a4[2] = v.x * e[2] + v.y * e[6] + v.z * e[10] + e[14]
@@ -573,6 +573,34 @@ function mat4_mt:multiply_vec3(v, out)
 	out.x = temp_a4[1]
 	out.y = temp_a4[2]
 	out.z = temp_a4[3]
+	return out
+end
+
+--- multiply vec3 array
+function mat4_mt:multiply_vec3_array(v, out)
+	out = out or {}
+	local e = self.e
+	temp_a4[1] = v[1] * e[1] + v[2] * e[5] + v[3] * e[9]  + e[13]
+	temp_a4[2] = v[1] * e[2] + v[2] * e[6] + v[3] * e[10] + e[14]
+	temp_a4[3] = v[1] * e[3] + v[2] * e[7] + v[3] * e[11] + e[15]
+	out[1] = temp_a4[1]
+	out[2] = temp_a4[2]
+	out[3] = temp_a4[3]
+	return out
+end
+
+--- multiply vec4 array
+function mat4_mt:multiply_vec4_array(v, out)
+	out = out or {}
+	local e = self.e
+	temp_a4[1] = v[1] * e[1] + v[2] * e[5] + v[3] * e[9]  + v[4] * e[13]
+	temp_a4[2] = v[1] * e[2] + v[2] * e[6] + v[3] * e[10] + v[4] * e[14]
+	temp_a4[3] = v[1] * e[3] + v[2] * e[7] + v[3] * e[11] + v[4] * e[15]
+	temp_a4[4] = v[1] * e[4] + v[2] * e[8] + v[3] * e[12] + v[4] * e[16]
+	out[1] = temp_a4[1]
+	out[2] = temp_a4[2]
+	out[3] = temp_a4[3]
+	out[4] = temp_a4[4]
 	return out
 end
 

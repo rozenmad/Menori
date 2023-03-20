@@ -128,10 +128,10 @@ end
 function Mesh.from_primitive(vertices, opt)
 	return Mesh {
 		mode = opt.mode,
-		vertexformat = opt.vertexformat,
 		vertices = vertices,
+		vertexformat = opt.vertexformat,
 		indices = opt.indices,
-		texture = opt.texture
+		texture = opt.texture,
 	}
 end
 
@@ -140,6 +140,7 @@ end
 -- @tparam[opt] Image texture
 function Mesh:init(primitive, texture)
 	local mesh = create_mesh_from_primitive(primitive, texture)
+	self.vertex_attribute_index = Mesh.get_attribute_index('VertexPosition', mesh:getVertexFormat())
 	self.lg_mesh = mesh
 	self.material_index = primitive.material_index
 	self.bound = calculate_bound(mesh)
@@ -177,6 +178,17 @@ function Mesh:get_vertex_count()
 	return self.lg_mesh:getVertexCount()
 end
 
+function Mesh:get_vertex_attribute(name, index, out)
+	local mesh = self.lg_mesh
+	local attribute_index = Mesh.get_attribute_index(name, mesh:getVertexFormat())
+
+	out = out or {}
+	table.insert(out, {
+		mesh:getVertexAttribute(index, attribute_index)
+	})
+	return out
+end
+
 function Mesh:get_triangles_transform(matrix)
 	local triangles = {}
 	local mesh = self.lg_mesh
@@ -207,7 +219,6 @@ function Mesh:get_triangles()
 	self.triangles = self.triangles or self:get_triangles_transform(mat4())
 	return self.triangles
 end
-
 
 --- Get an array of all mesh vertices.
 -- @tparam[opt=1] int iprimitive The index of the primitive.
