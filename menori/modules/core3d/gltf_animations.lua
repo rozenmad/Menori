@@ -2,14 +2,14 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2022
+	2023
 -------------------------------------------------------------------------------
 ]]
 
 --[[--
-Class for drawing box shape. (Inherited from menori.ModelNode class)
+A class that provides functionality for gltf animations.
 ]]
--- @classmod BoxShape
+-- @classmod glTFAnimation
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -21,9 +21,12 @@ local Node  = require (modules .. 'node')
 local vec3  = ml.vec3
 local quat  = ml.quat
 
-local glTFAnimations = class('glTFAnimations')
+local glTFAnimation = class('glTFAnimations')
 
-function glTFAnimations:init(animations)
+----
+-- The public constructor.
+-- @tparam table animations Animations loaded with the glTFLoader
+function glTFAnimation:init(animations)
 	self.animations = animations
 	self.accumulator = 0
 	self.animation = self.animations[1]
@@ -59,7 +62,7 @@ local function get_sampler_data(accumulator, sampler, target)
 		if target == 'rotation' then
 			return quat.slerp(quat(frame1), quat(frame2), s)
 		elseif target == 'weights' then
-		
+
 		else
 			return vec3.lerp(vec3(frame1), vec3(frame2), s)
 		end
@@ -73,11 +76,13 @@ local target_path = {
       translation = Node.set_position,
       scale = Node.set_scale,
       weights = function ()
-		--error('weights')
 	end
 }
 
-function glTFAnimations:set_action_by_name(name)
+----
+-- Set the action by name.
+-- @tparam string name Action name
+function glTFAnimation:set_action_by_name(name)
 	for i, v in ipairs(self.animations) do
 		if v.name == name then
 			self.animation = v
@@ -86,15 +91,24 @@ function glTFAnimations:set_action_by_name(name)
 	end
 end
 
-function glTFAnimations:set_action(i)
+----
+-- Set the action by index.
+-- @tparam number i Action index
+function glTFAnimation:set_action(i)
 	self.animation = self.animations[i]
 end
 
-function glTFAnimations:get_action_count()
+----
+-- Get the total number of actions.
+-- @treturn number
+function glTFAnimation:get_action_count()
 	return #self.animations
 end
 
-function glTFAnimations:update(dt)
+----
+-- Update animations.
+-- @tparam number dt
+function glTFAnimation:update(dt)
 	if self.animation then
 		for _, channel in ipairs(self.animation.channels) do
 			local node = channel.target_node
@@ -105,4 +119,4 @@ function glTFAnimations:update(dt)
 	self.accumulator = self.accumulator + dt
 end
 
-return glTFAnimations
+return glTFAnimation

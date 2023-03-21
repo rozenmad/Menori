@@ -1,8 +1,8 @@
 --[[
 -------------------------------------------------------------------------------
-	Menori
-	@author rozenmad
-	2022
+      Menori
+      @author rozenmad
+      2022
 -------------------------------------------------------------------------------
 ]]
 
@@ -10,7 +10,7 @@
 Singleton object.
 The main class for managing scenes and the viewport.
 ]]
---- @classmod Application
+--- @classmod App
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -30,7 +30,7 @@ local app = {
 --- Get current scene.
 -- @return Scene object
 function app_mt:get_current_scene()
-	return self.current_scene
+      return self.current_scene
 end
 
 --- Get viewport dimensions.
@@ -43,23 +43,26 @@ function app_mt:get_viewport()
 end
 
 --- Get viewport width.
+-- @treturn number
 function app_mt:get_viewport_w()
       return self.w or graphics_w
 end
 --- Get viewport height.
+-- @treturn number
 function app_mt:get_viewport_h()
       return self.h or graphics_h
 end
 
 --- Add scene to the scene list.
 -- @tparam string name
+-- @tparam menori.Scene scene object
 function app_mt:add_scene(name, scene)
       self.scenes[name] = scene
 end
 
 --- Get scene from the scene list by the name.
 -- @tparam string name
--- @return Scene object
+-- @treturn menori.Scene object
 function app_mt:set_scene(name)
       self.current_scene = self.scenes[name]
 end

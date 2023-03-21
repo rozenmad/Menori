@@ -18,5 +18,5 @@ vec4 effect(vec4 color, Image t, vec2 texture_coords, vec2 screen_coords) {
       if (opaque) {
             texcolor.a = 1.0;
       }
-      return texcolor;
+      return texcolor * color;
 }

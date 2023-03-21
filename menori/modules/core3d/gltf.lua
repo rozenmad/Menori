@@ -2,7 +2,7 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2022
+	2023
 -------------------------------------------------------------------------------
 ]]
 
@@ -562,7 +562,7 @@ local function glb_parser(glb_data)
 	return json_data, buffers
 end
 
---- Load model by filename.
+--- Load gltf model by filename.
 -- @function load
 -- @tparam string filename The filepath to the gltf file (GLTF must be separated (.gltf+.bin+textures) or (.gltf+textures)
 -- @tparam[opt=love.filesystem.read] function io_read Callback to read the file.
@@ -571,7 +571,7 @@ function glTFLoader.load(filename)
 	local path = filename:match(".+/")
 	local name, extension = filename:match("([^/]+)%.(.+)$")
 	local io_read = love.filesystem.read
-	--assert(love.filesystem.getInfo(filepath), 'in function <glTFLoader.load> file "' .. filepath .. '" not found.')
+	assert(love.filesystem.getInfo(filename), 'in function <glTFLoader.load> file "' .. filename .. '" not found.')
 
 	if extension == 'gltf' then
 		local filedata = io_read(filename)

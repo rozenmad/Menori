@@ -50,7 +50,7 @@ function scene:init()
 
 	local gltf = menori.glTFLoader.load('examples/assets/pokemon_firered_-_players_room.glb')
 	local scenes = menori.NodeTreeBuilder.create(gltf, function (scene, builder)
-            -- Callback for each scene in the gltf.
+		-- Callback for each scene in the gltf.
 		-- Create AABB for each node and add it to the aabb_root node.
 		scene:traverse(function (node)
 			if node.mesh then
@@ -69,7 +69,7 @@ function scene:init()
 				--self.aabb_root:attach(t)
 			end
 		end)
-      end)
+	end)
 
 	self.root_node:attach(scenes[1])
 
@@ -101,14 +101,14 @@ end
 -- camera control
 function scene:mousemoved(x, y, dx, dy)
 	if love.mouse.isDown(2) then
-      	self.y_angle = self.y_angle - dy * 0.2
-      	self.x_angle = self.x_angle - dx * 0.2
+		self.y_angle = self.y_angle - dy * 0.2
+		self.x_angle = self.x_angle - dx * 0.2
 		self.y_angle = ml_utils.clamp(self.y_angle, -45, 45)
 	end
 end
 
 function scene:wheelmoved(x, y)
-      self.view_scale = self.view_scale - y * 0.2
+	self.view_scale = self.view_scale - y * 0.2
 end
 
 function scene:update()

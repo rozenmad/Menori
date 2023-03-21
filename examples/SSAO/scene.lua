@@ -64,7 +64,7 @@ end
 local scene = menori.Scene:extend('SSAO_scene')
 
 function scene:init()
-      scene.super.init(self)
+	scene.super.init(self)
 
 	local _, _, w, h = menori.app:get_viewport()
 	self.ssao_c      = love.graphics.newCanvas(w, h)
@@ -106,7 +106,7 @@ function scene:init()
 				end
 			end
 		end)
-      end)
+	end)
 
 	self.root_node:attach(scenes[1])
 
@@ -185,9 +185,9 @@ function scene:render()
 		love.graphics.print(v.text .. (v.boolean and "On" or "Off"), 10, y)
 		y = y + 15
 	end
-      love.graphics.print("SSAO radius (hold Q or E): " .. self.ssao_radius, 10, y)
-      love.graphics.print("Hold mouse right button to move camera.", 10, y+30)
-      love.graphics.print("Use mousewheel for zoom.", 10, y+45)
+	love.graphics.print("SSAO radius (hold Q or E): " .. self.ssao_radius, 10, y)
+	love.graphics.print("Hold mouse right button to move camera.", 10, y+30)
+	love.graphics.print("Use mousewheel for zoom.", 10, y+45)
 	love.graphics.setColor(1, 1, 1, 1)
 end
 
@@ -202,14 +202,14 @@ end
 -- camera control
 function scene:mousemoved(x, y, dx, dy)
 	if love.mouse.isDown(2) then
-      	self.y_angle = self.y_angle - dy * 0.2
-      	self.x_angle = self.x_angle - dx * 0.2
+		self.y_angle = self.y_angle - dy * 0.2
+		self.x_angle = self.x_angle - dx * 0.2
 		self.y_angle = ml_utils.clamp(self.y_angle, -45, 45)
 	end
 end
 
 function scene:wheelmoved(x, y)
-      self.view_scale = self.view_scale - y * 0.2
+	self.view_scale = self.view_scale - y * 0.2
 end
 
 function scene:update(dt)

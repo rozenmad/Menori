@@ -84,11 +84,9 @@ local function new(mesh, max_triangles_per_node, matrix)
 	-- clone a helper array
 	tree._bbox_helper = {}
 	for i = 1, #tree._bbox_array do
-		local src = tree._bbox_array[i]
-		local dst = {
-			bound = src.bound:clone(),
+		tree._bbox_helper[i] = {
+			bound = tree._bbox_array[i].bound:clone(),
 		}
-		tree._bbox_helper[i] = dst
 	end
 
 	local count = #triangle_array
@@ -100,6 +98,7 @@ local function new(mesh, max_triangles_per_node, matrix)
 		local node = table.remove(tree._nodes_to_split)
 		tree:split_node(node)
 	end
+	tree._bbox_helper = {}
 	return tree
 end
 

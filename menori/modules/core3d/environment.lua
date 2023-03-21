@@ -2,7 +2,7 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2022
+	2023
 -------------------------------------------------------------------------------
 ]]
 
@@ -77,11 +77,11 @@ end
 -- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
 function Environment:apply_shader(shader)
 	--if self._shader_object_cache ~= shader then
-            love.graphics.setShader(shader)
+		love.graphics.setShader(shader)
 
-	      self:send_uniforms_to(shader)
-            self._shader_object_cache = shader
-      --end
+		self:send_uniforms_to(shader)
+		self._shader_object_cache = shader
+	--end
 end
 
 ----

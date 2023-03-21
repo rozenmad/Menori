@@ -17,10 +17,10 @@ local quat = ml.quat
 local scene = menori.Scene:extend('minimal_scene')
 
 function scene:init()
-      scene.super.init(self)
+	scene.super.init(self)
 
-      local _, _, w, h = menori.app:get_viewport()
-      self.camera = menori.PerspectiveCamera(60, w/h, 0.5, 1024)
+	local _, _, w, h = menori.app:get_viewport()
+	self.camera = menori.PerspectiveCamera(60, w/h, 0.5, 1024)
 	self.environment = menori.Environment(self.camera)
 
 	self.root_node = menori.Node()
@@ -31,11 +31,11 @@ function scene:init()
 	local scenes = menori.NodeTreeBuilder.create(gltf, function (scene, builder)
 		self.animations = menori.glTFAnimations(builder.animations)
 		self.animations:set_action(1)
-      end)
+	end)
 
 	-- adding scene to the root node.
 	self.root_node:attach(scenes[1])
-      self.angle = 0
+	self.angle = 0
 end
 
 function scene:render()
@@ -49,7 +49,7 @@ end
 function scene:update(dt)
 	-- recursively update the scene nodes
 	self:update_nodes(self.root_node, self.environment)
-      self.angle = self.angle + 0.25
+	self.angle = self.angle + 0.25
 
 	-- rotate the camera
 	local q = quat.from_euler_angles(0, math.rad(self.angle), math.rad(10)) * vec3.unit_z * 2.0

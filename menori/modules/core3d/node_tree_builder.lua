@@ -1,17 +1,15 @@
 --[[
 -------------------------------------------------------------------------------
-	Menori
-	@author rozenmad
-	2022
+      Menori
+      @author rozenmad
+      2022
 -------------------------------------------------------------------------------
 ]]
 
 --[[--
-Tree structure that is used when drawing scenes imported from the *gltf format.
-(Inherited from menori.Node class)
+Module for building scene nodes from a loaded gltf format.
 ]]
--- @classmod ModelNodeTree
--- @see Node
+-- @module NodeTreeBuilder
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -98,6 +96,11 @@ local function update_transform_callback(node)
       node:update_transform()
 end
 
+
+--- Creates a node tree.
+-- @tparam table gltf Data obtained with glTFLoader.load
+-- @tparam[opt] function callback Callback Called for each built scene with params (scene, builder).
+-- @treturn table An array of scenes, where each scene is a menori.Node object
 function NodeTreeBuilder.create(gltf, callback)
       local builder = {
             meshes = {},

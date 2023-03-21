@@ -2,9 +2,14 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2022
+	2023
 -------------------------------------------------------------------------------
 ]]
+
+--[[--
+Class provides instancing functionality for Meshes.
+]]
+-- @classmod InstancedMesh
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -18,13 +23,15 @@ if type(jit) == 'table' or jit.status() then
 	ffi = require 'ffi'
 end
 
-local instanced_mesh = class('InstancedMesh')
+local InstancedMesh = class('InstancedMesh')
 
 local default_format = {
       {name = "instance_position", format = "floatvec3"},
 }
 
-function instanced_mesh:init(lg_mesh, instanced_format)
+----
+-- The public constructor.
+function InstancedMesh:init(lg_mesh, instanced_format)
 	self.lg_mesh = lg_mesh
 	self.instanced_buffer = GeometryBuffer(16, instanced_format or default_format)
 
@@ -32,26 +39,26 @@ function instanced_mesh:init(lg_mesh, instanced_format)
 	self:_attach_buffers()
 end
 
-function instanced_mesh:increase_ic()
+function InstancedMesh:increase_ic()
 	self.count = self.count + 1
 end
 
-function instanced_mesh:decrease_ic()
+function InstancedMesh:decrease_ic()
 	self.count = self.count - 1
 end
 
-function instanced_mesh:set_count(count)
+function InstancedMesh:set_count(count)
 	count = count or 0
 	self.count = count
 end
 
-function instanced_mesh:update_instanced_buffer()
+function InstancedMesh:update_instanced_buffer()
 	if self.count > 0 then
 		self.instanced_buffer:update(self.count)
 	end
 end
 
-function instanced_mesh:get_instance_data(ctype, index)
+function InstancedMesh:get_instance_data(ctype, index)
 	index = index or 0
 	if index + 1 > self.instanced_buffer.size then
 		self:_detach_buffers()
@@ -63,21 +70,21 @@ function instanced_mesh:get_instance_data(ctype, index)
 	return ffi.cast(ctype, ptr)
 end
 
-function instanced_mesh:_attach_buffers()
+function InstancedMesh:_attach_buffers()
 	local buffer = self.instanced_buffer
 	for i, v in ipairs(buffer.format) do
 		self.lg_mesh:attachAttribute(v.name, buffer.mesh, "perinstance")
 	end
 end
 
-function instanced_mesh:_detach_buffers()
+function InstancedMesh:_detach_buffers()
 	local buffer = self.instanced_buffer
 	for i, v in ipairs(buffer.format) do
 		self.lg_mesh:detachAttribute(v.name)
 	end
 end
 
-function instanced_mesh:draw(material)
+function InstancedMesh:draw(material)
 	if self._need_update then
 		self._need_update = false
 		self:update_instanced_buffer()
@@ -104,4 +111,4 @@ function instanced_mesh:draw(material)
 	lg.drawInstanced(mesh, self.count)
 end
 
-return instanced_mesh
+return InstancedMesh

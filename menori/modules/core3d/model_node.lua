@@ -51,6 +51,7 @@ else
             shader:send('joints_matrices', 'column', data)
       end
 end
+
 --- The public constructor.
 -- @tparam menori.Mesh mesh object
 -- @tparam[opt=Material.default] menori.Material material object. (A new copy will be created for the material)
