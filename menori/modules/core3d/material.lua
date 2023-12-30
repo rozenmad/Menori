@@ -23,11 +23,7 @@ local Material = UniformList:extend('Material', {
       clone = utils.copy
 })
 
-if love._version_major > 11 then
-      Material.default_shader = ShaderUtils.shaders['default_mesh']
-else
-      Material.default_shader = ShaderUtils.shaders['default_mesh']
-end
+Material.default_shader = ShaderUtils.shaders['default_mesh']
 
 ----
 -- The public constructor.

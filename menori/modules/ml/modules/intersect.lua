@@ -15,7 +15,7 @@ menori.ml.intersect
 -- @classmod intersect
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
-local vec3    = require(modules .. "vec3")
+local vec3    = require (modules .. "vec3")
 
 local DBL_EPSILON = 2.2204460492503131e-16
 

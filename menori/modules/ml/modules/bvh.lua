@@ -16,9 +16,9 @@
 -- @classmod bvh
 
 local modules   = (...):gsub('%.[^%.]+$', '') .. "."
-local intersect = require(modules .. 'intersect')
-local vec3      = require(modules .. 'vec3')
-local bound3    = require(modules .. 'bound3')
+local intersect = require (modules .. 'intersect')
+local vec3      = require (modules .. 'vec3')
+local bound3    = require (modules .. 'bound3')
 local EPSILON   = 1e-6
 local BVH       = {}
 local BVHNode   = {}

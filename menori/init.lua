@@ -24,24 +24,20 @@ local menori = {
       Mesh                   = require(modules .. 'core3d.mesh'),
       ModelNode              = require(modules .. 'core3d.model_node'),
       NodeTreeBuilder        = require(modules .. 'core3d.node_tree_builder'),
-      GeometryBuffer         = require(modules .. 'core3d.geometry_buffer'),
       InstancedMesh          = require(modules .. 'core3d.instanced_mesh'),
       Camera                 = require(modules .. 'camera'),
       Node                   = require(modules .. 'node'),
       Scene                  = require(modules .. 'scene'),
       Sprite                 = require(modules .. 'sprite'),
-      SpriteLoader           = require(modules .. 'spriteloader'),
+      SpriteUtils            = require(modules .. 'spriteutils'),
+      Canvas                 = require(modules .. 'canvas'),
 
       ShaderUtils            = require(modules .. 'shaders.utils'),
 
-      app                    = require(modules .. 'app'),
+      scenemanager           = require(modules .. 'scenemanager'),
       utils                  = require(modules .. 'libs.utils'),
       class                  = require(modules .. 'libs.class'),
       ml                     = require(modules .. 'ml'),
-
-      -- deprecated
-      Application            = require(modules .. 'deprecated.application'),
-      ModelNodeTree          = require(modules .. 'deprecated.model_node_tree'),
 }
 
 return menori

@@ -14,7 +14,7 @@ menori.ml.bound3
 -- @alias bound3_mt
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
-local vec3    = require(modules .. "vec3")
+local vec3    = require (modules .. "vec3")
 
 local bound3 = {}
 local bound3_mt = {}

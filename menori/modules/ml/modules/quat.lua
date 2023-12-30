@@ -20,8 +20,8 @@ menori.ml.quat
 -- @alias quat_mt
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
-local vec3 = require(modules .. "vec3")
-local mat4 = require(modules .. "mat4")
+local vec3 = require (modules .. "vec3")
+local mat4 = require (modules .. "mat4")
 
 local DOT_THRESHOLD = 0.9995
 local DBL_EPSILON = 2.2204460492503131e-16

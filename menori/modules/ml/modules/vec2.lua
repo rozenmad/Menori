@@ -14,7 +14,7 @@ menori.ml.vec2
 -- @alias vec2_mt
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
-local utils = require(modules .. "utils")
+local utils = require (modules .. "utils")
 
 local vec2 = {}
 local vec2_mt = {}

@@ -12,7 +12,6 @@ Sprite class is a helper object for drawing textures that can contain a set of f
 -- @classmod Sprite
 
 local modules = (...):match('(.*%menori.modules.)')
-
 local class = require (modules .. 'libs.class')
 
 local sprite = class('Sprite')
@@ -117,7 +116,7 @@ function sprite:update(dt)
       end
 end
 
---- Sprite draw function.
+--- Draw sprite.
 -- See [love.graphics.draw](https://love2d.org/wiki/love.graphics.draw).
 -- @tparam number x
 -- @tparam number y
@@ -135,20 +134,18 @@ function sprite:draw(x, y, angle, sx, sy, ox, oy, kx, ky)
       love.graphics.draw(self.image, self.quads[self.index], x, y, angle, sx, sy, ox, oy, kx, ky)
 end
 
---- Sprite draw_ex function.
--- @tparam number x
--- @tparam number y
+--- Draw sprite in viewport.
+-- @tparam number nx normalized x [0-1]
+-- @tparam number ny normalized y [0-1]
 -- @tparam string fit Must be 'max' or 'min'
--- @tparam number bound_w Width of bounding volume
--- @tparam number bound_h Height of bounding volume
--- @tparam number onx
--- @tparam number ony
+-- @tparam number viewport_w Width of bounding volume
+-- @tparam number viewport_h Height of bounding volume
 -- @tparam number angle
--- @tparam number kx
--- @tparam number ky
 -- @tparam number sx
 -- @tparam number sy
-function sprite:draw_ex(x, y, fit, bound_w, bound_h, onx, ony, angle, kx, ky, sx, sy)
+-- @tparam number kx
+-- @tparam number ky
+function sprite:draw_in_viewport(nx, ny, fit, viewport_w, viewport_h, angle, sx, sy, kx, ky)
       local _, _, w, h = self:get_frame_viewport()
 
       sx = (1 * (sx or 1))
@@ -156,12 +153,12 @@ function sprite:draw_ex(x, y, fit, bound_w, bound_h, onx, ony, angle, kx, ky, sx
 
       if
       fit == 'max' then
-            local f = math.max(bound_w / w, bound_h / h)
+            local f = math.max(viewport_w / w, viewport_h / h)
             sx = f*sx
             sy = f*sy
       elseif
       fit == 'min' then
-             local f = math.min(bound_w / w, bound_h / h)
+            local f = math.min(viewport_w / w, viewport_h / h)
             sx = f*sx
             sy = f*sy
       end
@@ -169,8 +166,11 @@ function sprite:draw_ex(x, y, fit, bound_w, bound_h, onx, ony, angle, kx, ky, sx
       local ox = self.px * w
       local oy = self.py * h
 
-      x = x - w * sx * ((onx or 0) - self.px)
-      y = y - h * sy * ((ony or 0) - self.py)
+      -- x = x - w * sx * ((0) - self.px)
+      -- y = y - h * sy * ((0) - self.py)
+
+      local x = nx * viewport_w
+      local y = ny * viewport_h
 
       love.graphics.draw(self.image, self.quads[self.index], x, y, angle, sx, sy, ox, oy, kx, ky)
 end

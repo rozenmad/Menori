@@ -19,13 +19,14 @@ menori.ml.mat4
 -- @classmod mat4
 -- @alias mat4_mt
 
+local menori_modules = (...):match('(.*%menori.modules.)')
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
-local vec3 = require(modules .. "vec3")
-local vec4 = require(modules .. "vec4")
+local vec3 = require (modules .. "vec3")
+local vec4 = require (modules .. "vec4")
+local ffi  = require (menori_modules .. 'libs.ffi')
 
-local ffi, bytesize
-if type(jit) == 'table' or jit.status() then
-	ffi = require 'ffi'
+local bytesize
+if ffi then
 	bytesize = ffi.sizeof('float[16]')
 end
 
@@ -156,21 +157,37 @@ end
 function mat4_mt:to_table()
 	local t = {}
 	local e = self.e
+	-- t[ 1] = e[1]
+	-- t[ 2] = e[5]
+	-- t[ 3] = e[9]
+	-- t[ 4] = e[13]
+	-- t[ 5] = e[2]
+	-- t[ 6] = e[6]
+	-- t[ 7] = e[10]
+	-- t[ 8] = e[14]
+	-- t[ 9] = e[3]
+	-- t[10] = e[7]
+	-- t[11] = e[11]
+	-- t[12] = e[15]
+	-- t[13] = e[4]
+	-- t[14] = e[8]
+	-- t[15] = e[12]
+	-- t[16] = e[16]
 	t[ 1] = e[1]
-	t[ 2] = e[5]
-	t[ 3] = e[9]
-	t[ 4] = e[13]
-	t[ 5] = e[2]
+	t[ 2] = e[2]
+	t[ 3] = e[3]
+	t[ 4] = e[4]
+	t[ 5] = e[5]
 	t[ 6] = e[6]
-	t[ 7] = e[10]
-	t[ 8] = e[14]
-	t[ 9] = e[3]
-	t[10] = e[7]
+	t[ 7] = e[7]
+	t[ 8] = e[8]
+	t[ 9] = e[9]
+	t[10] = e[10]
 	t[11] = e[11]
-	t[12] = e[15]
-	t[13] = e[4]
-	t[14] = e[8]
-	t[15] = e[12]
+	t[12] = e[12]
+	t[13] = e[13]
+	t[14] = e[14]
+	t[15] = e[15]
 	t[16] = e[16]
 	return t
 end

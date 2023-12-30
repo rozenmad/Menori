@@ -12,19 +12,15 @@ Separated GLTF (.gltf+.bin+textures) or (.gltf+textures) is supported now.
 ]]
 -- @module glTFLoader
 
+local modules = (...):match('(.*%menori.modules.)')
 local json = require 'libs.rxijson.json'
-
-local ffi
-if type(jit) == 'table' or jit.status() then
-	ffi = require 'ffi'
-end
+local ffi  = require (modules .. 'libs.ffi')
 
 local function getFFIPointer(data)
 	if data.getFFIPointer then return data:getFFIPointer() else return data:getPointer() end
 end
 
 local glTFLoader = {}
-local buffers, data
 
 local type_constants = {
 	['SCALAR'] = 1,
@@ -139,21 +135,9 @@ local function get_unpack_type(component_type)
 	end
 end
 
-local nodes_mt = {}
-nodes_mt.__index = nodes_mt
-function nodes_mt.find_by_name(nodes, name)
-	for i, v in ipairs(nodes) do
-		if v.name == name then
-			return v
-		end
-	end
-end
-
-local function get_buffer(accessor_index)
-	local accessor = data.accessors[accessor_index + 1]
-	local buffer_view = data.bufferViews[accessor.bufferView + 1]
-
-	local data = buffers[buffer_view.buffer + 1]
+local function get_buffer(gltf, accessor_index)
+	local accessor = gltf.json_data.accessors[accessor_index + 1]
+	local buffer_view = gltf.json_data.bufferViews[accessor.bufferView + 1]
 
 	local offset = buffer_view.byteOffset or 0
 	local length = buffer_view.byteLength
@@ -161,7 +145,7 @@ local function get_buffer(accessor_index)
 	local component_size = component_type_constants[accessor.componentType]
 	local type_elements_count = type_constants[accessor.type]
 	return {
-		data = data,
+		data = gltf.buffers[buffer_view.buffer + 1],
 		offset = offset + (accessor.byteOffset or 0),
 		length = length,
 
@@ -178,8 +162,8 @@ local function get_buffer(accessor_index)
 	}
 end
 
-local function get_indices_content(v)
-	local buffer = get_buffer(v)
+local function get_indices_content(gltf, v)
+	local buffer = get_buffer(gltf, v)
 	local element_size = buffer.component_size * buffer.type_elements_count
 
 	local min = buffer.min and buffer.min[1] or 0
@@ -221,61 +205,83 @@ local function get_indices_content(v)
 			temp_data[i+1] = temp_data[i+1] - min
 		end
 	end
+	print(min, max)
 	return temp_data, element_size, min, max
 end
 
-local function get_vertices_content(attribute_buffers, components_stride, length, min, max)
+local function get_vertices_content(attribute_buffers, components_stride, length)
 	local start_offset = 0
-	local temp_data
-
+	local temp_data = love.data.newByteData(length)
 	if ffi then
-		temp_data = love.data.newByteData(length)
 		local temp_data_pointer = ffi.cast('char*', getFFIPointer(temp_data))
 
 		for _, buffer in ipairs(attribute_buffers) do
 			local element_size = buffer.component_size * buffer.type_elements_count
-			for i = min, max do
+			for i = 0, buffer.count - 1 do
 				local p1 = buffer.offset + i * buffer.stride
 				local data = ffi.cast('char*', getFFIPointer(buffer.data)) + p1
 
-				local p2 = start_offset + (i - min) * components_stride
+				local p2 = start_offset + i * components_stride
 
 				ffi.copy(temp_data_pointer + p2, data, element_size)
 			end
 			start_offset = start_offset + element_size
 		end
 	else
-		temp_data = {}
 		for _, buffer in ipairs(attribute_buffers) do
 			local unpack_type = get_unpack_type(buffer.component_type)
-			local data_string = buffer.data:getString()
-			for i = min, max do
-				local vertex = temp_data[(i - min) + 1] or {}
-				temp_data[(i - min) + 1] = vertex
 
-				local pos = buffer.offset + i * buffer.stride
+			local element_size = buffer.component_size * buffer.type_elements_count
+
+			for i = 0, buffer.count - 1 do
+				local p1 = buffer.offset + i * buffer.stride
+				local p2 = start_offset + i * components_stride
+
 				for k = 0, buffer.type_elements_count - 1 do
-					local element_pos = pos + k * buffer.component_size + 1
-					local attr = love.data.unpack(unpack_type, data_string, element_pos)
-					vertex[start_offset + k + 1] = attr
+					local idx = k * buffer.component_size
+					local attr = love.data.unpack(unpack_type, buffer.data, p1 + idx + 1)
+					love.data.pack(temp_data, p2 + idx, unpack_type, attr)
 				end
 			end
-			start_offset = start_offset + buffer.type_elements_count
+			start_offset = start_offset + element_size
 		end
 	end
 
 	return temp_data
 end
 
-local function init_mesh(mesh)
+local function get_attributes(gltf, attributes_array)
+	local attributes = {}
+	for name, attribute_index in pairs(attributes_array) do
+		local buffer = get_buffer(gltf, attribute_index)
+		local element_size = buffer.component_size * buffer.type_elements_count
+
+		local len = element_size * buffer.count
+		local bytedata = love.data.newByteData(len)
+		local unpack_type = get_unpack_type(buffer.component_type)
+
+		for i = 0, buffer.count - 1 do
+			local p1 = buffer.offset + i * buffer.stride
+			local p2 = i * element_size
+
+			for k = 0, buffer.type_elements_count - 1 do
+				local idx = k * buffer.component_size
+				local attr = love.data.unpack(unpack_type, buffer.data, p1 + idx + 1)
+				love.data.pack(bytedata, p2 + idx, unpack_type, attr)
+			end
+		end
+		attributes[name] = bytedata
+	end
+
+	return attributes
+end
+
+local function init_mesh(gltf, mesh)
 	local primitives = {}
 	for j, primitive in ipairs(mesh.primitives) do
-		local indices, indices_tsize, min, max
+		local indices, indices_tsize
 		if primitive.indices then
-			indices, indices_tsize, min, max = get_indices_content(primitive.indices)
-		else
-			min = 0
-			max = 0
+			indices, indices_tsize = get_indices_content(gltf, primitive.indices)
 		end
 
 		local length = 0
@@ -295,30 +301,33 @@ local function init_mesh(mesh)
 				attribute_name = k
 			end
 
-			local buffer = get_buffer(v)
+			local buffer = get_buffer(gltf, v)
 			attribute_buffers[#attribute_buffers+1] = buffer
-
-			if max == 0 then max = buffer.count end
-			if ffi then
-				count = (max - min) + 1
-			else
-				count = (max - min)
-			end
+			if count <= 0 then count = buffer.count end
 
 			local element_size = buffer.component_size * buffer.type_elements_count
-			length = length + count * element_size
+
+			length = length + buffer.count * element_size
 			components_stride = components_stride + element_size
 
 			add_vertex_format(vertexformat, attribute_name, buffer)
 		end
 
-		local vertices = get_vertices_content(attribute_buffers, components_stride, length, min, max)
+		local vertices = get_vertices_content(attribute_buffers, components_stride, length)
+
+		local targets = {}
+		if primitive.targets then
+			for _, attributes in ipairs(primitive.targets) do
+				table.insert(targets, get_attributes(gltf, attributes))
+			end
+		end
 
 		primitives[j] = {
 			mode = get_primitive_modes_constants(primitive.mode),
 			vertexformat = vertexformat,
 			vertices = vertices,
 			indices = indices,
+			targets = targets,
 			indices_tsize = indices_tsize,
 			material_index = primitive.material,
 			count = count,
@@ -330,7 +339,7 @@ local function init_mesh(mesh)
 	}
 end
 
-local function texture(textures, t)
+local function get_texture(textures, t)
 	if t then
 		local texture = textures[t.index + 1]
 		local ret = {
@@ -356,8 +365,8 @@ local function create_material(textures, material)
 		local _pbrBaseColorTexture = pbr.baseColorTexture
 		local _pbrMetallicRoughnessTexture = pbr.metallicRoughnessTexture
 
-		main_texture = texture(textures, _pbrBaseColorTexture)
-		local metallicRoughnessTexture = texture(textures, _pbrMetallicRoughnessTexture)
+		main_texture = get_texture(textures, _pbrBaseColorTexture)
+		local metallicRoughnessTexture = get_texture(textures, _pbrMetallicRoughnessTexture)
 
 		if main_texture then
 			uniforms.mainTexCoord = main_texture.tcoord
@@ -372,21 +381,21 @@ local function create_material(textures, material)
 	end
 
 	if material.normalTexture then
-		local normalTexture = texture(textures, material.normalTexture)
+		local normalTexture = get_texture(textures, material.normalTexture)
 		uniforms.normalTexture = normalTexture.source
 		uniforms.normalTextureCoord = normalTexture.tcoord
 		uniforms.normalTextureScale = normalTexture.scale
 	end
 
 	if material.occlusionTexture then
-		local occlusionTexture = texture(textures, material.occlusionTexture)
+		local occlusionTexture = get_texture(textures, material.occlusionTexture)
 		uniforms.occlusionTexture = occlusionTexture.source
 		uniforms.occlusionTextureCoord = occlusionTexture.tcoord
 		uniforms.occlusionTextureStrength = occlusionTexture.strength
 	end
 
 	if material.emissiveTexture then
-		local emissiveTexture = texture(textures, material.emissiveTexture)
+		local emissiveTexture = get_texture(textures, material.emissiveTexture)
 		uniforms.emissiveTexture = emissiveTexture.source
 		uniforms.occlusionTextureCoord = emissiveTexture.tcoord
 	end
@@ -451,15 +460,32 @@ local function get_data_array(buffer)
 				table.insert(array, ptr[0])
 			end
 		end
+	else
+		for i = 0, buffer.count - 1 do
+			local pos = (buffer.offset + i * buffer.stride) + 1
+			if buffer.type_elements_count > 1 then
+				local vector = {}
+				for j = 0, buffer.type_elements_count - 1 do
+					local value = love.data.unpack("f", buffer.data, pos + j * 4)
+					table.insert(vector, value)
+				end
+				table.insert(array, vector)
+			else
+				local value = love.data.unpack("f", buffer.data, pos)
+				table.insert(array, value)
+			end
+
+		end
 	end
+
 	return array
 end
 
-local function read_animation(animation)
+local function read_animation(gltf, animation)
 	local samplers = {}
 	for i, v in ipairs(animation.samplers) do
-		local time_buffer = get_buffer(v.input)
-		local data_buffer = get_buffer(v.output)
+		local time_buffer = get_buffer(gltf, v.input)
+		local data_buffer = get_buffer(gltf, v.output)
 
 		table.insert(samplers, {
 			time_array = get_data_array(time_buffer),
@@ -480,7 +506,7 @@ local function read_animation(animation)
 	return channels
 end
 
-local function load_image(io_read, path, images, texture)
+local function load_image(gltf, io_read, path, images, texture)
 	local source = texture.source + 1
 	local MSFT_texture_dds = texture.extensions and texture.extensions.MSFT_texture_dds
 	if MSFT_texture_dds then
@@ -498,9 +524,9 @@ local function load_image(io_read, path, images, texture)
 			image_raw_data = love.filesystem.newFileData(io_read(image_filename), image_filename)
 		end
 	else
-		local buffer_view = data.bufferViews[image.bufferView + 1]
+		local buffer_view = gltf.json_data.bufferViews[image.bufferView + 1]
 
-		local data = buffers[buffer_view.buffer + 1]
+		local data = gltf.buffers[buffer_view.buffer + 1]
 
 		local offset = buffer_view.byteOffset or 0
 		local length = buffer_view.byteLength
@@ -522,44 +548,42 @@ local function load_image(io_read, path, images, texture)
 	}
 end
 
-local function unpack_data(format, data, iterator)
+local function unpack_data(format, iterator)
 	local pos = iterator.position
 	iterator.position	= iterator.position + love.data.getPackedSize(format)
-	return love.data.unpack(format, data, pos + 1)
+	return love.data.unpack(format, iterator.data, pos + 1)
 end
 
-local function glb_parser(glb_data)
+local function parse_glb(gltf, glb_data)
 	local iterator = {
-		position = 0
+		position = 0, data = glb_data,
 	}
-	local magic, version = unpack_data('<I4I4', glb_data, iterator)
+	local magic, version = unpack_data('<I4I4', iterator)
 	assert(magic == 0x46546C67, 'GLB: wrong magic!')
 	assert(version == 0x2, 'Supported only GLTF 2.0!')
 
-	local length = unpack_data('<I4', glb_data, iterator)
+	local length = unpack_data('<I4', iterator)
 
-	local json_data
-	local buffers = {}
-	local bufferi = 1
+	gltf.buffers = {}
+
+	local buffer_index = 1
 
 	while iterator.position < length do
-		local chunk_length, chunk_type = unpack_data('<I4I4', glb_data, iterator)
+		local chunk_length, chunk_type = unpack_data('<I4I4', iterator)
 		local start_position = iterator.position
 		if
 		chunk_type == 0x4E4F534A then
 			local data_view = love.data.newDataView(glb_data, iterator.position, chunk_length)
-			json_data = json.decode(data_view:getString())
+			gltf.json_data = json.decode(data_view:getString())
 		elseif
 		chunk_type == 0x004E4942 then
 			local data_view = love.data.newDataView(glb_data, iterator.position, chunk_length)
-			buffers[bufferi] = data_view
-			bufferi = bufferi + 1
+			gltf.buffers[buffer_index] = data_view
+			buffer_index = buffer_index + 1
 		end
 
 		iterator.position = start_position + chunk_length
 	end
-
-	return json_data, buffers
 end
 
 --- Load gltf model by filename.
@@ -567,32 +591,35 @@ end
 -- @tparam string filename The filepath to the gltf file (GLTF must be separated (.gltf+.bin+textures) or (.gltf+textures)
 -- @tparam[opt=love.filesystem.read] function io_read Callback to read the file.
 -- @treturn table
-function glTFLoader.load(filename)
+function glTFLoader.load(filename, io_read)
+	io_read = io_read or love.filesystem.read
+
 	local path = filename:match(".+/")
 	local name, extension = filename:match("([^/]+)%.(.+)$")
-	local io_read = love.filesystem.read
 	assert(love.filesystem.getInfo(filename), 'in function <glTFLoader.load> file "' .. filename .. '" not found.')
+
+	local gltf = {}
 
 	if extension == 'gltf' then
 		local filedata = io_read(filename)
-		data = json.decode(filedata)
-		buffers = {}
-		for i, v in ipairs(data.buffers) do
+		gltf.json_data = json.decode(filedata)
+		gltf.buffers = {}
+		for i, v in ipairs(gltf.json_data.buffers) do
 			local base64data = v.uri:match('^data:application/.*;base64,(.+)')
 			if base64data then
-				buffers[i] = love.data.decode('data', 'base64', base64data)
+				gltf.buffers[i] = love.data.decode('data', 'base64', base64data)
 			else
-				buffers[i] = love.data.newByteData(io_read(path .. v.uri))
+				gltf.buffers[i] = love.data.newByteData(io_read(path .. v.uri))
 			end
 		end
 	elseif extension == 'glb' then
-		local filedata = io_read('data', filename)
-		data, buffers = glb_parser(filedata)
+		local filedata = assert(io_read('data', filename))
+		parse_glb(gltf, filedata)
 	end
 
 	local samplers = {}
-	if data.samplers then
-		for _, v in ipairs(data.samplers) do
+	if gltf.json_data.samplers then
+		for _, v in ipairs(gltf.json_data.samplers) do
 			table.insert(samplers, {
 				magFilter = parse_filter(v.magFilter),
 				minFilter = parse_filter(v.minFilter),
@@ -604,13 +631,13 @@ function glTFLoader.load(filename)
 
 	local images = {}
 	local textures = {}
-	if data.textures then
-		for _, texture in ipairs(data.textures) do
+	if gltf.json_data.textures then
+		for _, texture in ipairs(gltf.json_data.textures) do
 			local sampler = samplers[texture.sampler + 1]
 			local image = images[texture.source + 1]
 
 			if not image then
-				image = load_image(io_read, path, data.images, texture)
+				image = load_image(gltf, io_read, path, gltf.json_data.images, texture)
 				images[texture.source + 1] = image
 			end
 
@@ -626,9 +653,9 @@ function glTFLoader.load(filename)
 	end
 
 	local skins = {}
-	if data.skins then
-		for _, v in ipairs(data.skins) do
-			local buffer = get_buffer(v.inverseBindMatrices)
+	if gltf.json_data.skins then
+		for _, v in ipairs(gltf.json_data.skins) do
+			local buffer = get_buffer(gltf, v.inverseBindMatrices)
 			table.insert(skins, {
 				inverse_bind_matrices = get_data_array(buffer),
 				joints = v.joints,
@@ -638,34 +665,34 @@ function glTFLoader.load(filename)
 	end
 
 	local materials = {}
-	if data.materials then
-		for i, v in ipairs(data.materials) do
+	if gltf.json_data.materials then
+		for i, v in ipairs(gltf.json_data.materials) do
 			materials[i] = create_material(textures, v)
 		end
 	end
 
 	local meshes = {}
-	for i, v in ipairs(data.meshes) do
-		meshes[i] = init_mesh(v)
+	for i, v in ipairs(gltf.json_data.meshes) do
+		meshes[i] = init_mesh(gltf, v)
 	end
 
 	local animations = {}
-	if data.animations then
-		for i, animation in ipairs(data.animations) do
+	if gltf.json_data.animations then
+		for i, animation in ipairs(gltf.json_data.animations) do
 			animations[i] = {
-				channels = read_animation(animation),
+				channels = read_animation(gltf, animation),
 				name = animation.name
 			}
 		end
 	end
 
 	return {
-		asset = data.asset,
-		nodes = data.nodes,
-		scene = data.scene,
+		asset = gltf.json_data.asset,
+		nodes = gltf.json_data.nodes,
+		scene = gltf.json_data.scene,
 		materials = materials,
 		meshes = meshes,
-		scenes = data.scenes,
+		scenes = gltf.json_data.scenes,
 		images = images,
 		animations = animations,
 		skins = skins,

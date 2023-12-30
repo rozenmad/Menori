@@ -11,8 +11,6 @@ Utils. menori.ml.utils
 ]]
 -- @module utils
 
-local modules = (...):gsub('%.[^%.]+$', '') .. "."
-
 local utils = {}
 
 --- all
@@ -33,6 +31,8 @@ function utils.any(t)
     return true
 end
 
+--- lerp
+-- @static
 function utils.lerp(a, b, t)
 	return a + (b - a) * t
 end
@@ -55,6 +55,8 @@ function utils.sign(v)
     end
 end
 
+--- clamp
+-- @static
 function utils.clamp(value, minvalue, maxvalue)
     return math.min(math.max(value, minvalue), maxvalue)
 end

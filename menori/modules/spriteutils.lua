@@ -2,7 +2,7 @@
 -------------------------------------------------------------------------------
       Menori
       @author rozenmad
-      2022
+      2023
 -------------------------------------------------------------------------------
 ]]
 
@@ -16,8 +16,8 @@ local json = require 'libs.rxijson.json'
 local modules     = (...):gsub('%.[^%.]+$', '') .. "."
 local Sprite      = require(modules .. 'sprite')
 
-local SpriteLoader = {}
-local list = setmetatable({}, {__mode = 'v'})
+local SpriteUtils = {}
+local cache = setmetatable({}, {__mode = 'v'})
 
 local function load_aseprite_sprite_sheet(filename)
       local path = filename:match("(.*/).+%.json$")
@@ -73,60 +73,70 @@ local function load_aseprite_sprite_sheet(filename)
       return spritesheet
 end
 
---- Create a tileset from an image.
+--- Create sprite from image.
 -- @param image [Image](https://love2d.org/wiki/Image)
--- @tparam number offsetx Offset from beginnig of image by x.
--- @tparam number offsety Offset from beginnig of image by y.
+-- @treturn menori.Sprite object
+function SpriteUtils.from_image(image)
+      local w, h = image:getDimensions()
+      return Sprite(
+            { love.graphics.newQuad(0, 0, w, h, w, h) }, image
+      )
+end
+
+--- Create a (Quad array) from tileset image.
+-- @param image [Image](https://love2d.org/wiki/Image)
 -- @tparam number w Tile width.
 -- @tparam number h Tile height.
+-- @tparam number ox Offset from beginnig of image by x.
+-- @tparam number oy Offset from beginnig of image by y.
+-- @tparam number mx margin x.
+-- @tparam number my margin y.
 -- @treturn table Array of [Quad](https://love2d.org/wiki/Quad) objects
-function SpriteLoader.create_tileset_from_image(image, offsetx, offsety, w, h)
+function SpriteUtils.create_quad_array_from_tileset(image, w, h, ox, oy, mx, my)
+      ox = ox or 0
+      oy = oy or 0
+      mx = mx or 0
+      my = my or 0
       local image_w, image_h = image:getDimensions()
       local quads = {}
-      local iws = math.floor((image_w - offsetx) / w)
-      local ihs = math.floor((image_h - offsety) / h)
+      local iws = math.floor((image_w - ox) / (w + mx))
+      local ihs = math.floor((image_h - oy) / (h + my))
       for j = 0, ihs - 1 do
             for i = 0, iws - 1 do
-                  local px = i * w
-                  local py = j * h
+                  local px = i * w + i * mx
+                  local py = j * h + i * my
                   quads[#quads + 1] = love.graphics.newQuad(px, py, w, h, image_w, image_h)
             end
       end
       return quads
 end
 
---- Create sprite from image.
--- @param image [Image](https://love2d.org/wiki/Image)
--- @treturn menori.Sprite object
-function SpriteLoader.from_image(image)
-      local w, h = image:getDimensions()
-      return Sprite({love.graphics.newQuad(0, 0, w, h, w, h)}, image)
-end
-
 --- Create sprite from tileset image.
 -- @param image [Image](https://love2d.org/wiki/Image)
--- @tparam number offsetx
--- @tparam number offsety
--- @tparam number w
--- @tparam number h
+-- @tparam number w Tile width.
+-- @tparam number h Tile height.
+-- @tparam number ox Offset from beginnig of image by x.
+-- @tparam number oy Offset from beginnig of image by y.
+-- @tparam number mx margin x.
+-- @tparam number my margin y.
 -- @treturn menori.Sprite object
-function SpriteLoader.from_tileset_image(image, offsetx, offsety, w, h)
-      return Sprite(SpriteLoader.create_tileset_from_image(image, offsetx, offsety, w, h), image)
+function SpriteUtils.from_tileset(image, w, h, ox, oy, mx, my)
+      return Sprite(SpriteUtils.create_quad_array_from_tileset(image, w, h, ox, oy, mx, my), image)
 end
 
 --- Load sprite from aseprite spritesheet using sprite cache list.
 -- @tparam string filename
 -- @treturn menori.Sprite object
-function SpriteLoader.from_aseprite_sprite_sheet(filename)
-      if not list[filename] then list[filename] = load_aseprite_sprite_sheet(filename) end
-      return list[filename]
+function SpriteUtils.from_aseprite_spritesheet(filename)
+      if not cache[filename] then cache[filename] = load_aseprite_sprite_sheet(filename) end
+      return cache[filename]
 end
 
 --- Find aseprite spritesheet in cache list.
 -- @tparam string name
 -- @treturn menori.Sprite object
-function SpriteLoader.find_sprite_sheet(name)
-      return list[name]
+function SpriteUtils.find_spritesheet(name)
+      return cache[name]
 end
 
-return SpriteLoader
+return SpriteUtils

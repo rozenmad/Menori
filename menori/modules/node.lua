@@ -22,7 +22,8 @@ local vec3   = ml.vec3
 local quat   = ml.quat
 local bound3 = ml.bound3
 
-local find_child_by_name
+local _find
+local _transform_force
 
 local Node = class('Node')
 Node.layer = 0
@@ -42,7 +43,7 @@ function Node:init(name)
       self.local_matrix = mat4()
       self.world_matrix = mat4()
 
-      self.joint_matrix = mat4()
+      -- self.joint_matrix = mat4()
 
       self._transform_flag = true
 
@@ -188,13 +189,19 @@ function Node:get_aabb()
       ))
 end
 
+local function _recursive_update_transform(node)
+      if node.parent then node.parent:recursive_update_transform(node.parent) end
+      if _transform_force or node._transform_flag then
+            node:update_transform()
+            _transform_force = true
+      end
+end
+
 --- Update all transform up the hierarchy to the root node.
 -- @tparam[opt] bool force Forced update transformations of all nodes up to the root node.
 function Node:recursive_update_transform(force)
-      if self.parent then self.parent:recursive_update_transform(self, force) end
-      if force or self._transform_flag then
-            self:update_transform()
-      end
+      _transform_force = force
+      return _recursive_update_transform(self)
 end
 
 --- Update transform only for this node.
@@ -215,10 +222,10 @@ function Node:update_transform(parent_world_matrix)
             world_matrix:copy(local_matrix)
       end
 
-      if self.inverse_bind_matrix then
-            self.joint_matrix:copy(world_matrix)
-            self.joint_matrix:multiply(self.inverse_bind_matrix)
-      end
+      -- if self.inverse_bind_matrix then
+      --       self.joint_matrix:copy(world_matrix)
+      --       self.joint_matrix:multiply(self.inverse_bind_matrix)
+      -- end
 end
 
 --- Get child Node by index.
@@ -260,11 +267,11 @@ function Node:detach(child)
 end
 
 
-function find_child_by_name(children, t, i)
+function _find(children, t, i)
       for _, v in ipairs(children) do
             if v.name == t[i] then
                   if t[i + 1] then
-                        return find_child_by_name(v.children, t, i + 1)
+                        return _find(v.children, t, i + 1)
                   else
                         return v
                   end
@@ -281,7 +288,7 @@ function Node:find(name)
       for v in name:gmatch("([^/]+)") do
             table.insert(t, v)
       end
-      return find_child_by_name(self.children, t, 1)
+      return _find(self.children, t, 1)
 end
 
 --- Recursively traverse all nodes.

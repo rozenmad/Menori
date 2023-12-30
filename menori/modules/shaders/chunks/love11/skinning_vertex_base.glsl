@@ -1,3 +1,3 @@
 #ifdef USE_SKINNING
-      uniform mat4 joints_matrices[150];
+      uniform mat4 joints_matrices[32];
 #endif

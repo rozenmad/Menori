@@ -15,6 +15,8 @@ You need to inherit from the Scene class to create your own scene object.
 
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
+local scenemanager = require (modules .. 'scenemanager')
+local Canvas = require (modules .. 'canvas')
 
 local lovg = love.graphics
 local temp_environment
@@ -41,7 +43,60 @@ scene.layer_comp = layer_comp
 
 --- The public constructor.
 function scene:init()
+      scene.default_canvas = scene.default_canvas or Canvas()
+
       self.list_drawable_nodes = {}
+      self.canvas = scene.default_canvas
+end
+
+function scene:_recursive_render_nodes(node, transform_flag)
+      if not node.render_flag then
+            return
+      end
+      if node._transform_flag or transform_flag then
+            node:update_transform()
+            transform_flag = true
+      end
+
+      if node.render then
+            table.insert(self.list_drawable_nodes, node)
+      end
+
+      for _, v in ipairs(node.children) do
+            self:_recursive_render_nodes(v, transform_flag)
+      end
+end
+
+function scene:_recursive_update_nodes(node)
+      if not node.update_flag then
+            return
+      end
+
+      if node.update then
+            node:update(self, temp_environment)
+      end
+
+      local i = 1
+      local children = node.children
+      while i <= #children do
+            local child = children[i]
+            if child.detach_flag then
+                  table.remove(children, i)
+            else
+                  self:_recursive_update_nodes(child)
+                  i = i + 1
+            end
+      end
+end
+
+function scene:pop()
+      if scenemanager.current() == self then
+            scenemanager.pop()
+      end
+end
+
+function scene:remove()
+      scenemanager.remove(self)
 end
 
 --- Recursive node render function.
@@ -92,24 +147,6 @@ function scene:render_nodes(node, environment, renderstates, filter)
       return count
 end
 
-function scene:_recursive_render_nodes(node, transform_flag)
-      if not node.render_flag then
-            return
-      end
-      if node._transform_flag or transform_flag then
-            node:update_transform()
-            transform_flag = true
-      end
-
-      if node.render then
-            table.insert(self.list_drawable_nodes, node)
-      end
-
-      for _, v in ipairs(node.children) do
-            self:_recursive_render_nodes(v, transform_flag)
-      end
-end
-
 --- Recursive node update function.
 -- @tparam Node node
 -- @tparam Environment environment
@@ -117,36 +154,6 @@ function scene:update_nodes(node, environment)
       assert(node, "in function 'scene:update_nodes' node does not exist.")
       temp_environment = environment
       self:_recursive_update_nodes(node)
-end
-
-function scene:_recursive_update_nodes(node)
-      if not node.update_flag then
-            return
-      end
-
-      if node.update then
-            node:update(self, temp_environment)
-      end
-
-      local i = 1
-      local children = node.children
-      while i <= #children do
-            local child = children[i]
-            if child.detach_flag then
-                  table.remove(children, i)
-            else
-                  self:_recursive_update_nodes(child)
-                  i = i + 1
-            end
-      end
-end
-
-function scene:render()
-      
-end
-
-function scene:update()
-      
 end
 
 return scene

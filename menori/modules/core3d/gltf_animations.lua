@@ -62,7 +62,7 @@ local function get_sampler_data(accumulator, sampler, target)
 		if target == 'rotation' then
 			return quat.slerp(quat(frame1), quat(frame2), s)
 		elseif target == 'weights' then
-
+			--return frame1 + (frame2 - frame1) * s
 		else
 			return vec3.lerp(vec3(frame1), vec3(frame2), s)
 		end

@@ -14,7 +14,6 @@ Perspective camera class.
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
 local ml = require (modules .. 'ml')
-local app = require (modules .. 'app')
 
 local mat4 = ml.mat4
 local vec2 = ml.vec2
@@ -58,8 +57,6 @@ end
 -- @tparam table viewport (optional) viewport rectangle (x, y, w, h)
 -- @treturn table that containing {position = vec3, direction = vec3}
 function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
-	viewport = viewport or {app:get_viewport()}
-
 	local m_pos = vec3(mat4.unproject(vec3(x, y, 1), self.m_view, self.m_projection, viewport))
 	local c_pos = self.eye:clone()
 	local direction = vec3():sub(m_pos, self.eye):normalize()
@@ -75,7 +72,7 @@ end
 -- @tparam number y screen position y
 -- @tparam number z screen position z
 -- @treturn vec2 object
-function PerspectiveCamera:world_to_screen_point(x, y, z)
+function PerspectiveCamera:world_to_screen_point(x, y, z, viewport)
 	if type(x) == 'table' then
 		x, y, z = x.x, x.y, x.z
 	end
@@ -96,8 +93,8 @@ function PerspectiveCamera:world_to_screen_point(x, y, z)
 	)
 
 	local screen_space_pos = vec2(
-		(ndc_space_pos.x + 1) / 2 * app.w * app.sx,
-		(ndc_space_pos.y + 1) / 2 * app.h * app.sy
+		(ndc_space_pos.x + 1) / 2 * viewport.w,
+		(ndc_space_pos.y + 1) / 2 * viewport.h
 	)
 
 	return screen_space_pos

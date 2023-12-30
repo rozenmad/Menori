@@ -18,7 +18,7 @@ local Node     = require (modules .. 'node')
 local ml       = require (modules .. 'ml')
 local utils    = require (modules .. 'libs.utils')
 local Material = require (modules .. 'core3d.material')
-local ffi      = require('ffi')
+local ffi      = require (modules .. 'libs.ffi')
 
 local vec3     = ml.vec3
 local mat4     = ml.mat4
@@ -26,14 +26,15 @@ local bound3   = ml.bound3
 
 local ModelNode = Node:extend('ModelNode')
 
-local joints_uniform_limit = 150
+local joints_uniform_limit = 160
 local temp_mat = mat4()
 local root_mat = mat4()
+local temp_t = {}
 local data
 local instancebuffer
 local send_joints_matrices
 
-if love._version_major > 11 then
+if love._version_major > 11 and ffi then
       joints_uniform_limit = 256
       data = love.data.newByteData(joints_uniform_limit * 16 * 4)
       local bufferformat = {
@@ -129,14 +130,18 @@ function ModelNode:render(scene, environment)
             end
             root_mat:inverse()
 
-            for i = 1, #self.joints do
+            for i = 1, math.min(joints_uniform_limit, #self.joints) do
                   local node = self.joints[i]
                   temp_mat:copy(node.world_matrix)
                   temp_mat:multiply(node.inverse_bind_matrix)
                   temp_mat:multiply(root_mat)
 
-                  local ptr = ffi.cast('char*', data:getFFIPointer()) + (i-1) * 16*4
-                  ffi.copy(ptr, temp_mat.e+1, 16*4)
+                  if ffi then
+                        local ptr = ffi.cast('char*', data:getFFIPointer()) + (i-1) * 16*4
+                        ffi.copy(ptr, temp_mat.e+1, 16*4)
+                  else
+                        data:setFloat((i-1) * 16*4, temp_mat:to_table(temp_t))
+                  end
             end
 
             send_joints_matrices(shader)

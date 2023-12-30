@@ -14,7 +14,8 @@ Class for initializing and storing mesh vertices and material.
 local modules = (...):match('(.*%menori.modules.)')
 
 local class = require (modules .. 'libs.class')
-local ml = require (modules .. 'ml')
+local ml    = require (modules .. 'ml')
+
 local vec3 = ml.vec3
 local mat4 = ml.mat4
 local bound3 = ml.bound3

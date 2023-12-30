@@ -9,14 +9,16 @@ attribute vec3 VertexNormal;
 attribute vec4 VertexJoints;
 attribute vec4 VertexWeights;
 
-#include <skinning_vertex_base.glsl>
+#menori_include <transpose.glsl>
+#menori_include <inverse.glsl>
+#menori_include <skinning_vertex_base.glsl>
 
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
       vec3 vert_normal = VertexNormal;
       vec4 vert_position = vec4((m_model * vertex_position).xyz, 1.0);
 
-      #include <skinning_vertex.glsl>
-      #include <normal.glsl>
+      #menori_include <skinning_vertex.glsl>
+      #menori_include <normal.glsl>
 
       normal = vert_normal;
 
