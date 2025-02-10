@@ -100,28 +100,38 @@ function ModelNode:render(scene, environment)
       shader:send('m_model', 'column', self.world_matrix.data)
 
       if self.joints then
+            -- print ("hey", self)
             -- if self.skeleton_node then
             --       shader:send('m_skeleton', self.skeleton_node.world_matrix.data)
             -- end
 
             local size = math.max(math.ceil(math.sqrt(#self.joints * 4) / 4) * 4, 4)
-            data = love.data.newByteData(size * size * 4 * 4)
+            self.data = self.data or love.image.newImageData(size, size, 'rgba32f')
 
             for i = 1, #self.joints do
                   local node = self.joints[i]
 
                   if ffi then
-                        local ptr = ffi.cast('char*', data:getFFIPointer()) + (i-1) * matrix_bytesize
+                        local ptr = ffi.cast('char*', self.data:getFFIPointer()) + (i-1) * matrix_bytesize
                         ffi.copy(ptr, node.joint_matrix.e+1, matrix_bytesize)
                   else
-                        data:setFloat((i-1) * matrix_bytesize, node.joint_matrix.e)
+                        local e = node.joint_matrix.e
+                        local p = (i - 1) * 4
+                        local y = p / size 
+                        self.data:setPixel((p + 0) % size, y, e[01], e[02], e[03], e[04])
+                        self.data:setPixel((p + 1) % size, y, e[05], e[06], e[07], e[08])
+                        self.data:setPixel((p + 2) % size, y, e[09], e[10], e[11], e[12])
+                        self.data:setPixel((p + 3) % size, y, e[13], e[14], e[15], e[16])
+                        -- self.data:setFloat((i-1) * matrix_bytesize, node.joint_matrix.e)
                   end
             end
 
-            local joints_texture_data = love.image.newImageData(size, size, 'rgba32f', data)
-            joints_texture = love.graphics.newImage(joints_texture_data)
-
-            shader:send('joints_texture', joints_texture)
+            if not self.joints_texture then 
+                  self.joints_texture = love.graphics.newImage(self.data)
+            else
+                  self.joints_texture:replacePixels(self.data)
+            end
+            shader:send('joints_texture', self.joints_texture)
       end
 
       local c = self.color

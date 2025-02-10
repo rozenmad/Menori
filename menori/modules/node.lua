@@ -92,7 +92,7 @@ end
 -- @tparam ml.quat q Rotation quaternion.
 function Node:set_rotation(q)
       self._transform_flag = true
-      self.rotation = q
+      self.rotation:set(q)
 end
 
 --- Set Node local scale.

@@ -32,24 +32,29 @@ function glTFAnimation:init(animations)
 	self.animation = self.animations[1]
 end
 
+
+local q_a, q_b = quat(), quat()
+local v_a, v_b = vec3(), vec3()
 local function get_sampler_data(accumulator, sampler, target)
 	local min = sampler.time_array[1]
 	local max = sampler.time_array[#sampler.time_array]
 	accumulator = (accumulator % (max - min)) + min
 
+
 	local frame1_index = utils.binsearch(sampler.time_array, accumulator)
 	local frame2_index = math.min(#sampler.time_array, frame1_index + 1)
+
 
 	local frame1 = sampler.data_array[frame1_index]
 	local frame2 = sampler.data_array[frame2_index]
 
 	if sampler.interpolation == 'STEP' or frame1_index == frame2_index then
 		if target == 'rotation' then
-			return quat(frame1)
+			return q_a:set(frame1)
 		elseif target == 'weights' then
 
 		else
-			return vec3(frame1)
+			return v_a:set(frame1)
 		end
 	end
 
@@ -60,11 +65,11 @@ local function get_sampler_data(accumulator, sampler, target)
 
 	if sampler.interpolation == 'LINEAR' then
 		if target == 'rotation' then
-			return quat.slerp(quat(frame1), quat(frame2), s)
+			return quat.slerp(q_a:set(frame1), q_b:set(frame2), s)
 		elseif target == 'weights' then
 
 		else
-			return vec3.lerp(vec3(frame1), vec3(frame2), s)
+			return vec3.lerp(v_a:set(frame1), v_b:set(frame2), s)
 		end
 	end
 
@@ -117,6 +122,7 @@ function glTFAnimation:update(dt)
 		end
 	end
 	self.accumulator = self.accumulator + dt
+
 end
 
 return glTFAnimation
