@@ -33,6 +33,7 @@ vec3.zero   = new()
 vec3.unit_x = new(1, 0, 0)
 vec3.unit_y = new(0, 1, 0)
 vec3.unit_z = new(0, 0, 1)
+vec3.one    = new(1, 1, 1)
 
 --- clone
 function vec3_mt:clone()

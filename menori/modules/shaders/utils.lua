@@ -5,6 +5,41 @@ local ffi = require (menori_modules .. 'libs.ffi')
 
 local features = love.graphics.getSupported()
 
+local data_format = {
+      ["float"]       = "float",
+      ["floatvec2"]   = "vec2",
+      ["floatvec3"]   = "vec3",
+      ["floatvec4"]   = "vec4",
+      ["floatmat2x2"] = "mat2",
+      ["floatmat3x3"] = "mat3",
+      ["floatmat4x4"] = "mat4",
+      ["int32"]       = "int",
+      ["int32vec2"]   = "ivec2",
+      ["int32vec3"]   = "ivec3",
+      ["int32vec4"]   = "ivec4",
+      ["uint32"]      = "uint",
+      ["uint32vec2"]  = "uvec2",
+      ["uint32vec3"]  = "uvec3",
+      ["uint32vec4"]  = "uvec4",
+      ["snorm8vec4"]  = "vec4",
+      ["unorm8vec4"]  = "vec4",
+      ["int8vec4"]    = "ivec4",
+      ["uint8vec4"]   = "uvec4",
+      ["snorm16vec2"] = "vec2",
+      ["snorm16vec4"] = "vec4",
+      ["unorm16vec2"] = "vec2",
+      ["unorm16vec4"] = "vec4",
+      ["int16vec2"]   = "ivec2",
+      ["int16vec4"]   = "ivec4",
+      ["uint16"]      = "uint",
+      ["uint16vec2"]  = "uvec2",
+      ["uint16vec4"]  = "uvec4",
+      ["bool"]        = "bool",
+      ["boolvec2"]    = "bvec2",
+      ["boolvec3"]    = "bvec3",
+      ["boolvec4"]    = "bvec4",
+}
+
 local function readfile(path, name)
       path = path:gsub('%.', '/')
       return love.filesystem.read(path .. name .. '.glsl')
@@ -15,15 +50,53 @@ local function add_shader_chunk(path, name)
       chunks[name .. '.glsl'] = readfile(path, name)
 end
 
-add_shader_chunk(modules .. 'chunks.', 'skinning_vertex_base')
-add_shader_chunk(modules .. 'chunks.', 'skinning_vertex')
-add_shader_chunk(modules .. 'chunks.', 'normal')
+local shaders_path = love._version_major > 11 and '.love12.' or ''
+local add_attribute
+local md5_hash
+
+if love.system.getOS() ~= 'Web' and love._version_major > 11 then
+      md5_hash = function (s)
+            return love.data.hash('string', 'md5', s)
+      end
+else
+      md5_hash = function (s)
+            return love.data.hash('md5', s)
+      end
+end
+
+if love.system.getOS() == 'Web' then
+      add_attribute = function (attributes, element)
+            table.insert(attributes,
+                  string.format("attribute %s %s;",
+                        data_format[element.format],
+                        element.name
+            ))
+      end
+else
+      add_attribute = function (attributes, element)
+            table.insert(attributes,
+                  string.format("layout (location = %d) in %s %s;",
+                        element.location,
+                        data_format[element.format],
+                        element.name
+                  ))
+            -- or attributes (deprecated in love 12)
+            -- table.insert(attributes,
+            --       string.format("attribute %s %s;",
+            --             data_format[element.format],
+            --             element.name
+            -- ))
+      end
+end
+
 add_shader_chunk(modules .. 'chunks.', 'billboard_base')
 add_shader_chunk(modules .. 'chunks.', 'billboard')
+add_shader_chunk(modules .. 'chunks.', 'color')
 add_shader_chunk(modules .. 'chunks.', 'inverse')
+add_shader_chunk(modules .. 'chunks.', 'normal')
+add_shader_chunk(modules .. 'chunks.', 'skinning_vertex_base')
+add_shader_chunk(modules .. 'chunks.', 'skinning_vertex')
 add_shader_chunk(modules .. 'chunks.', 'transpose')
-
-local cache = {}
 
 local function include_chunks(code)
       local lines = {}
@@ -37,68 +110,94 @@ local function include_chunks(code)
       return table.concat(lines, '\n')
 end
 
-local function load_shader_file(name, shaderpath, opt)
-      local code = readfile(modules, shaderpath)
+local function preprocess_shader(code, opt)
+      if opt then
+            local additional = ''
+            if opt.definitions then
+                  local t = {}
+                  for _, v in ipairs(opt.definitions) do
+                        table.insert(t, string.format('#define %s\n', v))
+                  end
+                  if #t > 0 then
+                        local s = table.concat(t) .. '\n'
+                        additional = s .. additional
+                  end
+            end
 
-      if opt and opt.definitions then
-            local t = {}
-            for _, v in ipairs(opt.definitions) do
-                  table.insert(t, string.format('#define %s\n', v))
+            if opt.attributes then
+                  local s = table.concat(opt.attributes, '\n') .. '\n'
+                  additional = s .. additional
             end
-            if #t > 0 then
-                  local s = table.concat(t) .. '\n'
-                  code = s .. code
-            end
+
+            code = additional .. code
       end
 
       if features['glsl3'] then
             code = '#pragma language glsl3\n' .. code
       end
 
-      cache[name] = include_chunks(code)
+      return include_chunks(code)
 end
 
-local USE_SKINNING = {
-      definitions = {"USE_SKINNING"}
+local cache = {
+      default_mesh_vert  = readfile(modules .. shaders_path, 'default_mesh_vert'),
+      default_mesh_frag  = readfile(modules .. shaders_path, 'default_mesh_frag'),
+      deferred_mesh_frag = readfile(modules .. shaders_path, 'deferred_mesh_frag'),
 }
-local BILLBOARD_ROTATE = {
-      definitions = {"BILLBOARD_ROTATE"}
+
+local shader_defines = {
+      VertexColor  = "USE_COLOR",
+      VertexJoints = "USE_SKINNING",
 }
 
-load_shader_file('default_mesh_vert', 'default_mesh_vert')
-load_shader_file('default_mesh_frag', 'default_mesh_frag')
+local shader_program_cache = {}
 
-load_shader_file('default_mesh_skinning_vert', 'default_mesh_vert', USE_SKINNING)
-load_shader_file('default_mesh_skinning_frag', 'default_mesh_frag', USE_SKINNING)
+local function create_shader(material)
+      local opt = {
+            definitions = {}, attributes = {},
+      }
 
-load_shader_file('deferred_mesh_frag', 'deferred_mesh_frag')
+      if love._version_major > 11 then
+            for _, element in ipairs(material.attributes) do
+                  local define = shader_defines[element.name]
+                  if define then
+                        table.insert(opt.definitions, define)
+                  end
 
-load_shader_file('deferred_mesh_skinning_vert', 'default_mesh_vert', USE_SKINNING)
-load_shader_file('deferred_mesh_skinning_frag', 'default_mesh_frag', USE_SKINNING)
+                  add_attribute(opt.attributes, element)
+            end
+      else
+            for _, element in ipairs(material.attributes) do
+                  local define = shader_defines[element[1]]
+                  if define then
+                        table.insert(opt.definitions, define)
+                  end
+            end
+      end
 
-load_shader_file('instanced_mesh_vert', 'instanced_mesh_vert')
+      local vertcode = material.shader_vertcode
+      local fragcode = material.shader_fragcode
 
-load_shader_file('instanced_mesh_billboard_vert', 'instanced_mesh_vert', BILLBOARD_ROTATE)
-load_shader_file('instanced_mesh_billboard_frag', 'default_mesh_frag', BILLBOARD_ROTATE)
+      material.shader_vertcode = vertcode
+      material.shader_fragcode = fragcode
 
-load_shader_file('outline_mesh_vert', 'outline_mesh_vert')
-load_shader_file('outline_mesh_frag', 'outline_mesh_frag')
+      vertcode = preprocess_shader(vertcode, opt)
+      opt.attributes = nil
+      fragcode = preprocess_shader(fragcode, opt)
 
-local shaders = {
-      default_mesh = love.graphics.newShader(cache['default_mesh_vert'], cache['default_mesh_frag']),
-      default_mesh_skinning = love.graphics.newShader(cache['default_mesh_skinning_vert'], cache['default_mesh_skinning_frag']),
-      deferred_mesh = love.graphics.newShader(cache['default_mesh_vert'], cache['deferred_mesh_frag']),
-      deferred_mesh_skinning = love.graphics.newShader(cache['deferred_mesh_skinning_vert'], cache['deferred_mesh_skinning_frag']),
+      local cache_key = md5_hash(vertcode .. fragcode)
 
-      instanced_mesh = love.graphics.newShader(cache['instanced_mesh_vert'], cache['default_mesh_frag']),
-      instanced_mesh_billboard = love.graphics.newShader(cache['instanced_mesh_billboard_vert'], cache['default_mesh_frag']),
-
-      outline_mesh = love.graphics.newShader(cache['outline_mesh_vert'], cache['outline_mesh_frag']),
-}
+      local shader = shader_program_cache[cache_key]
+      if not shader then
+            shader = love.graphics.newShader(fragcode, vertcode)
+            shader_program_cache[cache_key] = shader
+      end
+      return shader
+end
 
 return {
       cache = cache,
       add_shader_chunk = add_shader_chunk,
-      load_shader_file = load_shader_file,
-      shaders = shaders,
+      preprocess_shader = preprocess_shader,
+      create_shader = create_shader,
 }

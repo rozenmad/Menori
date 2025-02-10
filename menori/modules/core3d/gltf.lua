@@ -57,24 +57,25 @@ local component_types = {
 }
 
 local add_vertex_format
+local types = {
+	['SCALAR'] = '',
+	['VEC2'] = 'vec2',
+	['VEC3'] = 'vec3',
+	['VEC4'] = 'vec4',
+	['MAT2'] = 'mat2x2',
+	['MAT3'] = 'mat3x3',
+	['MAT4'] = 'mat4x4',
+}
+
 if love._version_major > 11 then
-	local types = {
-		['SCALAR'] = '',
-		['VEC2'] = 'vec2',
-		['VEC3'] = 'vec3',
-		['VEC4'] = 'vec4',
-		['MAT2'] = 'mat2x2',
-		['MAT3'] = 'mat3x3',
-		['MAT4'] = 'mat4x4',
-	}
-	function add_vertex_format(vertexformat, attribute_name, buffer)
+	function add_vertex_format(vertexformat, attribute_name, buffer, location)
 		local format = component_types[buffer.component_type] .. types[buffer.type]
 		table.insert(vertexformat, {
 			name = attribute_name, format = format
 		})
 	end
 else
-	local types = {
+	local love11_types = {
 		'byte',
 		'unorm16',
 		'',
@@ -82,8 +83,9 @@ else
 	}
 
 	function add_vertex_format(vertexformat, attribute_name, buffer)
+		local format = component_types[buffer.component_type] .. types[buffer.type]
 		table.insert(vertexformat, {
-			attribute_name, types[buffer.component_size], buffer.type_elements_count
+			attribute_name, love11_types[buffer.component_size], buffer.type_elements_count, format = format,
 		})
 	end
 end
@@ -92,9 +94,9 @@ end
 local attribute_aliases = {
 	['POSITION'] = 'VertexPosition',
 	['TEXCOORD'] = 'VertexTexCoord',
-	['JOINTS']   = 'VertexJoints',
-	['NORMAL']   = 'VertexNormal',
 	['COLOR']    = 'VertexColor',
+	['NORMAL']   = 'VertexNormal',
+	['JOINTS']   = 'VertexJoints',
 	['WEIGHTS']  = 'VertexWeights',
 	['TANGENT']  = 'VertexTangent',
 }
@@ -275,6 +277,16 @@ local function get_attributes(gltf, attributes_array)
 	return attributes
 end
 
+local attribute_order = {
+	['POSITION'] = 0,
+	['NORMAL']   = 10,
+	['TANGENT']  = 20,
+	['TEXCOORD'] = 30,
+	['COLOR']    = 40,
+	['JOINTS']   = 50,
+	['WEIGHTS']  = 60,
+}
+
 local function init_mesh(gltf, mesh)
 	local primitives = {}
 	for j, primitive in ipairs(mesh.primitives) do
@@ -289,18 +301,31 @@ local function init_mesh(gltf, mesh)
 		local count = 0
 		local vertexformat = {}
 
+		local attributes = {}
 		for k, v in pairs(primitive.attributes) do
-			local attribute, value = k:match('(%w+)(.*)')
+			local attribute, index = k:match('(%w+)_*(.*)')
+			index = tonumber(index) or 0
+			table.insert(attributes, {
+				attribute = k, order = attribute_order[attribute] + index, value = v
+			})
+		end
+
+		table.sort(attributes, function (a, b)
+			return a.order < b.order
+		end)
+
+		for i, v in ipairs(attributes) do
+			local attribute, value = v.attribute:match('(%w+)(.*)')
 			local attribute_name
 			if value == '_0' then
 				attribute_name = attribute_aliases[attribute]
 			elseif attribute_aliases[attribute] then
 				attribute_name = attribute_aliases[attribute] .. value
 			else
-				attribute_name = k
+				attribute_name = v.attribute
 			end
 
-			local buffer = get_buffer(gltf, v)
+			local buffer = get_buffer(gltf, v.value)
 			attribute_buffers[#attribute_buffers+1] = buffer
 			if count <= 0 then count = buffer.count end
 
@@ -309,7 +334,7 @@ local function init_mesh(gltf, mesh)
 			length = length + buffer.count * element_size
 			components_stride = components_stride + element_size
 
-			add_vertex_format(vertexformat, attribute_name, buffer)
+			add_vertex_format(vertexformat, attribute_name, buffer, i - 1)
 		end
 
 		local vertices = get_vertices_content(attribute_buffers, components_stride, length)

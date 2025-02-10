@@ -17,13 +17,17 @@ local Mesh = require (modules .. 'core3d.mesh')
 local vertexformat
 if love._version_major > 11 then
 	vertexformat = {
-		{format = "floatvec3", name = "VertexPosition"},
-		{format = "floatvec4", name = "VertexColor"},
+		{format = "floatvec3", name = "VertexPosition", location = 0},
+		{format = "floatvec4", name = "VertexColor", location = 1},
+		{format = "floatvec2", name = "VertexTexCoord", location = 2},
+		{format = "floatvec3", name = "VertexNormal", location = 3},
 	}
 else
 	vertexformat = {
 		{"VertexPosition", "float", 3},
 		{"VertexColor", "float", 4},
+		{"VertexTexCoord", "float", 2},
+		{"VertexNormal", "float", 3},
 	}
 end
 
@@ -46,9 +50,14 @@ local function BoxShape(sx, sy, sz)
 		{-sx,-sy,-sz, 1, 1, 1, 1}, { sx,-sy,-sz, 1, 1, 1, 1}, {-sx,-sy, sz, 1, 1, 1, 1}, { sx,-sy, sz, 1, 1, 1, 1},
 	}
 
-	return Mesh.from_primitive(vertices, {
+	local mesh = Mesh.from_primitive(vertices, {
 		vertexformat = vertexformat, indices = Mesh.generate_indices(24)
 	})
+
+	mesh.lg_mesh:setAttributeEnabled("VertexTexCoord", false)
+      mesh.lg_mesh:setAttributeEnabled("VertexNormal", false)
+
+	return mesh
 end
 
 return BoxShape

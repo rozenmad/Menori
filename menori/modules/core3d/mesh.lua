@@ -15,6 +15,7 @@ local modules = (...):match('(.*%menori.modules.)')
 
 local class = require (modules .. 'libs.class')
 local ml    = require (modules .. 'ml')
+local utils = require (modules .. 'libs.utils')
 
 local vec3 = ml.vec3
 local mat4 = ml.mat4
@@ -25,43 +26,18 @@ local Mesh = class('Mesh')
 
 local default_template = {1, 2, 3, 2, 4, 3}
 
-local vertexformat
 if love._version_major > 11 then
-      vertexformat = {
-            {format = "floatvec3", name = "VertexPosition"},
-            {format = "floatvec2", name = "VertexTexCoord"},
-            {format = "floatvec3", name = "VertexNormal"  },
+      Mesh.default_vertexformat = {
+            {format = "floatvec3", name = "VertexPosition", location = 0},
+            {format = "floatvec2", name = "VertexTexCoord", location = 1},
+            {format = "floatvec3", name = "VertexNormal"  , location = 2},
       }
 else
-      vertexformat = {
+      Mesh.default_vertexformat = {
             {"VertexPosition", "float", 3},
             {"VertexTexCoord", "float", 2},
             {"VertexNormal"  , "float", 3},
       }
-end
-
-Mesh.default_vertexformat = vertexformat
-
-local function create_mesh_from_primitive(primitive, texture)
-      local count = primitive.count or #primitive.vertices
-      assert(count > 0)
-
-      local vertexformat = primitive.vertexformat or Mesh.default_vertexformat
-      local mode = primitive.mode or 'triangles'
-
-      local lg_mesh = lg.newMesh(vertexformat, primitive.vertices, mode, 'static')
-
-      if primitive.indices then
-            local idatatype
-            if primitive.indices_tsize then
-                  idatatype = primitive.indices_tsize <= 2 and 'uint16' or 'uint32'
-            end
-            lg_mesh:setVertexMap(primitive.indices, idatatype)
-      end
-      if texture then
-            lg_mesh:setTexture(texture)
-      end
-      return lg_mesh
 end
 
 local function calculate_bound(lg_mesh_obj)
@@ -122,6 +98,29 @@ function Mesh.get_attribute_index(attribute, format)
       end
 end
 
+function Mesh.set_locations(vertexformat, used_locations)
+      used_locations = used_locations and utils.copy(used_locations) or {}
+      vertexformat = utils.copy(vertexformat)
+
+      for _, v in ipairs(vertexformat) do
+            if v.location then
+                  used_locations[v.location] = v.name
+            end
+      end
+
+      local next_location = 0
+      for _, v in ipairs(vertexformat) do
+            if not v.location then
+                  while used_locations[next_location] do
+                        next_location = next_location + 1
+                  end
+                  v.location = next_location
+                  used_locations[next_location] = v.name
+            end
+      end
+      return vertexformat, used_locations
+end
+
 --- Create a menori.Mesh from vertices.
 -- @static
 -- @tparam table vertices that contains vertex data. See [LOVE Mesh](https://love2d.org/wiki/love.graphics.newMesh)
@@ -140,11 +139,32 @@ end
 -- @tparam table primitives List of primitives
 -- @tparam[opt] Image texture
 function Mesh:init(primitive, texture)
-      local mesh = create_mesh_from_primitive(primitive, texture)
-      self.vertex_attribute_index = Mesh.get_attribute_index('VertexPosition', mesh:getVertexFormat())
-      self.lg_mesh = mesh
+      local count = primitive.count or #primitive.vertices
+      assert(count > 0)
+
+      local vertexformat, used_locations = Mesh.set_locations(primitive.vertexformat or Mesh.default_vertexformat)
+
+      local mode = primitive.mode or 'triangles'
+
+      local lg_mesh = lg.newMesh(vertexformat, primitive.vertices, mode, 'static')
+
+      if primitive.indices then
+            local idatatype
+            if primitive.indices_tsize then
+                  idatatype = primitive.indices_tsize <= 2 and 'uint16' or 'uint32'
+            end
+            lg_mesh:setVertexMap(primitive.indices, idatatype)
+      end
+      if texture then
+            lg_mesh:setTexture(texture)
+      end
+
+      self.vertex_attribute_index = Mesh.get_attribute_index('VertexPosition', lg_mesh:getVertexFormat())
+      self.lg_mesh = lg_mesh
+      self.vertexformat = vertexformat
       self.material_index = primitive.material_index
-      self.bound = calculate_bound(mesh)
+      self.bound = calculate_bound(lg_mesh)
+      self.used_locations = used_locations
 end
 
 --- Draw a Mesh object on the screen.

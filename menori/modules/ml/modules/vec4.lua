@@ -30,10 +30,12 @@ local function new(x, y, z, w)
 	}, vec4_mt)
 end
 
+vec4.zero   = new()
 vec4.unit_x = new(1, 0, 0, 0)
 vec4.unit_y = new(0, 1, 0, 0)
 vec4.unit_z = new(0, 0, 1, 0)
 vec4.unit_w = new(0, 0, 0, 1)
+vec4.one    = new(1, 1, 1, 1)
 
 --- clone
 function vec4_mt:clone()

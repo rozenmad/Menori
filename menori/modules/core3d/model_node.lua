@@ -14,10 +14,11 @@ Class for drawing Mesh objects. (Inherited from menori.Node class)
 
 local modules = (...):match('(.*%menori.modules.)')
 
-local Node     = require (modules .. 'node')
-local ml       = require (modules .. 'ml')
-local Material = require (modules .. 'core3d.material')
-local ffi      = require (modules .. 'libs.ffi')
+local Node        = require (modules .. 'node')
+local ml          = require (modules .. 'ml')
+local Material    = require (modules .. 'core3d.material')
+local ShaderUtils = require (modules .. 'shaders.utils')
+local ffi         = require (modules .. 'libs.ffi')
 
 local vec3     = ml.vec3
 local bound3   = ml.bound3
@@ -35,6 +36,8 @@ function ModelNode:init(mesh, material)
 	ModelNode.super.init(self)
       material = material or Material.default
       self.material = material:clone()
+      self.material.attributes = mesh.vertexformat
+      self.material.shader = self.material.shader or ShaderUtils.create_shader(self.material)
 	self.mesh = mesh
 
       self.color = ml.vec4(1)

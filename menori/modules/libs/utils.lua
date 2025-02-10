@@ -50,6 +50,16 @@ function utils.copy(value)
       return t
 end
 
+function utils.table_concat(...)
+      local new_t = {}
+	for _, t in ipairs({...}) do
+		for _, element in ipairs(t) do
+			new_t[#new_t+1] = element
+		end
+	end
+	return new_t
+end
+
 function utils.binsearch(array, value)
 	local l = 1
 	local r = #array

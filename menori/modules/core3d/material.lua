@@ -23,17 +23,16 @@ local Material = UniformList:extend('Material', {
       clone = utils.copy
 })
 
-Material.default_shader = ShaderUtils.shaders['default_mesh']
-
 ----
 -- The public constructor.
 -- @tparam string name Name of the material.
 -- @param[opt=Material.default_shader] shader [LOVE Shader](https://love2d.org/wiki/Shader)
-function Material:init(name, shader)
+function Material:init(opt)
       Material.super.init(self)
+      opt = opt or {}
 
-      self.name = name
-      self.shader = shader or Material.default_shader
+      self.name = opt.name
+      self.attributes = {}
 
       self.depth_test = true
       self.depth_func = 'less'
@@ -43,6 +42,10 @@ function Material:init(name, shader)
 
       self.alpha_mode = 'OPAQUE'
       self.main_texture = nil
+
+      self.shader_vertcode = opt.shader_vertcode or ShaderUtils.cache['default_mesh_vert']
+      self.shader_fragcode = opt.shader_fragcode or ShaderUtils.cache['default_mesh_frag']
+      self.shader = opt.shader
 end
 
 Material.default = Material("Default")

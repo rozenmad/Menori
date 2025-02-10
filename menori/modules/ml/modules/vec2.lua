@@ -28,8 +28,10 @@ local function new(x, y)
 	}, vec2_mt)
 end
 
+vec2.zero   = new()
 vec2.unit_x = new(1, 0)
 vec2.unit_y = new(0, 1)
+vec2.one    = new(1, 1)
 
 --- clone
 function vec2_mt:clone()

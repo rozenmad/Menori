@@ -23,6 +23,7 @@ local ShaderUtils = require (modules .. 'shaders.utils')
 local ml = require (modules .. 'ml')
 local mat4 = ml.mat4
 local vec3 = ml.vec3
+local vec4 = ml.vec4
 local quat = ml.quat
 
 local NodeTreeBuilder = {}
@@ -38,9 +39,9 @@ local function create_nodes(builder, nodes, i)
       local r = quat(0, 0, 0, 1)
       local s = vec3(1)
       if v.translation or v.rotation or v.scale then
-            t:set(v.translation or {0, 0, 0})
-            r:set(v.rotation or {0, 0, 0, 1})
-            s:set(v.scale or {1, 1, 1})
+            t:set(v.translation or vec3.zero)
+            r:set(v.rotation or vec4.unit_w)
+            s:set(v.scale or vec3.one)
       elseif v.matrix then
             mat4(v.matrix):decompose(t, r, s)
       end
@@ -53,13 +54,7 @@ local function create_nodes(builder, nodes, i)
                   if m.material_index then
                         material = builder.materials[m.material_index + 1]
                   end
-                  local model_node = ModelNode(m, material)
-                  if v.skin then
-                        model_node.material.shader = ShaderUtils.shaders['default_mesh_skinning']
-                  else
-                        model_node.material.shader = ShaderUtils.shaders['default_mesh']
-                  end
-                  array_nodes[j] = model_node
+                  array_nodes[j] = ModelNode(m, material)
             end
             if #array_nodes > 1 then
                   node = Node()
@@ -117,7 +112,7 @@ function NodeTreeBuilder.create(gltf, callback)
       end
 
       for i, v in ipairs(gltf.materials) do
-            local material = Material(v.name)
+            local material = Material(v)
             material.mesh_cull_mode = v.double_sided and 'none' or 'back'
             material.alpha_mode = v.alpha_mode
             material.alpha_cutoff = v.alpha_cutoff

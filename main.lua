@@ -35,7 +35,7 @@ function love.update(dt)
 	if love.keyboard.isDown('escape') then
 		love.event.quit()
 	end
-	love.mouse.setRelativeMode(love.mouse.isDown(2))
+	-- love.mouse.setRelativeMode(love.mouse.isDown(2))
 end
 
 local function set_scene()

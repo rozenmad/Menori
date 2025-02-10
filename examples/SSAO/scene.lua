@@ -99,11 +99,8 @@ function scene:init()
 		scene:traverse(function (node)
 			if node.mesh then
 				-- use deferred shader
-				if node.skeleton_node then
-					node.material.shader = menori.ShaderUtils.shaders['deferred_mesh_skinning']
-				else
-					node.material.shader = menori.ShaderUtils.shaders['deferred_mesh']
-				end
+				node.material.shader_fragcode = menori.ShaderUtils.cache['deferred_mesh_frag']
+				node.material.shader = menori.ShaderUtils.create_shader(node.material)
 			end
 		end)
 	end)

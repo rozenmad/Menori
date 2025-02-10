@@ -14,13 +14,16 @@ Class provides instancing functionality for Meshes.
 local modules = (...):match('(.*%menori.modules.)')
 
 local class = require (modules .. 'libs.class')
+local utils = require (modules .. 'libs.utils')
+
+local Mesh = require (modules .. 'core3d.mesh')
 
 local lg = love.graphics
 
 local InstancedMesh = class('InstancedMesh')
 
 local default_format = {
-      {name = "instance_position", format = "floatvec3"},
+      {name = "InstancePosition", format = "floatvec3"},
 }
 
 ----
@@ -31,11 +34,13 @@ function InstancedMesh:init(lg_mesh, instanced_format)
 	-- self.instanced_mesh_buffer = love.graphics.newBuffer(instanced_format, 16, { vertex = true })
 	self.instanced_mesh_buffer = love.graphics.newMesh(instanced_format, 16, 'triangles', 'dynamic')
 
-	self.format = instanced_format
+	self.instanced_format = Mesh.set_locations(instanced_format, lg_mesh.used_locations)
 	self.format_attribute_indices_map = {}
-	for i, v in ipairs(self.format) do
+	for i, v in ipairs(self.instanced_format) do
 		self.format_attribute_indices_map[v.name] = i
 	end
+
+	self.vertexformat = utils.table_concat(lg_mesh.vertexformat, self.instanced_format)
 
 	self.count = 0
 	self:_attach_buffer()
@@ -68,7 +73,7 @@ function InstancedMesh:_reallocate(current_count)
 	local instance_count = self.instanced_mesh_buffer:getVertexCount()
 	if current_count > instance_count then
 		self:_detach_buffer()
-		local temp_mesh = love.graphics.newMesh(self.format, instance_count * 2, 'triangles', 'dynamic')
+		local temp_mesh = love.graphics.newMesh(self.instanced_format, instance_count * 2, 'triangles', 'dynamic')
 		for i = 1, instance_count do
 			temp_mesh:setVertex(i, self.instanced_mesh_buffer:getVertex(i))
 		end
@@ -80,13 +85,13 @@ function InstancedMesh:_reallocate(current_count)
 end
 
 function InstancedMesh:_attach_buffer()
-	for i, v in ipairs(self.format) do
+	for i, v in ipairs(self.instanced_format) do
 		self.lg_mesh:attachAttribute(v.name, self.instanced_mesh_buffer, "perinstance")
 	end
 end
 
 function InstancedMesh:_detach_buffer()
-	for i, v in ipairs(self.format) do
+	for i, v in ipairs(self.instanced_format) do
 		self.lg_mesh:detachAttribute(v.name)
 	end
 end
