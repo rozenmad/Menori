@@ -57,6 +57,12 @@ local component_types = {
 }
 
 local add_vertex_format
+local get_bytedata_buffer = function(data)
+	return data
+end
+local love_data_pack = function(data, position, format, value)
+	love.data.pack(data, position, format, value)
+end
 local types = {
 	['SCALAR'] = '',
 	['VEC2'] = 'vec2',
@@ -68,12 +74,13 @@ local types = {
 }
 
 if love._version_major > 11 then
-	function add_vertex_format(vertexformat, attribute_name, buffer, location)
+	add_vertex_format = function(vertexformat, attribute_name, buffer, location)
 		local format = component_types[buffer.component_type] .. types[buffer.type]
 		table.insert(vertexformat, {
 			name = attribute_name, format = format
 		})
 	end
+
 else
 	local love11_types = {
 		'byte',
@@ -82,12 +89,26 @@ else
 		'float',
 	}
 
-	function add_vertex_format(vertexformat, attribute_name, buffer)
+	add_vertex_format = function(vertexformat, attribute_name, buffer)
 		local format = component_types[buffer.component_type] .. types[buffer.type]
 		table.insert(vertexformat, {
 			attribute_name, love11_types[buffer.component_size], buffer.type_elements_count, format = format,
 		})
 	end
+
+	local temp = {}
+	get_bytedata_buffer = function(data)
+		data = love.data.newByteData(table.concat(temp))
+		temp = {}
+		return data
+	end
+	love_data_pack = function(_, pos, format, value)
+		local packed = love.data.pack("string", format, value)
+		for i = 1, #packed do
+			temp[pos + i] = packed:sub(i, i)
+		end
+	end
+
 end
 
 
@@ -241,11 +262,13 @@ local function get_vertices_content(attribute_buffers, components_stride, length
 				for k = 0, buffer.type_elements_count - 1 do
 					local idx = k * buffer.component_size
 					local attr = love.data.unpack(unpack_type, buffer.data, p1 + idx + 1)
-					love.data.pack(temp_data, p2 + idx, unpack_type, attr)
+					love_data_pack(temp_data, p2 + idx, unpack_type, attr)
 				end
 			end
 			start_offset = start_offset + element_size
 		end
+
+		temp_data = get_bytedata_buffer(temp_data)
 	end
 
 	return temp_data
@@ -268,10 +291,10 @@ local function get_attributes(gltf, attributes_array)
 			for k = 0, buffer.type_elements_count - 1 do
 				local idx = k * buffer.component_size
 				local attr = love.data.unpack(unpack_type, buffer.data, p1 + idx + 1)
-				love.data.pack(bytedata, p2 + idx, unpack_type, attr)
+				love_data_pack(bytedata, p2 + idx, unpack_type, attr)
 			end
 		end
-		attributes[name] = bytedata
+		attributes[name] = get_bytedata_buffer(bytedata)
 	end
 
 	return attributes

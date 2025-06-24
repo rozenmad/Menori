@@ -51,41 +51,15 @@ local function add_shader_chunk(path, name)
 end
 
 local shaders_path = love._version_major > 11 and '.love12.' or ''
-local add_attribute
 local md5_hash
 
-if love.system.getOS() ~= 'Web' and love._version_major > 11 then
+if love._version_major > 11 then
       md5_hash = function (s)
             return love.data.hash('string', 'md5', s)
       end
 else
       md5_hash = function (s)
             return love.data.hash('md5', s)
-      end
-end
-
-if love.system.getOS() == 'Web' then
-      add_attribute = function (attributes, element)
-            table.insert(attributes,
-                  string.format("attribute %s %s;",
-                        data_format[element.format],
-                        element.name
-            ))
-      end
-else
-      add_attribute = function (attributes, element)
-            table.insert(attributes,
-                  string.format("layout (location = %d) in %s %s;",
-                        element.location,
-                        data_format[element.format],
-                        element.name
-                  ))
-            -- or attributes (deprecated in love 12)
-            -- table.insert(attributes,
-            --       string.format("attribute %s %s;",
-            --             data_format[element.format],
-            --             element.name
-            -- ))
       end
 end
 
@@ -164,7 +138,12 @@ local function create_shader(material)
                         table.insert(opt.definitions, define)
                   end
 
-                  add_attribute(opt.attributes, element)
+                  table.insert(opt.attributes,
+                        string.format("layout (location = %d) in %s %s;",
+                              element.location,
+                              data_format[element.format],
+                              element.name
+                        ))
             end
       else
             for _, element in ipairs(material.attributes) do

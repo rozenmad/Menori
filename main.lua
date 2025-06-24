@@ -13,11 +13,18 @@ for _, v in ipairs(example_list) do
 end
 menori.app:set_scene('Minimal')
 
+local w, h = love.graphics.getDimensions()
+local canvas = love.graphics.newCanvas(w, h)
+local canvas_sprite = menori.SpriteLoader.from_image(canvas)
+
+canvas_sprite.px = 0.5
+canvas_sprite.py = 0.5
+
 function love.draw()
+	love.graphics.setCanvas({canvas, depth = true})
 	menori.app:render()
 
 	local font = love.graphics.getFont()
-	local w, h = love.graphics.getDimensions()
 
 	love.graphics.setColor(1, 0.5, 0, 1)
 	love.graphics.print(love.timer.getFPS(), 10, 10)
@@ -27,6 +34,11 @@ function love.draw()
 	love.graphics.print("Example: " .. example_list[scene_iterator].title, 10, 25)
 	love.graphics.print(prev_str, 10, h-30)
 	love.graphics.print(next_str, w - font:getWidth(next_str) - 10, h-30)
+
+	love.graphics.setCanvas()
+
+	local cw, ch = love.graphics.getDimensions()
+	canvas_sprite:draw_in_viewport(0, 0, 'min', cw, ch, 0.5, 0.5)
 end
 
 function love.update(dt)

@@ -149,7 +149,7 @@ end
 -- @tparam number sy
 -- @tparam number kx
 -- @tparam number ky
-function sprite:draw_in_viewport(x, y, fit, viewport_w, viewport_h, align_nx, align_ny, angle, sx, sy, kx, ky)
+function sprite:draw_in_viewport(x, y, fit, viewport_w, viewport_h, align_nx, align_ny, angle, sx, sy, ox, oy, kx, ky)
       local iw, ih = self.image:getDimensions()
 
       sx = sx or 1
@@ -161,34 +161,29 @@ function sprite:draw_in_viewport(x, y, fit, viewport_w, viewport_h, align_nx, al
       viewport_w = viewport_w or iw
       viewport_h = viewport_h or ih
 
-      local px = 0
-      local py = 0
       if
       fit == 'none' then
       elseif
       fit == 'fill' then
-            sx = viewport_w / iw
-            sy = viewport_h / ih
+            self.scale_x = viewport_w / iw
+            self.scale_y = viewport_h / ih
       elseif
       fit == 'min' then
-            sx = math.min(viewport_w / iw, viewport_h / ih)
-            sy = sx
-            px = (viewport_w - iw * sx) * align_nx
-            py = (viewport_h - ih * sy) * align_ny
+            self.scale_x = math.min(viewport_w / iw, viewport_h / ih)
+            self.scale_y = self.scale_x
       elseif
       fit == 'max' then
-            sx = math.max(viewport_w / iw, viewport_h / ih)
-            sy = sx
+            self.scale_x = math.max(viewport_w / iw, viewport_h / ih)
+            self.scale_y = self.scale_x
       end
 
-      local ox = align_nx * iw + self.px * iw
-      local oy = align_ny * ih + self.py * ih
+      sx = self.scale_x * sx
+      sy = self.scale_y * sy
 
-      x = x + px + align_nx * math.min(iw*sx, viewport_w)
-      y = y + py + align_ny * math.min(ih*sy, viewport_h)
+      x = x + align_nx * viewport_w - self.px * iw * sx
+      y = y + align_ny * viewport_h - self.py * ih * sy
 
       love.graphics.draw(self.image, self.quads[self.index], x, y, angle, sx, sy, ox, oy, kx, ky)
 end
-
 
 return sprite

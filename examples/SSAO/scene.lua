@@ -129,6 +129,7 @@ function scene:render()
 
 	if tips[1].boolean then
 		-- calculate ssao
+		local canvas = love.graphics.getCanvas()
 		love.graphics.setCanvas(self.ssao_c)
 		love.graphics.clear()
 		love.graphics.setShader(self.ssao_shader)
@@ -143,11 +144,12 @@ function scene:render()
 		local _, _, w, h = menori.app:get_viewport()
 		love.graphics.rectangle('fill', 0, 0, w, h)
 		love.graphics.setShader()
-		love.graphics.setCanvas()
+		love.graphics.setCanvas(canvas)
 
 		local result_ssao_canvas = self.ssao_c
 		if tips[3].boolean then
 			-- apply blur to ssao, store result in ssao_blur canvas
+			local canvas = love.graphics.getCanvas()
 			love.graphics.setCanvas(self.ssao_blur_c)
 			love.graphics.setShader(self.ssao_blur_shader)
 			self.ssao_blur_shader:send('ssao_c', self.ssao_c)
@@ -155,7 +157,7 @@ function scene:render()
 			love.graphics.rectangle('fill', 0, 0, w, h)
 
 			love.graphics.setShader()
-			love.graphics.setCanvas()
+			love.graphics.setCanvas(canvas)
 
 			result_ssao_canvas = self.ssao_blur_c
 		end

@@ -9,4 +9,5 @@ function love.conf(t)
     t.window.title = "Menori Examples"
     t.window.vsync = true
     t.highdpi = true
+    t.window.resizable = true
 end

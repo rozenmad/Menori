@@ -26,8 +26,6 @@ local bound3   = ml.bound3
 local ModelNode = Node:extend('ModelNode')
 
 local matrix_bytesize = 16*4
-local data
-local joints_texture
 
 --- The public constructor.
 -- @tparam menori.Mesh mesh object
@@ -41,6 +39,15 @@ function ModelNode:init(mesh, material)
 	self.mesh = mesh
 
       self.color = ml.vec4(1)
+end
+
+function ModelNode:_ensure_joints_texture()
+      local size = math.max(math.ceil(math.sqrt(#self.joints * 4) / 4) * 4, 4)
+      if self.joints_size ~= size then
+            self.joints_size = size
+            self.joints_data = love.image.newImageData(self.joints_size, self.joints_size, 'rgba32f')
+            self.joints_texture = love.graphics.newImage(self.joints_data)
+      end
 end
 
 --- Clone an object.
@@ -104,24 +111,28 @@ function ModelNode:render(scene, environment)
             --       shader:send('m_skeleton', self.skeleton_node.world_matrix.data)
             -- end
 
-            local size = math.max(math.ceil(math.sqrt(#self.joints * 4) / 4) * 4, 4)
-            data = love.data.newByteData(size * size * 4 * 4)
+            self:_ensure_joints_texture()
 
             for i = 1, #self.joints do
                   local node = self.joints[i]
 
                   if ffi then
-                        local ptr = ffi.cast('char*', data:getFFIPointer()) + (i-1) * matrix_bytesize
+                        local ptr = ffi.cast('char*', self.joints_data:getFFIPointer()) + (i-1) * matrix_bytesize
                         ffi.copy(ptr, node.joint_matrix.e+1, matrix_bytesize)
                   else
-                        data:setFloat((i-1) * matrix_bytesize, node.joint_matrix.e)
+                        -- https://github.com/rozenmad/Menori/pull/7
+                        local e = node.joint_matrix.e
+                        local p = (i - 1) * 4
+                        local y = p / self.joints_size
+                        self.joints_data:setPixel((p + 0) % self.joints_size, y, e[01], e[02], e[03], e[04])
+                        self.joints_data:setPixel((p + 1) % self.joints_size, y, e[05], e[06], e[07], e[08])
+                        self.joints_data:setPixel((p + 2) % self.joints_size, y, e[09], e[10], e[11], e[12])
+                        self.joints_data:setPixel((p + 3) % self.joints_size, y, e[13], e[14], e[15], e[16])
                   end
             end
 
-            local joints_texture_data = love.image.newImageData(size, size, 'rgba32f', data)
-            joints_texture = love.graphics.newImage(joints_texture_data)
-
-            shader:send('joints_texture', joints_texture)
+            self.joints_texture:replacePixels(self.joints_data)
+            shader:send('joints_texture', self.joints_texture)
       end
 
       local c = self.color
