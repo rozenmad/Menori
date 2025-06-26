@@ -96,19 +96,20 @@ else
 		})
 	end
 
-	local temp = {}
-	get_bytedata_buffer = function(data)
-		data = love.data.newByteData(table.concat(temp))
-		temp = {}
-		return data
-	end
-	love_data_pack = function(_, pos, format, value)
-		local packed = love.data.pack("string", format, value)
-		for i = 1, #packed do
-			temp[pos + i] = packed:sub(i, i)
+	if not ffi then
+		local temp = {}
+		get_bytedata_buffer = function(data)
+			data = love.data.newByteData(table.concat(temp))
+			temp = {}
+			return data
+		end
+		love_data_pack = function(_, pos, format, value)
+			local packed = love.data.pack("string", format, value)
+			for i = 1, #packed do
+				temp[pos + i] = packed:sub(i, i)
+			end
 		end
 	end
-
 end
 
 
@@ -231,62 +232,23 @@ local function get_indices_content(gltf, v)
 	return temp_data, element_size, min, max
 end
 
-local function get_vertices_content(attribute_buffers, components_stride, length)
-	local start_offset = 0
-	local temp_data = love.data.newByteData(length)
+local function copy_buffer_data(bytedata, buffer, start_offset, element_size, components_stride)
 	if ffi then
-		local temp_data_pointer = ffi.cast('char*', getFFIPointer(temp_data))
+		local temp_data_pointer = ffi.cast('char*', getFFIPointer(bytedata))
+		for i = 0, buffer.count - 1 do
+			local p1 = buffer.offset + i * buffer.stride
+			local data = ffi.cast('char*', getFFIPointer(buffer.data)) + p1
 
-		for _, buffer in ipairs(attribute_buffers) do
-			local element_size = buffer.component_size * buffer.type_elements_count
-			for i = 0, buffer.count - 1 do
-				local p1 = buffer.offset + i * buffer.stride
-				local data = ffi.cast('char*', getFFIPointer(buffer.data)) + p1
+			local p2 = start_offset + i * components_stride
 
-				local p2 = start_offset + i * components_stride
-
-				ffi.copy(temp_data_pointer + p2, data, element_size)
-			end
-			start_offset = start_offset + element_size
+			ffi.copy(temp_data_pointer + p2, data, element_size)
 		end
 	else
-		for _, buffer in ipairs(attribute_buffers) do
-			local unpack_type = get_unpack_type(buffer.component_type)
-
-			local element_size = buffer.component_size * buffer.type_elements_count
-
-			for i = 0, buffer.count - 1 do
-				local p1 = buffer.offset + i * buffer.stride
-				local p2 = start_offset + i * components_stride
-
-				for k = 0, buffer.type_elements_count - 1 do
-					local idx = k * buffer.component_size
-					local attr = love.data.unpack(unpack_type, buffer.data, p1 + idx + 1)
-					love_data_pack(temp_data, p2 + idx, unpack_type, attr)
-				end
-			end
-			start_offset = start_offset + element_size
-		end
-
-		temp_data = get_bytedata_buffer(temp_data)
-	end
-
-	return temp_data
-end
-
-local function get_attributes(gltf, attributes_array)
-	local attributes = {}
-	for name, attribute_index in pairs(attributes_array) do
-		local buffer = get_buffer(gltf, attribute_index)
-		local element_size = buffer.component_size * buffer.type_elements_count
-
-		local len = element_size * buffer.count
-		local bytedata = love.data.newByteData(len)
 		local unpack_type = get_unpack_type(buffer.component_type)
 
 		for i = 0, buffer.count - 1 do
 			local p1 = buffer.offset + i * buffer.stride
-			local p2 = i * element_size
+			local p2 = start_offset + i * components_stride
 
 			for k = 0, buffer.type_elements_count - 1 do
 				local idx = k * buffer.component_size
@@ -294,6 +256,29 @@ local function get_attributes(gltf, attributes_array)
 				love_data_pack(bytedata, p2 + idx, unpack_type, attr)
 			end
 		end
+	end
+end
+
+local function get_vertices_data(attribute_buffers, components_stride, length)
+	local start_offset = 0
+	local bytedata = love.data.newByteData(length)
+	for _, buffer in ipairs(attribute_buffers) do
+		local element_size = buffer.component_size * buffer.type_elements_count
+		copy_buffer_data(bytedata, buffer, start_offset, element_size, components_stride)
+		start_offset = start_offset + element_size
+	end
+	return get_bytedata_buffer(bytedata)
+end
+
+local function get_attributes(gltf, attributes_array)
+	local attributes = {}
+	for name, attribute_index in pairs(attributes_array) do
+		local buffer = get_buffer(gltf, attribute_index)
+
+		local element_size = buffer.component_size * buffer.type_elements_count
+		local bytedata = love.data.newByteData(element_size)
+		copy_buffer_data(bytedata, buffer, 0, element_size, element_size)
+
 		attributes[name] = get_bytedata_buffer(bytedata)
 	end
 
@@ -360,7 +345,7 @@ local function init_mesh(gltf, mesh)
 			add_vertex_format(vertexformat, attribute_name, buffer, i - 1)
 		end
 
-		local vertices = get_vertices_content(attribute_buffers, components_stride, length)
+		local vertices = get_vertices_data(attribute_buffers, components_stride, length)
 
 		local targets = {}
 		if primitive.targets then
@@ -521,7 +506,6 @@ local function get_data_array(buffer)
 				local value = love.data.unpack("f", buffer.data, pos)
 				table.insert(array, value)
 			end
-
 		end
 	end
 

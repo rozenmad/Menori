@@ -13,11 +13,10 @@ uniform mat4 m_projection;
 #menori_include <skinning_vertex_base.glsl>
 
 void vertexmain() {
-	VaryingTexCoord.xy = VertexTexCoord.xy;
-
       vec3 vert_normal = VertexNormal;
       vec4 vert_position = vec4((m_model * vec4(VertexPosition.xyz, 1.0)).xyz, 1.0);
 
+      #menori_include <texcoord.glsl>
       #menori_include <color.glsl>
       #menori_include <skinning_vertex.glsl>
       #menori_include <normal.glsl>

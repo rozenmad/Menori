@@ -70,6 +70,7 @@ add_shader_chunk(modules .. 'chunks.', 'inverse')
 add_shader_chunk(modules .. 'chunks.', 'normal')
 add_shader_chunk(modules .. 'chunks.', 'skinning_vertex_base')
 add_shader_chunk(modules .. 'chunks.', 'skinning_vertex')
+add_shader_chunk(modules .. 'chunks.', 'texcoord')
 add_shader_chunk(modules .. 'chunks.', 'transpose')
 
 local function include_chunks(code)
@@ -120,8 +121,9 @@ local cache = {
 }
 
 local shader_defines = {
-      VertexColor  = "USE_COLOR",
-      VertexJoints = "USE_SKINNING",
+      VertexColor    = "USE_COLOR",
+      VertexJoints   = "USE_SKINNING",
+      VertexTexCoord = "USE_TEXCOORD",
 }
 
 local shader_program_cache = {}
