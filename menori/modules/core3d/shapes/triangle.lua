@@ -6,21 +6,36 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Triangle shape.
-]]
+--- Triangle shape factory function.
+-- @module Triangle
 
 local modules = (...):match('(.*%menori.modules.)')
 
 local Mesh = require (modules .. 'core3d.mesh')
 local vertexformat = require (modules .. 'core3d.shapes.vertexformat')
 
---- The public constructor.
--- Creates a menori.Mesh with a triangle shape.
+--- Creates a `menori.Mesh` with a triangle shape.
 -- @function Triangle
--- @table or @number v1 Triangle size or first vertex position {x, y, z} (default: 1)
--- @table v2 Second vertex position {x, y, z}
--- @table v3 Third vertex position {x, y, z}
+-- @tparam number|table v1 Triangle size for equilateral triangle (default: 1) or first vertex position {x, y, z}
+-- @tparam table v2 Second vertex position {x, y, z} (required if v1 is a table)
+-- @tparam table v3 Third vertex position {x, y, z} (required if v1 is a table)
+-- @treturn menori.Mesh A new `menori.Mesh` object containing the triangle geometry
+-- @usage
+-- -- Create an equilateral triangle with default size (1)
+-- local triangle = menori.Triangle()
+-- 
+-- -- Create an equilateral triangle with size 2
+-- local triangle = menori.Triangle(2)
+-- 
+-- -- Create a custom triangle with three vertices
+-- local triangle = menori.Triangle(
+--     { 0,  1, 0},  -- first vertex
+--     {-1, -1, 0},  -- second vertex
+--     { 1, -1, 0}   -- third vertex
+-- )
+--
+-- -- Create a ModelNode with triangle
+-- local model_node = menori.ModelNode(triangle)
 local function Triangle(v1, v2, v3)
 	local vertices
 

@@ -6,9 +6,9 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Class for drawing Mesh objects. (Inherited from menori.Node class)
-]]
+--- Class for drawing Mesh objects. (Inherited from menori.Node class)
+-- ModelNode is a specialized node that renders 3D mesh geometry with materials.
+-- It handles transformation matrices, skeletal animation joints, and material properties.
 -- @classmod ModelNode
 -- @see Node
 
@@ -27,9 +27,17 @@ local ModelNode = Node:extend('ModelNode')
 
 local matrix_bytesize = 16*4
 
---- The public constructor.
--- @tparam menori.Mesh mesh object
--- @tparam[opt=Material.default] menori.Material material object. (A new copy will be created for the material)
+----
+-- The public constructor.
+-- @tparam menori.Mesh mesh The mesh object to render
+-- @tparam[opt=Material.default] menori.Material material The material object (a new copy will be created)
+-- @usage
+-- -- Create a ModelNode with a mesh and default material
+-- local model = ModelNode(mesh)
+--
+-- -- Create a ModelNode with a custom material
+-- local material = menori.Material()
+-- local model = ModelNode(mesh, material)
 function ModelNode:init(mesh, material)
 	ModelNode.super.init(self)
       material = material or Material.default
@@ -37,8 +45,6 @@ function ModelNode:init(mesh, material)
       self.material.attributes = mesh.vertexformat
       self.material.shader = self.material.shader or ShaderUtils.create_shader(self.material)
 	self.mesh = mesh
-
-      self.color = ml.vec4(1)
 end
 
 function ModelNode:_ensure_joints_texture()
@@ -50,17 +56,21 @@ function ModelNode:_ensure_joints_texture()
       end
 end
 
---- Clone an object.
--- @treturn menori.ModelNode object
+----
+-- Clone the ModelNode object.
+-- Creates a copy of the ModelNode with the same mesh and a cloned material.
+-- @treturn menori.ModelNode A new cloned ModelNode object
 function ModelNode:clone()
       local t = ModelNode(self.mesh, self.material)
       ModelNode.super.clone(self, t)
       return t
 end
 
---- Calculate AABB by applying the current transformations.
--- @tparam[opt=1] number index The index of the primitive in the mesh.
--- @treturn menori.ml.bound3 object
+----
+-- Calculate axis-aligned bounding box (AABB) with current transformations applied.
+-- Computes the world-space bounding box by transforming the mesh's local bounds
+-- using the current world transformation matrix.
+-- @treturn menori.ml.bound3 The transformed bounding box in world coordinates
 function ModelNode:calculate_aabb()
       local bound = self.mesh.bound
       local min = bound.min
@@ -93,14 +103,18 @@ function ModelNode:calculate_aabb()
       return aabb
 end
 
-function ModelNode:set_color(r, g, b, a)
-      self.color:set(r, g, b, a)
-end
-
---- Draw a ModelNode object on the screen.
--- This function will be called implicitly in the hierarchy when a node is drawn with scene:render_nodes()
--- @tparam menori.Scene scene object that is used when drawing the model
--- @tparam menori.Environment environment object that is used when drawing the model
+----
+-- Draw a ModelNode object.
+-- This function renders the model using the current material and handles skeletal animation
+-- if joints are present. It's called implicitly in the hierarchy when a node is drawn with scene:render_nodes()
+-- @tparam menori.Scene scene The scene object used for rendering context
+-- @tparam menori.Environment environment The environment object providing lighting and other rendering parameters
+-- @usage
+-- -- This is typically called automatically by the scene
+-- scene:render_nodes()
+-- 
+-- -- Or manually for custom rendering
+-- model_node:render(scene, environment)
 function ModelNode:render(scene, environment)
       local shader = self.material.shader
       environment:apply_shader(shader)
@@ -135,21 +149,15 @@ function ModelNode:render(scene, environment)
             shader:send('joints_texture', self.joints_texture)
       end
 
-      local c = self.color
-      love.graphics.setColor(c.x, c.y, c.z, c.w)
       self.mesh:draw(self.material)
 end
 
 return ModelNode
 
----
--- Own copy of the Material that is bound to the model.
--- @field material
+--- Own copy of the Material that is bound to the model.
+-- This is a cloned copy of the material passed to the constructor, allowing
+-- independent modification without affecting the original material.
+-- @field material menori.Material
 
----
--- The menori.Mesh object that is bound to the model.
--- @field mesh
-
----
--- Model color. (Deprecated)
--- @field color
+--- The menori.Mesh object that is bound to the model.
+-- @field mesh menori.Mesh

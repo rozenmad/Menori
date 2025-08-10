@@ -6,9 +6,8 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Module for building scene nodes from a loaded gltf format.
-]]
+
+--- Module for building scene nodes from a loaded gltf format.
 -- @module NodeTreeBuilder
 
 local modules = (...):match('(.*%menori.modules.)')
@@ -92,10 +91,37 @@ local function update_transform_callback(node)
 end
 
 
---- Creates a node tree.
--- @tparam table gltf Data obtained with glTFLoader.load
--- @tparam[opt] function callback Callback Called for each built scene with params (scene, builder).
--- @treturn table An array of scenes, where each scene is a menori.Node object
+--- Creates a node tree from glTF data.
+-- Processes glTF data and builds a complete scene hierarchy with meshes, materials, 
+-- animations, and skinning information.
+-- @tparam table gltf Data obtained with glTFLoader.load containing meshes, materials, nodes, scenes, etc.
+-- @tparam function[opt] callback Optional callback function called for each built scene with params (scene, builder)
+-- @treturn table An array of scenes, where each scene is a menori.Node object representing the root of a scene hierarchy
+-- @usage
+-- -- Basic usage
+-- local gltf_data = menori.glTFLoader.load("model.gltf")
+-- local scenes = menori.NodeTreeBuilder.create(gltf_data)
+-- local main_scene = scenes[1]
+--
+-- -- With callback for post-processing
+-- local scenes = menori.NodeTreeBuilder.create(gltf_data, function(scene, builder)
+--     print("Built scene:", scene.name)
+--     print("Animations available:", #builder.animations)
+--     -- Access builder.meshes, builder.materials, builder.nodes, builder.animations
+--     scene:traverse(function(node, index)
+--         print("Processing node:", node.name)
+--         -- Access extra data from glTF
+--         if node.extras then
+--             print("  - Has extra data:", node.extras)
+--         end
+--     end)
+-- end)
+--
+-- -- The builder table contains:
+-- -- builder.meshes - array of mesh arrays (one per gltf mesh)
+-- -- builder.materials - array of Material objects
+-- -- builder.nodes - array of Node objects
+-- -- builder.animations - array of animation data
 function NodeTreeBuilder.create(gltf, callback)
       local builder = {
             meshes = {},

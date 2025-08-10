@@ -6,9 +6,8 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Capsule shape.
-]]
+--- Capsule shape factory function.
+-- @module Capsule
 
 local modules = (...):match('(.*%menori.modules.)')
 local Mesh = require(modules .. 'core3d.mesh')
@@ -31,14 +30,26 @@ local function add_ring(vertices, radius, ring_radius, y, ny, v_segments, idx, t
       return idx
 end
 
---- The public constructor.
--- Creates a menori.Mesh with a capsule shape.
+--- Creates a `menori.Mesh` with a capsule geometry.
 -- @function Capsule
--- @number radius Capsule radius (default: 0.5)
--- @number height Total capsule height (including hemispheres) (default: 1)
--- @number v_segments Number of vertical segments (default: 8)
--- @number h_segments Number of horizontal segments (default: 16)
--- @number cylinder_segments Number of cylinder segments (default: 1)
+-- @tparam number radius Capsule radius (default: 0.5)
+-- @tparam number height Total capsule height including hemispheres (default: 1)
+-- @tparam number v_segments Number of vertical segments around the capsule (default: 8)
+-- @tparam number h_segments Number of horizontal segments for each hemisphere (default: 16)
+-- @tparam number cylinder_segments Number of segments along the cylinder height (default: 1)
+-- @treturn menori.Mesh A new `menori.Mesh` object containing the capsule geometry
+-- @usage
+-- -- Create a capsule with default parameters
+-- local capsule = menori.Capsule()
+--
+-- -- Create a capsule with radius 1 and height 3
+-- local capsule = menori.Capsule(1, 3)
+--
+-- -- Create a detailed capsule with custom segment counts
+-- local capsule = menori.Capsule(0.5, 2, 12, 24, 4)
+--
+-- -- Create a ModelNode with capsule
+-- local model_node = menori.ModelNode(capsule)
 local function Capsule(radius, height, v_segments, h_segments, cylinder_segments)
       radius = radius or 0.5
       height = height or 1

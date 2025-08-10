@@ -6,21 +6,32 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Sphere shape.
-]]
+--- Sphere shape factory function.
+-- @module Sphere
 
 local modules = (...):match('(.*%menori.modules.)')
 
 local Mesh = require (modules .. 'core3d.mesh')
 local vertexformat = require (modules .. 'core3d.shapes.vertexformat')
 
---- The public constructor.
--- Creates a menori.Mesh with a sphere shape.
+--- Creates a `menori.Mesh` with a sphere geometry.
 -- @function Sphere
--- @number radius Sphere radius (default: 1)
--- @number v_segments Number of vertical segments (default: 16)
--- @number h_segments Number of horizontal segments (default: 32)
+-- @tparam number radius Sphere radius (default: 1)
+-- @tparam number v_segments Number of vertical segments (default: 16)
+-- @tparam number h_segments Number of horizontal segments (default: 32)
+-- @treturn menori.Mesh A new `menori.Mesh` object containing the sphere geometry
+-- @usage
+-- -- Create a sphere with default parameters
+-- local sphere = menori.Sphere()
+-- 
+-- -- Create a sphere with radius 2
+-- local sphere = menori.Sphere(2)
+-- 
+-- -- Create a low-poly sphere with custom segment counts
+-- local sphere = menori.Sphere(1, 4, 8)
+--
+-- -- Create a ModelNode with sphere
+-- local model_node = menori.ModelNode(sphere)
 local function Sphere(radius, v_segments, h_segments)
 	radius = radius or 1
 	v_segments = math.max(3, v_segments or 16)

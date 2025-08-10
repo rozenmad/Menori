@@ -6,9 +6,9 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Perspective camera class.
-]]
+--- Perspective camera class for 3D rendering.
+-- Provides a perspective projection camera with configurable field of view, aspect ratio,
+-- and near/far clipping planes. Supports view transformations and coordinate conversions.
 -- @classmod PerspectiveCamera
 
 local modules = (...):match('(.*%menori.modules.)')
@@ -24,11 +24,12 @@ local vec4 = ml.vec4
 local PerspectiveCamera = class('PerspectiveCamera')
 
 ----
--- The public constructor.
--- @tparam number fov Field of view of the Camera, in degrees.
--- @tparam number aspect The aspect ratio.
--- @tparam number nclip The distance of the near clipping plane from the the Camera.
--- @tparam number fclip The distance of the far clipping plane from the Camera.
+-- Creates a new PerspectiveCamera instance.
+-- Initializes the camera with perspective projection.
+-- @tparam number fov Field of view of the camera, in degrees (default: 60)
+-- @tparam number aspect The aspect ratio (width/height) (default: 1.6666667)
+-- @tparam number nclip The distance of the near clipping plane from the camera (default: 0.1)
+-- @tparam number fclip The distance of the far clipping plane from the camera (default: 2048.0)
 function PerspectiveCamera:init(fov, aspect, nclip, fclip)
 	fov = fov or 60
 	aspect = aspect or 1.6666667
@@ -45,18 +46,20 @@ function PerspectiveCamera:init(fov, aspect, nclip, fclip)
 end
 
 ----
--- Updating the view matrix.
+-- Updates the view matrix based on current eye, center, and up vectors.
+-- Call this method after modifying the camera position or orientation.
 function PerspectiveCamera:update_view_matrix()
 	self.m_view:identity()
 	self.m_view:look_at_RH(self.eye, self.center, self.up)
 end
 
 ----
--- Get a ray going from camera through screen point.
--- @tparam number x screen position x
--- @tparam number y screen position y
--- @tparam table viewport (optional) viewport rectangle (x, y, w, h)
--- @treturn table that containing {position = vec3, direction = vec3}
+-- Generates a ray from the camera through a screen point.
+-- Useful for ray casting, mouse picking, and collision detection.
+-- @tparam number x Screen position x coordinate
+-- @tparam number y Screen position y coordinate
+-- @tparam table viewport Viewport rectangle {x, y, width, height}
+-- @treturn table Ray data containing {position = vec3, direction = vec3}
 function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
 	viewport = viewport or {app:get_viewport()}
 
@@ -69,12 +72,13 @@ function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
 end
 
 ----
--- Transform position from world space into screen space.
--- @tparam number x
--- screen position x or vec3
--- @tparam number y screen position y
--- @tparam number z screen position z
--- @treturn vec2 object
+-- Transforms a position from world space into screen space.
+-- Converts 3D world coordinates to 2D screen coordinates.
+-- @tparam number|table x World position x coordinate, or vec3 object containing world position
+-- @tparam number y World position y coordinate (ignored if x is vec3)
+-- @tparam number z World position z coordinate (ignored if x is vec3)
+-- @tparam table viewport Screen viewport {x, y, width, height}
+-- @treturn vec2 Screen space coordinates
 function PerspectiveCamera:world_to_screen_point(x, y, z, viewport)
 	if type(x) == 'table' then
 		viewport = y
@@ -107,34 +111,29 @@ function PerspectiveCamera:world_to_screen_point(x, y, z, viewport)
 end
 
 ----
--- Get direction.
--- @treturn vec3 object
+-- Gets the normalized direction vector the camera is facing.
+-- @treturn vec3 Normalized direction vector from eye to center
 function PerspectiveCamera:get_direction()
 	return (self.center - self.eye):normalize()
 end
 
 return PerspectiveCamera
 
----
--- Projection matrix.
+--- Projection matrix for perspective transformation.
 -- @tfield mat4 m_projection
 
----
--- Inverse projection matrix.
+--- Inverse projection matrix.
 -- @tfield mat4 m_inv_projection
 
----
--- View matrix.
+--- View matrix computed from eye, center, and up vectors.
+-- Updated by calling update_view_matrix().
 -- @tfield[readonly] mat4 m_view
 
----
--- Position where the camera is looking at.
+--- Position where the camera is looking at.
 -- @tfield vec3 center
 
----
--- Position of the camera.
+--- Position of the camera in world space.
 -- @tfield vec3 eye
 
----
--- Normalized up vector, how the camera is oriented.
+--- Normalized up vector defining camera orientation.
 -- @tfield vec3 up

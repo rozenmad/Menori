@@ -6,9 +6,9 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Class for initializing and storing mesh vertices and material.
-]]
+--- Mesh class for initializing and storing mesh vertices.
+-- Provides functionality for creating, manipulating, and rendering 3D mesh geometry
+-- with support for custom vertex formats and transformations.
 -- @classmod Mesh
 
 local modules = (...):match('(.*%menori.modules.)')
@@ -66,7 +66,8 @@ local function calculate_bound(lg_mesh_obj)
       )
 end
 
---- Generate indices for quadrilateral primitives.
+----
+-- Generate indices for quadrilateral primitives.
 -- @static
 -- @tparam number count Count of vertices
 -- @tparam table template Template list that is used to generate indices in a specific sequence
@@ -86,10 +87,13 @@ function Mesh.generate_indices(count, template)
       return indices
 end
 
---- Get the attribute index from the vertex format.
+----
+-- Gets the attribute index from the vertex format.
+-- Searches for a specific vertex attribute by name in the vertex format table.
 -- @static
--- @tparam string attribute The attribute to be found.
--- @tparam table format Vertex format table.
+-- @tparam string attribute The attribute name to find (e.g., "VertexPosition", "VertexNormal")
+-- @tparam table format Vertex format table containing attribute definitions
+-- @treturn number|nil The index of the attribute, or nil if not found
 function Mesh.get_attribute_index(attribute, format)
       for i, v in ipairs(format) do
             if v[1] == attribute or v.name == attribute then
@@ -98,6 +102,13 @@ function Mesh.get_attribute_index(attribute, format)
       end
 end
 
+----
+-- Assigns location indices to vertex format attributes.
+-- Ensures each vertex attribute has a unique location for shader binding.
+-- @static
+-- @tparam table vertexformat Vertex format table to process
+-- @tparam table used_locations Optional table of already used location indices
+-- @treturn table,table Modified vertex format and updated used locations table
 function Mesh.set_locations(vertexformat, used_locations)
       used_locations = used_locations and utils.copy(used_locations) or {}
       vertexformat = utils.copy(vertexformat)
@@ -121,9 +132,17 @@ function Mesh.set_locations(vertexformat, used_locations)
       return vertexformat, used_locations
 end
 
---- The public constructor.
--- Create a menori.Mesh from vertices.
--- @tparam table primitive that containing {vertices=, mode=, vertexformat=, indices=}
+----
+-- The public constructor.
+-- Initializes a mesh with vertices, optional indices, vertex format, etc.
+-- @tparam table primitive Table containing mesh data with following fields:
+-- @tparam table primitive.vertices Array of vertex data
+-- @tparam[opt] table primitive.vertexformat Vertex format specification (uses default if not provided)
+-- @tparam[opt] table primitive.indices Index array for vertex mapping
+-- @tparam[opt] string primitive.mode Drawing mode (default: "triangles")
+-- @tparam[opt] number primitive.count Vertex count override
+-- @tparam[opt] number primitive.material_index Material index
+-- @tparam[opt] number primitive.indices_tsize Index data type size
 function Mesh:init(primitive)
       local count = primitive.count or #primitive.vertices
       assert(count > 0)
@@ -150,8 +169,9 @@ function Mesh:init(primitive)
       self.used_locations = used_locations
 end
 
---- Draw a Mesh object on the screen.
--- @tparam menori.Material material The Material to be used when drawing the mesh.
+----
+-- Renders the mesh using the specified material.
+-- @tparam menori.Material material The material to use when drawing the mesh
 function Mesh:draw(material)
       material:send_to(material.shader)
 
@@ -174,14 +194,26 @@ function Mesh:draw(material)
       lg.draw(mesh)
 end
 
+----
+-- Gets the bounding box of the mesh.
+-- @treturn ml.bound3 Axis-aligned bounding box
 function Mesh:get_bound()
       return self.bound
 end
 
+----
+-- Gets the total number of vertices in the mesh.
+-- @treturn number Vertex count
 function Mesh:get_vertex_count()
       return self.lg_mesh:getVertexCount()
 end
 
+----
+-- Gets a specific vertex attribute value by name and vertex index.
+-- @tparam string name Attribute name (e.g., "VertexPosition", "VertexNormal")
+-- @tparam number index Vertex index
+-- @tparam[opt] table out Output table to store results
+-- @treturn table Table containing the attribute values
 function Mesh:get_vertex_attribute(name, index, out)
       local mesh = self.lg_mesh
       local attribute_index = Mesh.get_attribute_index(name, mesh:getVertexFormat())
@@ -193,6 +225,10 @@ function Mesh:get_vertex_attribute(name, index, out)
       return out
 end
 
+----
+-- Gets all triangles from the mesh with transformation applied.
+-- @tparam ml.mat4 matrix Transformation matrix to apply to vertices
+-- @treturn table Array of triangles in format {{{x, y, z}, {x, y, z}, {x, y, z}}, ...}
 function Mesh:get_triangles_transform(matrix)
       local triangles = {}
       local mesh = self.lg_mesh
@@ -216,15 +252,18 @@ function Mesh:get_triangles_transform(matrix)
       return triangles
 end
 
---- Create a cached array of triangles from the mesh vertices and return it.
--- @treturn table Triangles { {{x, y, z}, {x, y, z}, {x, y, z}}, ...}
+----
+-- Creates a cached array of triangles from the mesh vertices.
+-- @treturn table Array of triangles in format {{{x, y, z}, {x, y, z}, {x, y, z}}, ...}
 function Mesh:get_triangles()
       return self:get_triangles_transform(mat4())
 end
 
---- Get an array of all mesh vertices.
--- @tparam[opt=1] int iprimitive The index of the primitive.
--- @treturn table The table in the form of {vertex, ...} where each vertex is a table in the form of {attributecomponent, ...}.
+----
+-- Gets an array of mesh vertices as an array.
+-- @tparam[opt=1] number start Starting vertex index
+-- @tparam[opt] number count Number of vertices to retrieve (defaults to all remaining)
+-- @treturn table Array of vertices, where each vertex is a table of attribute components
 function Mesh:get_vertices(start, count)
       local mesh = self.lg_mesh
       start = start or 1
@@ -237,6 +276,12 @@ function Mesh:get_vertices(start, count)
       return vertices
 end
 
+----
+-- Gets transformed vertex positions as an array.
+-- @tparam ml.mat4 matrix Transformation matrix to apply
+-- @tparam[opt=1] number start Starting vertex index
+-- @tparam[opt] number count Number of vertices to retrieve  (defaults to all remaining)
+-- @treturn table Array of vertices, where each vertex is a table of attribute components
 function Mesh:get_vertices_transform(matrix, start, count)
       local mesh = self.lg_mesh
       start = start or 1
@@ -251,19 +296,24 @@ function Mesh:get_vertices_transform(matrix, start, count)
       return vertices
 end
 
+--- Gets the vertex index mapping of the mesh.
+-- @treturn table|nil Index array if present, nil otherwise
 function Mesh:get_vertex_map()
       return self.lg_mesh:getVertexMap()
 end
 
---- Get an array of all mesh vertices.
--- @tparam table vertices The table in the form of {vertex, ...} where each vertex is a table in the form of {attributecomponent, ...}.
--- @tparam number startvertex The vertex from which the insertion will start.
+----
+-- Updates mesh vertices with new data.
+-- @tparam table vertices Array of vertices, where each vertex is a table of attribute components
+-- @tparam number startvertex The vertex index from which insertion will start
 function Mesh:set_vertices(vertices, startvertex)
       self.lg_mesh:setVertices(vertices, startvertex)
 end
 
---- Apply the transformation matrix to the mesh vertices.
--- @tparam ml.mat4 matrix
+----
+-- Applies a transformation matrix to all mesh vertex positions.
+-- Permanently modifies the mesh geometry by transforming all vertex positions.
+-- @tparam ml.mat4 matrix Transformation matrix to apply to vertex positions
 function Mesh:apply_matrix(matrix)
       local temp_v3 = vec3(0, 0, 0)
 
@@ -281,3 +331,21 @@ function Mesh:apply_matrix(matrix)
 end
 
 return Mesh
+
+--- Underlying LOVE Mesh object used for rendering.
+-- @tfield love.Mesh lg_mesh
+
+--- Vertex format specification used by this mesh.
+-- @tfield table vertexformat
+
+--- Material index.
+-- @tfield number material_index
+
+--- Cached bounding box of the mesh geometry.
+-- @tfield ml.bound3 bound
+
+--- Location mapping table for vertex attributes.
+-- @tfield table used_locations
+
+--- Index of the VertexPosition attribute in the vertex format.
+-- @tfield number vertex_attribute_index

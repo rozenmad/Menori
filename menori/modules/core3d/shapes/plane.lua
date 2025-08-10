@@ -6,25 +6,36 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Plane shape.
-]]
+--- Plane shape factory function.
+-- @module Plane
 
 local modules = (...):match('(.*%menori.modules.)')
 
 local Mesh = require (modules .. 'core3d.mesh')
 local vertexformat = require (modules .. 'core3d.shapes.vertexformat')
 
---- The public constructor.
--- Creates a menori.Mesh with a plane shape.
+--- Creates a `menori.Mesh` with a plane geometry.
 -- @function Plane
--- @number width Plane width (default: 2)
--- @number height Plane height (default: 2)
--- @number width_segments Number of width segments (default: 1)
--- @number height_segments Number of height segments (default: 1)
+-- @tparam number width Width of the plane along the X-axis.
+-- @tparam number height Height of the plane along the Y-axis.
+-- @tparam number v_segments Number of vertical subdivisions (parallel to the Y-axis).
+-- @tparam number h_segments Number of horizontal subdivisions (parallel to the X-axis).
+-- @treturn menori.Mesh A new `menori.Mesh` object representing the generated plane.
+-- @usage
+-- -- Create a default 1x1 plane with no subdivisions
+-- local plane = menori.Plane()
+--
+-- -- Create a 4x3 plane with no subdivisions
+-- local plane = menori.Plane(4, 3)
+--
+-- -- Create a 1x1 plane subdivided into a 10x10 grid
+-- local plane = menori.Plane(1, 1, 10, 10)
+--
+-- -- Create a ModelNode with plane
+-- local model_node = menori.ModelNode(plane)
 local function Plane(width, height, v_segments, h_segments)
-	width = width or 2
-	height = height or 2
+	width = width or 1
+	height = height or 1
 	v_segments = v_segments or 1
 	h_segments = h_segments or 1
 

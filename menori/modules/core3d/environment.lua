@@ -6,10 +6,10 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-An environment is a class that sends information about the current settings of the environment
-(such as ambient color, fog, light sources, camera transformation matrices) etc to the shader.
-]]
+--- Environment management class for 3D rendering.
+-- An environment class that manages and sends information about the current rendering settings
+-- (such as ambient color, fog, light sources, camera transformation matrices) to shaders.
+-- Extends UniformList to provide automatic uniform management and light source handling.
 -- @classmod Environment
 
 local modules = (...):match('(.*%menori.modules.)')
@@ -25,7 +25,8 @@ local temp_int_view_m = ml.mat4()
 
 ----
 -- The public constructor.
--- @param camera Camera that will be associated with this environment.
+-- Initializes the environment with a camera.
+-- @tparam menori.Camera|menori.PerspectiveCamera camera Camera that will be associated with this environment
 function Environment:init(camera)
 	Environment.super.init(self)
 
@@ -36,9 +37,10 @@ function Environment:init(camera)
 end
 
 ----
--- Add light source.
--- @tparam strign uniform_name Name of uniform used in the shader
--- @tparam menori.UniformList light Light source object
+-- Adds a light source to the environment.
+-- Light sources are grouped by uniform name and sent to shaders as arrays.
+-- @tparam string uniform_name Name of uniform used in the shader (e.g., "directional_lights", "point_lights")
+-- @tparam menori.UniformList light Light source object that implements UniformList
 function Environment:add_light(uniform_name, light)
 	local t = self.lights[uniform_name] or {}
 	self.lights[uniform_name] = t
@@ -46,10 +48,10 @@ function Environment:add_light(uniform_name, light)
 end
 
 ----
--- Send all the environment uniforms to the shader.
--- This function can be used when creating your own display objects, or for shading technique.
--- This method is called automatically when the environment is used in scene:render_nodes()
--- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
+-- Sends all environment uniforms to the specified shader.
+-- This function can be used when creating custom display objects or shading techniques.
+-- This method is called automatically when the environment is used in scene:render_nodes().
+-- @tparam love.Shader shader LOVE Shader object to send uniforms to
 function Environment:send_uniforms_to(shader)
 	local camera = self.camera
 	self:send_to(shader)
@@ -74,10 +76,10 @@ function Environment:send_uniforms_to(shader)
 end
 
 ----
--- Set a Shader as current pixel effect or vertex shaders.
--- All drawing operations until the next apply will be drawn using the Shader object specified.
--- This method is called automatically when the environment is used in scene:render_nodes()
--- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
+-- Applies the shader and sends all environment uniforms to it.
+-- Sets the shader as current and ensures all uniforms are transmitted.
+-- This method is called automatically when the environment is used in scene:render_nodes().
+-- @tparam love.Shader shader LOVE Shader object to apply and configure
 function Environment:apply_shader(shader)
 	--if self._shader_object_cache ~= shader then
 		love.graphics.setShader(shader)
@@ -88,10 +90,12 @@ function Environment:apply_shader(shader)
 end
 
 ----
--- Send light sources uniforms to the shader.
--- This function can be used when creating your own display objects, or for shading technique.
--- This method is called automatically when the environment is used in scene:render_nodes()
--- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
+-- Sends light source uniforms to the shader.
+-- Transmits all registered light sources as shader uniform arrays with count variables.
+-- For each light group, sends a "_count" uniform and individual light data.
+-- This function can be used when creating custom display objects or shading techniques.
+-- This method is called automatically when the environment is used in scene:render_nodes().
+-- @tparam love.Shader shader LOVE Shader object to send light uniforms to
 function Environment:send_light_sources_to(shader)
 	for k, v in pairs(self.lights) do
 		utils.noexcept_send_uniform(shader, k .. '_count', #v)
@@ -103,14 +107,14 @@ end
 
 return Environment
 
----
--- Camera object associated with the current Environment.
--- @field camera (menori.Camera or menori.PerspectiveCamera)
+--- Camera object associated with the current Environment.
+-- @tfield menori.Camera|menori.PerspectiveCamera camera
 
----
--- UniformList object. Uniforms in the list are automatically sent to the shader, which will be used to display objects with this environment.
+--- Inherited UniformList functionality.
+-- Uniforms in the list are automatically sent to the shader when rendering
+-- objects with this environment.
 -- @tfield menori.UniformList uniform_list
 
----
--- List of light sources.
+--- Collection of light sources organized by uniform name.
+-- Each key maps to an array of light objects that implement UniformList.
 -- @tfield table lights

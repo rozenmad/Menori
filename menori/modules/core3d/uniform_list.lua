@@ -9,7 +9,7 @@
 --[[--
 A class that stores a list of Uniform variables and implements their sending to the shader.
 ]]
---- @classmod UniformList
+-- @classmod UniformList
 
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')

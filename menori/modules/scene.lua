@@ -6,12 +6,10 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Base class of scenes.
-It contains methods for recursively drawing and updating nodes.
-You need to inherit from the Scene class to create your own scene object.
-]]
---- @classmod Scene
+--- Base class of scenes.
+-- It contains methods for recursively drawing and updating nodes.
+-- You need to inherit from the Scene class to create your own scene object.
+-- @classmod Scene
 
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')
@@ -46,13 +44,34 @@ function scene:init()
       self.transparent_flag = false
 end
 
---- Node render function.
--- @tparam menori.Node node
--- @tparam menori.Environment environment
--- @tparam[opt] table renderstates
--- @tparam[opt] function filter The callback function.
--- @usage renderstates = { canvas, ..., clear = true, colors = {color, ...} }
--- @usage function default_filter(node, scene, environment) node:render(scene, environment) end
+----
+-- Node render function.
+-- Recursively renders all nodes in the hierarchy with proper sorting and filtering.
+-- @tparam menori.Node node Node to start rendering from
+-- @tparam menori.Environment environment Rendering environment containing camera and other settings
+-- @tparam table[opt] renderstates Table containing render states and canvas configuration
+-- @tparam function[opt] filter Callback function for custom node filtering during render
+-- @treturn number Number of rendered drawable nodes
+-- @usage
+-- -- Basic usage with default parameters
+-- local count = scene:render_nodes(root_node, environment)
+--
+-- -- With custom render states
+-- local renderstates = {
+--     canvas1, canvas2,      -- canvases to render to
+--     clear = true,          -- clear before rendering
+--     colors = {color, ...}, -- clear color
+--     node_sort_comp = custom_sort_function
+-- }
+-- scene:render_nodes(root_node, environment, renderstates)
+--
+-- -- With custom filter function
+-- local function custom_filter(node, scene, environment)
+--     if node.visible then
+--         node:render(scene, environment)
+--     end
+-- end
+-- scene:render_nodes(root_node, environment, nil, custom_filter)
 function scene:render_nodes(node, environment, renderstates, filter)
       assert(node, "in function 'scene:render_nodes' node does not exist.")
 
@@ -120,7 +139,8 @@ function scene:render_nodes(node, environment, renderstates, filter)
       return count
 end
 
---- Node update function.
+----
+-- Node update function.
 --@tparam Node node
 --@tparam Environment environment
 function scene:update_nodes(node, environment)

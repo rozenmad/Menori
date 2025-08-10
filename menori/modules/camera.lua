@@ -160,8 +160,6 @@ end
 --- Set camera bounding box.
 -- @tparam number w bounding box width.
 -- @tparam number h bounding box height.
--- @tparam number pvx normalized center x inside bounding box.
--- @tparam number pvy normalized center y inside bounding box.
 function camera:set_bounding_box(w, h)
       self.bound_w = w
       self.bound_h = h

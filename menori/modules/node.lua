@@ -6,12 +6,10 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Node is the base class of all display objects.
-Node object can be assigned as a child of another node, resulting in a tree arrangement.
-You need to inherit from the Node class to create your own display object.
-]]
---- @classmod Node
+--- Node is the base class of all display objects.
+-- Node object can be assigned as a child of another node, resulting in a tree arrangement.
+-- You need to inherit from the Node class to create your own display object.
+-- @classmod Node
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -29,7 +27,7 @@ local Node = class('Node')
 Node.layer = 0
 
 --- The public constructor.
--- @string[opt='node'] name Node name.
+-- @tparam string[opt='node'] name Node name
 function Node:init(name)
       self.children = {}
       self.parent = nil
@@ -52,8 +50,9 @@ function Node:init(name)
       self.scale    = vec3(1)
 end
 
---- Clone an object.
--- @treturn menori.Node object
+--- Clone a node object.
+-- @tparam menori.Node[opt] new_object Target object to copy data to
+-- @treturn menori.Node Cloned node object
 function Node:clone(new_object)
       new_object = new_object or Node()
       new_object.parent = self.parent
@@ -78,36 +77,38 @@ function Node:clone(new_object)
       return new_object
 end
 
---- Set Node local position.
--- @tparam number x
--- position x or vec3
--- @tparam number y position y
--- @tparam number z position z
+----
+-- Set Node local position.
+-- @tparam number|vec3 x Position x coordinate or vec3 position vector
+-- @tparam number[opt] y Position y coordinate
+-- @tparam number[opt] z Position z coordinate
 function Node:set_position(x, y, z)
       self._transform_flag = true
       self.position:set(x, y, z)
 end
 
---- Set Node local rotation.
--- @tparam ml.quat q Rotation quaternion.
+----
+-- Set Node local rotation.
+-- @tparam quat q Rotation quaternion.
 function Node:set_rotation(q)
       self._transform_flag = true
       self.rotation = q
 end
 
---- Set Node local scale.
--- @tparam number sx
--- scale sx or vec3
--- @tparam number sy scale y
--- @tparam number sz scale z
+----
+-- Set Node local scale.
+-- @tparam number|vec3 sx Scale x factor or vec3 scale vector
+-- @tparam number[opt] sy Scale y factor
+-- @tparam number[opt] sz Scale z factor
 function Node:set_scale(sx, sy, sz)
       self._transform_flag = true
       self.scale:set(sx, sy, sz)
 end
 
---- Get world space position of the Node.
--- @tparam[opt] vec3 retvalue
--- @treturn vec3 object
+----
+-- Get world space position of the Node.
+-- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @treturn vec3 World space position vector
 function Node:get_world_position(retvalue)
       self:recursive_update_transform()
       local p = retvalue or vec3()
@@ -115,9 +116,10 @@ function Node:get_world_position(retvalue)
       return p
 end
 
---- Get world space rotation of the Node.
--- @tparam[opt] quat retvalue
--- @treturn quat object
+----
+-- Get world space rotation of the Node.
+-- @tparam quat[opt] retvalue Optional quat object to store the result
+-- @treturn quat World space rotation quaternion
 function Node:get_world_rotation(retvalue)
       self:recursive_update_transform()
       local q = retvalue or quat()
@@ -125,9 +127,10 @@ function Node:get_world_rotation(retvalue)
       return q
 end
 
---- The world space scale of the Node.
--- @tparam[opt] vec3 retvalue
--- @return vec3 object
+----
+-- Get world space scale of the Node.
+-- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @treturn vec3 World space scale vector
 function Node:get_world_scale(retvalue)
       self:recursive_update_transform()
       local s = retvalue or vec3()
@@ -135,25 +138,28 @@ function Node:get_world_scale(retvalue)
       return s
 end
 
---- The red axis of the transform in world space.
--- @tparam[opt] vec3 retvalue
--- @return vec3 object
+----
+-- Get the right axis of the transform in world space.
+-- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @treturn vec3 Right axis vector (red axis)
 function Node:right(retvalue)
       self:recursive_update_transform()
       return (retvalue or vec3()):set(self.world_matrix[1], self.world_matrix[5], self.world_matrix[ 9])
 end
 
---- The green axis of the transform in world space.
--- @tparam[opt] vec3 retvalue
--- @return vec3 object
+----
+-- Get the up axis of the transform in world space.
+-- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @treturn vec3 Up axis vector (green axis)
 function Node:up(retvalue)
       self:recursive_update_transform()
       return (retvalue or vec3()):set(self.world_matrix[2], self.world_matrix[6], self.world_matrix[10])
 end
 
---- The blue axis of the transform in world space.
--- @tparam[opt] vec3 retvalue
--- @treturn vec3 object
+----
+-- Get the forward axis of the transform in world space.
+-- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @treturn vec3 Forward axis vector (blue axis)
 function Node:forward(retvalue)
       self:recursive_update_transform()
       return (retvalue or vec3()):set(self.world_matrix[3], self.world_matrix[7], self.world_matrix[11])
@@ -181,8 +187,9 @@ function Node:_recursive_get_aabb(t)
       return t
 end
 
---- Calculate the largest AABB in down the hierarchy of nodes.
--- @treturn bound3 object
+----
+-- Calculate the largest AABB down the hierarchy of nodes.
+-- @treturn bound3 Axis-aligned bounding box
 function Node:get_aabb()
       return self:_recursive_get_aabb(bound3(
             vec3(math.huge), vec3(-math.huge)
@@ -197,14 +204,17 @@ local function _recursive_update_transform(node)
       end
 end
 
---- Update all transform up the hierarchy to the root node.
--- @tparam[opt] bool force Forced update transformations of all nodes up to the root node.
+----
+-- Update all transforms up the hierarchy to the root node.
+-- @tparam bool[opt] force Force update transformations of all nodes up to the root node
 function Node:recursive_update_transform(force)
       _transform_force = force
       return _recursive_update_transform(self)
 end
 
---- Update transform only for this node.
+----
+-- Update transform only for this node.
+-- @tparam mat4[opt] parent_world_matrix Parent world matrix to use for transformation
 function Node:update_transform(parent_world_matrix)
       local local_matrix = self.local_matrix
       local world_matrix = self.world_matrix
@@ -228,15 +238,17 @@ function Node:update_transform(parent_world_matrix)
       end
 end
 
---- Get child Node by index.
--- @tparam number index
--- @treturn menori.Node object
+----
+-- Get child Node by index.
+-- @tparam number index Child index
+-- @treturn menori.Node Child node object
 function Node:get_child_by_index(index)
       assert(index <= #self.children and index > 0, 'child index out of range')
       return self.children[index]
 end
 
---- Remove all children from this node.
+----
+-- Remove all children from this node.
 function Node:remove_children()
       for i = #self.children, 1, -1 do
             self.children[i].parent = nil
@@ -244,9 +256,10 @@ function Node:remove_children()
       end
 end
 
---- Attach child node to this node.
--- @tparam menori.Node object
--- @treturn menori.Node object
+----
+-- Attach child node(s) to this node.
+-- @tparam menori.Node ... One or more node objects to attach
+-- @treturn menori.Node ... The attached node object(s)
 function Node:attach(...)
       for i, node in ipairs({...}) do
             self.children[#self.children + 1] = node
@@ -256,8 +269,9 @@ function Node:attach(...)
       return ...
 end
 
---- Detach child node.
--- @tparam menori.Node child
+----
+-- Detach child node from this node.
+-- @tparam menori.Node child Child node to detach
 function Node:detach(child)
       for i, v in ipairs(self.children) do
             if v == child then
@@ -265,7 +279,6 @@ function Node:detach(child)
             end
       end
 end
-
 
 function _find(children, t, i)
       for _, v in ipairs(children) do
@@ -279,10 +292,11 @@ function _find(children, t, i)
       end
 end
 
---- Find a child node by name.
--- @tparam string name If name contains a '/' character it will access
--- the Node in the hierarchy like a path name.
--- @treturn menori.Node The found child or nil
+----
+-- Find a child node by name.
+-- @tparam string name Node name. If name contains a '/' character it will access
+-- the Node in the hierarchy like a path name
+-- @treturn menori.Node|nil The found child node or nil if not found
 function Node:find(name)
       local t = {}
       for v in name:gmatch("([^/]+)") do
@@ -291,8 +305,10 @@ function Node:find(name)
       return _find(self.children, t, 1)
 end
 
---- Recursively traverse all nodes.
+----
+-- Recursively traverse all nodes.
 -- @tparam function callback Function that is called for every child node with params (child, index)
+-- @tparam number[opt] _index Internal parameter for recursion
 function Node:traverse(callback, _index)
       callback(self, _index or 1)
       local children = self.children
@@ -303,7 +319,8 @@ function Node:traverse(callback, _index)
       end
 end
 
---- Detach this node from the parent node.
+----
+-- Detach this node from its parent node.
 function Node:detach_from_parent()
       local parent = self.parent
       if parent then
@@ -318,8 +335,10 @@ function Node:detach_from_parent()
       end
 end
 
---- Get the topmost Node in the hierarchy.
--- @tparam[opt] menori.Node upto the Node where the hierarchy recursion will stop if it exist
+----
+-- Get the topmost Node in the hierarchy.
+-- @tparam menori.Node[opt] upto The Node where the hierarchy recursion will stop if it exists
+-- @treturn menori.Node Root node of the hierarchy
 function Node:get_root_node(upto)
       if self.parent and self.parent ~= upto then
             return self.parent:get_root_node(upto)
@@ -327,12 +346,17 @@ function Node:get_root_node(upto)
       return self
 end
 
---- The number of children attached to this node.
+----
+-- Get the number of children attached to this node.
+-- @treturn number Number of children
 function Node:children_count()
       return #self.children
 end
 
---- Recursively print all the children attached to this node.
+----
+-- Recursively print all the children attached to this node.
+-- @tparam menori.Node[opt] node Node to start printing from (defaults to self)
+-- @tparam string[opt] tabs Indentation string for formatting
 function Node:debug_print(node, tabs)
       node = node or self
       tabs = tabs or ''

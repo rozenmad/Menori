@@ -10,7 +10,7 @@
 Singleton object.
 The main class for managing scenes.
 ]]
---- @classmod SceneManager
+-- @classmod SceneManager
 
 local modules = (...):match('(.*%menori.modules.)')
 local class = require (modules .. 'libs.class')

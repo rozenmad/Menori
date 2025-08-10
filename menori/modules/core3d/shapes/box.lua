@@ -6,9 +6,8 @@
 -------------------------------------------------------------------------------
 ]]
 
---[[--
-Box shape.
-]]
+--- Box shape factory function.
+-- @module Box
 
 local modules = (...):match('(.*%menori.modules.)')
 
@@ -54,15 +53,28 @@ local function addPlane(vertices, indices, vertex_count, u_dir, v_dir, w_dir, u_
 	return vertex_count + (u_seg + 1) * (v_seg + 1)
 end
 
---- The public constructor.
--- Creates a menori.Mesh with a box shape.
+--- Creates a `menori.Mesh` with a box geometry.
+-- A box is a rectangular cuboid with configurable dimensions and subdivision segments.
 -- @function Box
--- @number width Box width (default: 1)
--- @number height Box height (default: 1)
--- @number depth Box depth (default: 1)
--- @number w_segments Number of width segments (default: 1)
--- @number h_segments Number of height segments (default: 1)
--- @number d_segments Number of depth segments (default: 1)
+-- @tparam number width Box width along the X-axis (default: 1)
+-- @tparam number height Box height along the Y-axis (default: 1)
+-- @tparam number depth Box depth along the Z-axis (default: 1)
+-- @tparam number w_segments Number of segments along the width (default: 1)
+-- @tparam number h_segments Number of segments along the height (default: 1)
+-- @tparam number d_segments Number of segments along the depth (default: 1)
+-- @treturn menori.Mesh A new `menori.Mesh` object containing the box geometry
+-- @usage
+-- -- Create a unit cube with default parameters
+-- local box = menori.Box()
+--
+-- -- Create a box with custom dimensions
+-- local box = menori.Box(2, 3, 1)
+--
+-- -- Create a subdivided box
+-- local box = menori.Box(1, 1, 1, 4, 4, 4)
+--
+-- -- Create a ModelNode with box
+-- local model_node = menori.ModelNode(box)
 local function Box(width, height, depth, w_segments, h_segments, d_segments)
 	width = width or 1
 	height = height or 1
