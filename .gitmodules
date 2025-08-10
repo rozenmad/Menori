@@ -1,3 +1,0 @@
-[submodule "libs/rxijson"]
-	path = libs/rxijson
-	url = https://github.com/rxi/json.lua

@@ -2,7 +2,7 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2022
+	2025
 -------------------------------------------------------------------------------
 	this module based on CPML - Cirno's Perfect Math Library
 	-- @author Colby Klein

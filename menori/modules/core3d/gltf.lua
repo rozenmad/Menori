@@ -2,7 +2,7 @@
 -------------------------------------------------------------------------------
 	Menori
 	@author rozenmad
-	2023
+	2025
 -------------------------------------------------------------------------------
 ]]
 
@@ -13,7 +13,7 @@ Separated GLTF (.gltf+.bin+textures) or (.gltf+textures) is supported now.
 -- @module glTFLoader
 
 local modules = (...):match('(.*%menori.modules.)')
-local json = require 'libs.rxijson.json'
+local json = require 'libs.json'
 local ffi  = require (modules .. 'libs.ffi')
 
 local function getFFIPointer(data)

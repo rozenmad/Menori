@@ -2,7 +2,7 @@
 -------------------------------------------------------------------------------
       Menori
       @author rozenmad
-      2022
+      2025
 -------------------------------------------------------------------------------
 ]]
 
@@ -121,24 +121,10 @@ function Mesh.set_locations(vertexformat, used_locations)
       return vertexformat, used_locations
 end
 
---- Create a menori.Mesh from vertices.
--- @static
--- @tparam table vertices that contains vertex data. See [LOVE Mesh](https://love2d.org/wiki/love.graphics.newMesh)
--- @tparam[opt] table opt that containing {mode=, vertexformat=, indices=, texture=}
-function Mesh.from_primitive(vertices, opt)
-      return Mesh {
-            mode = opt.mode,
-            vertices = vertices,
-            vertexformat = opt.vertexformat,
-            indices = opt.indices,
-            texture = opt.texture,
-      }
-end
-
 --- The public constructor.
--- @tparam table primitives List of primitives
--- @tparam[opt] Image texture
-function Mesh:init(primitive, texture)
+-- Create a menori.Mesh from vertices.
+-- @tparam table primitive that containing {vertices=, mode=, vertexformat=, indices=}
+function Mesh:init(primitive)
       local count = primitive.count or #primitive.vertices
       assert(count > 0)
 
@@ -154,9 +140,6 @@ function Mesh:init(primitive, texture)
                   idatatype = primitive.indices_tsize <= 2 and 'uint16' or 'uint32'
             end
             lg_mesh:setVertexMap(primitive.indices, idatatype)
-      end
-      if texture then
-            lg_mesh:setTexture(texture)
       end
 
       self.vertex_attribute_index = Mesh.get_attribute_index('VertexPosition', lg_mesh:getVertexFormat())

@@ -2,7 +2,7 @@
 -------------------------------------------------------------------------------
       Menori
       @author rozenmad
-      2022
+      2025
 -------------------------------------------------------------------------------
 ]]
 
@@ -11,7 +11,7 @@ Helper class for loading aseprite spritesheet animations. Also it contains other
 ]]
 -- @module SpriteLoader
 
-local json = require 'libs.rxijson.json'
+local json = require 'libs.json'
 
 local modules     = (...):gsub('%.[^%.]+$', '') .. "."
 local Sprite      = require(modules .. 'sprite')
