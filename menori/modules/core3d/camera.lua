@@ -59,7 +59,7 @@ end
 -- @tparam number x Screen position x coordinate
 -- @tparam number y Screen position y coordinate
 -- @tparam table viewport Viewport rectangle {x, y, width, height}
--- @treturn table Ray data containing {position = vec3, direction = vec3}
+-- @treturn table Ray data containing {origin = vec3, direction = vec3}
 function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
 	viewport = viewport or {app:get_viewport()}
 
@@ -67,7 +67,7 @@ function PerspectiveCamera:screen_point_to_ray(x, y, viewport)
 	local c_pos = self.eye:clone()
 	local direction = vec3():sub(m_pos, self.eye):normalize()
 	return {
-		position = c_pos, direction = direction
+		origin = c_pos, direction = direction
 	}
 end
 

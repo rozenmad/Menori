@@ -41,6 +41,9 @@ local matrix_bytesize = 16*4
 function ModelNode:init(mesh, material)
 	ModelNode.super.init(self)
       material = material or Material.default
+
+      self.is_model_node = true
+
       self.material = material:clone()
       self.material.attributes = mesh.vertexformat
       self.material.shader = self.material.shader or ShaderUtils.create_shader(self.material)
@@ -70,7 +73,7 @@ end
 -- Calculate axis-aligned bounding box (AABB) with current transformations applied.
 -- Computes the world-space bounding box by transforming the mesh's local bounds
 -- using the current world transformation matrix.
--- @treturn menori.ml.bound3 The transformed bounding box in world coordinates
+-- @treturn bound3 The transformed bounding box in world coordinates
 function ModelNode:calculate_aabb()
       local bound = self.mesh.bound
       local min = bound.min
@@ -154,10 +157,12 @@ end
 
 return ModelNode
 
---- Own copy of the Material that is bound to the model.
+---
+-- Own copy of the Material that is bound to the model.
 -- This is a cloned copy of the material passed to the constructor, allowing
 -- independent modification without affecting the original material.
 -- @field material menori.Material
 
---- The menori.Mesh object that is bound to the model.
+---
+-- The menori.Mesh object that is bound to the model.
 -- @field mesh menori.Mesh

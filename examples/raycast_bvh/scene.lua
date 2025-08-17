@@ -65,8 +65,8 @@ function scene:init()
 	local scenes = menori.NodeTreeBuilder.create(gltf, function (scene, builder)
 		-- Create BVH for each mesh node.
 		scene:traverse(function (node)
-			if node.mesh then
-				node.bvh = ml.bvh(node.mesh, 10, node.world_matrix)
+			if node.is_model_node then
+				node.bvh = ml.bvh(node, 10)
 				debug_bvh(node.bvh, self.aabb_root)
 			end
 		end)
@@ -163,7 +163,7 @@ function scene:update()
 
 	-- Sorted by distance.
 	table.sort(intersect_list, function (a, b)
-		return a.distance < b.distance
+		return a.t < b.t
 	end)
 
 	-- Set the position of the box at the intersection point of the ray and the mesh.

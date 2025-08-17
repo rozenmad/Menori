@@ -31,12 +31,14 @@ local function locate_uniform(list, name, constant, type)
 	return uniform
 end
 
---- The public constructor.
+----
+-- The public constructor.
 function UniformList:init()
 	self.list = {}
 end
 
---- Set one or more any type values into uniform list.
+----
+-- Set one or more any type values into uniform list.
 -- @tparam string name
 -- @param ... See shader:send(name, ...)
 function UniformList:set(name, ...)
@@ -44,7 +46,8 @@ function UniformList:set(name, ...)
 	uniform.value = {...}
 end
 
---- Set one or more color values into uniform list.
+----
+-- Set one or more color values into uniform list.
 -- @tparam string name
 -- @param ... See shader:sendColor(name, ...)
 function UniformList:set_color(name, ...)
@@ -52,36 +55,41 @@ function UniformList:set_color(name, ...)
 	uniform.value = {...}
 end
 
---- Set matrix object into uniform list.
+----
+-- Set matrix object into uniform list.
 -- @tparam string name
--- @tparam ml.mat4 object Matrix of the menori.ml
+-- @tparam mat4 object Matrix of the menori.ml
 function UniformList:set_matrix(name, object)
 	local uniform = locate_uniform(self.list, name, false, 3)
 	uniform.value = object
 end
 
---- Set vector object into uniform list.
+----
+-- Set vector object into uniform list.
 -- @tparam string name
--- @tparam ml.vec object Vector of the menori.ml.
+-- @tparam vec2|vec3|vec4 object Vector of the menori.ml.
 function UniformList:set_vector(name, object)
 	local uniform = locate_uniform(self.list, name, false, 4)
 	uniform.value = object
 end
 
---- Get Uniform variable from list.
+----
+-- Get Uniform variable from list.
 -- @tparam string name
 -- @treturn table {[constant]=boolean,[type]=number,[value]=table}
 function UniformList:get(name)
 	return self.list[name]
 end
 
---- Remove Uniform variable from list.
+---
+-- Remove Uniform variable from list.
 -- @tparam string name
 function UniformList:remove(name)
 	self.list[name] = nil
 end
 
---- Send all Uniform values from the list to the Shader.
+----
+-- Send all Uniform values from the list to the Shader.
 -- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
 -- @param[opt=''] concat_str A string to be added before each Uniform name.
 function UniformList:send_to(shader, concat_str)

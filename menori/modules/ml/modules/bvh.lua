@@ -18,6 +18,7 @@
 local modules   = (...):gsub('%.[^%.]+$', '') .. "."
 local intersect = require (modules .. 'intersect')
 local vec3      = require (modules .. 'vec3')
+local mat4      = require (modules .. 'mat4')
 local bound3    = require (modules .. 'bound3')
 local EPSILON   = 1e-6
 local BVH       = {}
@@ -29,13 +30,14 @@ BVHNode.__index = BVHNode
 
 local temp_vec = vec3()
 
-local function new(mesh, max_triangles_per_node, matrix)
+local function new(model_node, max_triangles_per_node)
 	local tree = setmetatable({}, BVH)
 
-	tree._mesh = mesh
+	tree.model_node = model_node
+	local mesh = model_node.mesh
+	local matrix = model_node.world_matrix
 	tree._mesh_indices = mesh:get_vertex_map()
 	tree._max_triangles_per_node = max_triangles_per_node or 10
-	tree._matrix = matrix
 
 	local p1x, p1y, p1z
 	local p2x, p2y, p2z
@@ -102,12 +104,22 @@ local function new(mesh, max_triangles_per_node, matrix)
 	return tree
 end
 
+local function from_mesh(mesh, max_triangles_per_node, matrix)
+	local t = {
+		mesh = mesh,
+		world_matrix = matrix or mat4()
+	}
+	return new(t, max_triangles_per_node)
+end
+
 function BVH:_extract_triangle(bbox)
 	local triangle = {}
 	local vertex_indices = bbox.vertex_indices
+	local mesh = self.model_node.mesh
+	local matrix = self.model_node.world_matrix
 	for i = 1, 3 do
-		self._mesh:get_vertex_attribute("VertexPosition", vertex_indices[i], triangle)
-		self._matrix:multiply_vec3_array(triangle[i], triangle[i])
+		mesh:get_vertex_attribute("VertexPosition", vertex_indices[i], triangle)
+		matrix:multiply_vec3_array(triangle[i], triangle[i])
 	end
 	return triangle
 end
@@ -149,7 +161,7 @@ function BVH:intersect_ray(ray, backfaceCulling)
 	while #nodes > 0 do
 		local node = table.remove(nodes)
 
-		if BVH.intersectNodeBox(ray.position, inv_ray_direction, node.extents) then
+		if BVH.intersectNodeBox(ray.origin, inv_ray_direction, node.extents) then
 			if node._node0 then
 				nodes[#nodes + 1] = node._node0
 			end
@@ -170,7 +182,7 @@ function BVH:intersect_ray(ray, backfaceCulling)
 	end
 
 	table.sort(intersecting, function (a, b)
-		return a.distance < b.distance
+		return a.t < b.t
 	end)
 
 	return intersecting
@@ -425,6 +437,9 @@ Node = setmetatable({}, {
 	__call = function(_, ...) return new_node(...) end
 })
 
-return setmetatable({}, {
+return setmetatable({
+	from_mesh = from_mesh,
+	new = new,
+}, {
 	__call = function(_, ...) return new(...) end
 })

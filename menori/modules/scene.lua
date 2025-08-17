@@ -49,8 +49,8 @@ end
 -- Recursively renders all nodes in the hierarchy with proper sorting and filtering.
 -- @tparam menori.Node node Node to start rendering from
 -- @tparam menori.Environment environment Rendering environment containing camera and other settings
--- @tparam table[opt] renderstates Table containing render states and canvas configuration
--- @tparam function[opt] filter Callback function for custom node filtering during render
+-- @tparam[opt] table renderstates Table containing render states and canvas configuration
+-- @tparam[opt] function filter Callback function for custom node filtering during render
 -- @treturn number Number of rendered drawable nodes
 -- @usage
 -- -- Basic usage with default parameters

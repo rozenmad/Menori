@@ -54,7 +54,7 @@ function Material:init(opt)
       Material.super.init(self)
       opt = opt or {}
 
-      self.name = opt.name
+      self.name = opt.name or 'base_material'
       self.attributes = {}
 
       self.depth_test = true
@@ -78,39 +78,50 @@ Material.default = Material("Default")
 Material.default:set('baseColor', {1, 1, 1, 1})
 return Material
 
---- Material name.
--- @field name string
+--- 
+-- Material name.
+-- @string[opt="base_material"] name
 
---- The shader object that is bound to the material.
--- @field shader love.Shader
+--- 
+-- The shader object that is bound to the material.
+-- @tfield love.Shader shader
 
---- Depth test flag.
--- @field depth_test boolean (default: true)
+--- 
+-- Depth test flag.
+-- @bool[opt=true] depth_test
 
---- Depth comparison function used for depth testing.
+--- 
+-- Depth comparison function used for depth testing.
 -- Possible values: 'never', 'less', 'equal', 'lequal', 'greater', 'notequal', 'gequal', 'always'
--- @field depth_func string (default: 'less')
+-- @string[opt="less"] depth_func
 
---- Sets whether wireframe lines will be used when drawing.
--- @field wireframe boolean (default: false)
+--- 
+-- Sets whether wireframe lines will be used when drawing.
+-- @bool[opt=false] wireframe
 
---- Sets whether back-facing triangles in a Mesh are culled.
+--- 
+-- Sets whether back-facing triangles in a Mesh are culled.
 -- Possible values: 'back', 'front', 'none'
--- @field mesh_cull_mode string (default: 'back')
+-- @string[opt="back"] mesh_cull_mode
 
---- Alpha blending mode for transparency.
+--- 
+-- Alpha blending mode for transparency.
 -- Possible values: 'OPAQUE', 'MASK', 'BLEND'
--- @field alpha_mode string (default: 'OPAQUE')
+-- @string[opt="OPAQUE"] alpha_mode
 
---- The main texture to be used with mesh:setTexture().
+--- 
+-- The main texture to be used with mesh:setTexture().
 -- Corresponds to uniform Image MainTex in shader.
--- @field main_texture love.Texture
+-- @tfield love.Texture main_texture
 
---- Vertex shader source code.
--- @field shader_vertcode string
+--- 
+-- Vertex shader source code.
+-- @string shader_vertcode
 
---- Fragment shader source code.
--- @field shader_fragcode string
+--- 
+-- Fragment shader source code.
+-- @string shader_fragcode
 
---- Material attributes table.
--- @field attributes table
+--- 
+-- Material attributes table.
+-- @tfield table attributes

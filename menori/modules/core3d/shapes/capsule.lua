@@ -13,7 +13,7 @@ local modules = (...):match('(.*%menori.modules.)')
 local Mesh = require(modules .. 'core3d.mesh')
 local vertexformat = require(modules .. 'core3d.shapes.vertexformat')
 
-local function add_ring(vertices, radius, ring_radius, y, ny, v_segments, idx, total_height)
+local function add_ring(vertices, radius, ring_radius, y, ny, v_segments, idx, capsule_height)
       for s = 0, v_segments do
             local theta = 2 * math.pi * s / v_segments
             local x = ring_radius * math.cos(theta)
@@ -22,7 +22,7 @@ local function add_ring(vertices, radius, ring_radius, y, ny, v_segments, idx, t
             local nz = z / radius
 
             local u = (s / v_segments)
-            local v = 1 - ((y + total_height / 2) / total_height)
+            local v = 1 - ((y + capsule_height / 2) / capsule_height)
 
             vertices[idx] = {x, y, z, nx, ny, nz, 1, 1, 1, 1, u, v}
             idx = idx + 1
@@ -33,7 +33,7 @@ end
 --- Creates a `menori.Mesh` with a capsule geometry.
 -- @function Capsule
 -- @tparam number radius Capsule radius (default: 0.5)
--- @tparam number height Total capsule height including hemispheres (default: 1)
+-- @tparam number height Height of the cylindrical section only (default: 1)
 -- @tparam number v_segments Number of vertical segments around the capsule (default: 8)
 -- @tparam number h_segments Number of horizontal segments for each hemisphere (default: 16)
 -- @tparam number cylinder_segments Number of segments along the cylinder height (default: 1)
@@ -57,7 +57,8 @@ local function Capsule(radius, height, v_segments, h_segments, cylinder_segments
       h_segments = math.max(1, h_segments or 16)
       cylinder_segments = math.max(1, cylinder_segments or 1)
 
-      local half_cyl_height = (height - 2 * radius) / 2
+      local capsule_height = height + radius * 2
+      local half_cyl_height = height / 2
       if half_cyl_height < 0 then
             error("Capsule height must be >= 2 * radius")
       end
@@ -70,13 +71,13 @@ local function Capsule(radius, height, v_segments, h_segments, cylinder_segments
             local ring_r = radius * math.cos(phi)
             local y = radius * math.sin(phi) + half_cyl_height
             local ny = math.sin(phi)
-            idx = add_ring(vertices, radius, ring_r, y, ny, v_segments, idx, height)
+            idx = add_ring(vertices, radius, ring_r, y, ny, v_segments, idx, capsule_height)
       end
 
       for r = 0, cylinder_segments do
             local t = r / cylinder_segments
             local y = half_cyl_height - t * (2 * half_cyl_height)
-            idx = add_ring(vertices, radius, radius, y, 0, v_segments, idx, height)
+            idx = add_ring(vertices, radius, radius, y, 0, v_segments, idx, capsule_height)
       end
 
       for r = 1, h_segments do
@@ -84,7 +85,7 @@ local function Capsule(radius, height, v_segments, h_segments, cylinder_segments
             local ring_r = radius * math.cos(phi)
             local y = -radius * math.sin(phi) - half_cyl_height
             local ny = -math.sin(phi)
-            idx = add_ring(vertices, radius, ring_r, y, ny, v_segments, idx, height)
+            idx = add_ring(vertices, radius, ring_r, y, ny, v_segments, idx, capsule_height)
       end
 
       local stride = v_segments + 1

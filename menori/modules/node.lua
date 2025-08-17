@@ -26,8 +26,9 @@ local _transform_force
 local Node = class('Node')
 Node.layer = 0
 
---- The public constructor.
--- @tparam string[opt='node'] name Node name
+----
+-- The public constructor.
+-- @tparam[opt='node'] string name Node name
 function Node:init(name)
       self.children = {}
       self.parent = nil
@@ -50,8 +51,9 @@ function Node:init(name)
       self.scale    = vec3(1)
 end
 
---- Clone a node object.
--- @tparam menori.Node[opt] new_object Target object to copy data to
+----
+-- Clone a node object.
+-- @tparam[opt] menori.Node new_object Target object to copy data to
 -- @treturn menori.Node Cloned node object
 function Node:clone(new_object)
       new_object = new_object or Node()
@@ -80,8 +82,8 @@ end
 ----
 -- Set Node local position.
 -- @tparam number|vec3 x Position x coordinate or vec3 position vector
--- @tparam number[opt] y Position y coordinate
--- @tparam number[opt] z Position z coordinate
+-- @tparam[opt] number y Position y coordinate
+-- @tparam[opt] number z Position z coordinate
 function Node:set_position(x, y, z)
       self._transform_flag = true
       self.position:set(x, y, z)
@@ -92,14 +94,14 @@ end
 -- @tparam quat q Rotation quaternion.
 function Node:set_rotation(q)
       self._transform_flag = true
-      self.rotation = q
+      self.rotation:set(q)
 end
 
 ----
 -- Set Node local scale.
 -- @tparam number|vec3 sx Scale x factor or vec3 scale vector
--- @tparam number[opt] sy Scale y factor
--- @tparam number[opt] sz Scale z factor
+-- @tparam[opt] number sy Scale y factor
+-- @tparam[opt] number sz Scale z factor
 function Node:set_scale(sx, sy, sz)
       self._transform_flag = true
       self.scale:set(sx, sy, sz)
@@ -107,7 +109,7 @@ end
 
 ----
 -- Get world space position of the Node.
--- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @tparam[opt] vec3 retvalue Optional vec3 object to store the result
 -- @treturn vec3 World space position vector
 function Node:get_world_position(retvalue)
       self:recursive_update_transform()
@@ -118,7 +120,7 @@ end
 
 ----
 -- Get world space rotation of the Node.
--- @tparam quat[opt] retvalue Optional quat object to store the result
+-- @tparam[opt] quat retvalue Optional quat object to store the result
 -- @treturn quat World space rotation quaternion
 function Node:get_world_rotation(retvalue)
       self:recursive_update_transform()
@@ -129,7 +131,7 @@ end
 
 ----
 -- Get world space scale of the Node.
--- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @tparam[opt] vec3 retvalue Optional vec3 object to store the result
 -- @treturn vec3 World space scale vector
 function Node:get_world_scale(retvalue)
       self:recursive_update_transform()
@@ -140,29 +142,29 @@ end
 
 ----
 -- Get the right axis of the transform in world space.
--- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @tparam[opt] vec3 retvalue Optional vec3 object to store the result
 -- @treturn vec3 Right axis vector (red axis)
 function Node:right(retvalue)
       self:recursive_update_transform()
-      return (retvalue or vec3()):set(self.world_matrix[1], self.world_matrix[5], self.world_matrix[ 9])
+      return (retvalue or vec3()):set( self.world_matrix[1], self.world_matrix[5],-self.world_matrix[ 9])
 end
 
 ----
 -- Get the up axis of the transform in world space.
--- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @tparam[opt] vec3 retvalue Optional vec3 object to store the result
 -- @treturn vec3 Up axis vector (green axis)
 function Node:up(retvalue)
       self:recursive_update_transform()
-      return (retvalue or vec3()):set(self.world_matrix[2], self.world_matrix[6], self.world_matrix[10])
+      return (retvalue or vec3()):set( self.world_matrix[2], self.world_matrix[6], self.world_matrix[10])
 end
 
 ----
 -- Get the forward axis of the transform in world space.
--- @tparam vec3[opt] retvalue Optional vec3 object to store the result
+-- @tparam[opt] vec3 retvalue Optional vec3 object to store the result
 -- @treturn vec3 Forward axis vector (blue axis)
 function Node:forward(retvalue)
       self:recursive_update_transform()
-      return (retvalue or vec3()):set(self.world_matrix[3], self.world_matrix[7], self.world_matrix[11])
+      return (retvalue or vec3()):set(-self.world_matrix[3], self.world_matrix[7], self.world_matrix[11])
 end
 
 function Node:_recursive_get_aabb(t)
@@ -206,7 +208,7 @@ end
 
 ----
 -- Update all transforms up the hierarchy to the root node.
--- @tparam bool[opt] force Force update transformations of all nodes up to the root node
+-- @tparam[opt] bool force Force update transformations of all nodes up to the root node
 function Node:recursive_update_transform(force)
       _transform_force = force
       return _recursive_update_transform(self)
@@ -214,7 +216,7 @@ end
 
 ----
 -- Update transform only for this node.
--- @tparam mat4[opt] parent_world_matrix Parent world matrix to use for transformation
+-- @tparam[opt] mat4 parent_world_matrix Parent world matrix to use for transformation
 function Node:update_transform(parent_world_matrix)
       local local_matrix = self.local_matrix
       local world_matrix = self.world_matrix
@@ -308,7 +310,7 @@ end
 ----
 -- Recursively traverse all nodes.
 -- @tparam function callback Function that is called for every child node with params (child, index)
--- @tparam number[opt] _index Internal parameter for recursion
+-- @tparam[opt] number _index Internal parameter for recursion
 function Node:traverse(callback, _index)
       callback(self, _index or 1)
       local children = self.children
@@ -337,7 +339,7 @@ end
 
 ----
 -- Get the topmost Node in the hierarchy.
--- @tparam menori.Node[opt] upto The Node where the hierarchy recursion will stop if it exists
+-- @tparam[opt] menori.Node upto The Node where the hierarchy recursion will stop if it exists
 -- @treturn menori.Node Root node of the hierarchy
 function Node:get_root_node(upto)
       if self.parent and self.parent ~= upto then
@@ -355,8 +357,8 @@ end
 
 ----
 -- Recursively print all the children attached to this node.
--- @tparam menori.Node[opt] node Node to start printing from (defaults to self)
--- @tparam string[opt] tabs Indentation string for formatting
+-- @tparam[opt] menori.Node node Node to start printing from (defaults to self)
+-- @tparam[opt] string tabs Indentation string for formatting
 function Node:debug_print(node, tabs)
       node = node or self
       tabs = tabs or ''
@@ -399,11 +401,11 @@ return Node
 
 ---
 -- Local transformation matrix
--- @field[readonly] local_matrix
+-- @field[readonly] mat4 local_matrix
 
 ---
 -- World transformation matrix based on world (parent) factors.
--- @field[readonly] world_matrix
+-- @field[readonly] mat4 world_matrix
 
 ---
 -- Local position.

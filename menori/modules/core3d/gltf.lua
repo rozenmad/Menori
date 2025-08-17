@@ -313,8 +313,9 @@ local function init_mesh(gltf, mesh)
 		for k, v in pairs(primitive.attributes) do
 			local attribute, index = k:match('(%w+)_*(.*)')
 			index = tonumber(index) or 0
+			local order = (attribute_order[attribute] or 100)
 			table.insert(attributes, {
-				attribute = k, order = attribute_order[attribute] + index, value = v
+				attribute = k, order = order + index, value = v
 			})
 		end
 

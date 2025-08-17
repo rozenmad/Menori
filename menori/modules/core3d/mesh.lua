@@ -196,7 +196,7 @@ end
 
 ----
 -- Gets the bounding box of the mesh.
--- @treturn ml.bound3 Axis-aligned bounding box
+-- @treturn bound3 Axis-aligned bounding box
 function Mesh:get_bound()
       return self.bound
 end
@@ -227,7 +227,7 @@ end
 
 ----
 -- Gets all triangles from the mesh with transformation applied.
--- @tparam ml.mat4 matrix Transformation matrix to apply to vertices
+-- @tparam mat4 matrix Transformation matrix to apply to vertices
 -- @treturn table Array of triangles in format {{{x, y, z}, {x, y, z}, {x, y, z}}, ...}
 function Mesh:get_triangles_transform(matrix)
       local triangles = {}
@@ -278,7 +278,7 @@ end
 
 ----
 -- Gets transformed vertex positions as an array.
--- @tparam ml.mat4 matrix Transformation matrix to apply
+-- @tparam mat4 matrix Transformation matrix to apply
 -- @tparam[opt=1] number start Starting vertex index
 -- @tparam[opt] number count Number of vertices to retrieve  (defaults to all remaining)
 -- @treturn table Array of vertices, where each vertex is a table of attribute components
@@ -313,7 +313,7 @@ end
 ----
 -- Applies a transformation matrix to all mesh vertex positions.
 -- Permanently modifies the mesh geometry by transforming all vertex positions.
--- @tparam ml.mat4 matrix Transformation matrix to apply to vertex positions
+-- @tparam mat4 matrix Transformation matrix to apply to vertex positions
 function Mesh:apply_matrix(matrix)
       local temp_v3 = vec3(0, 0, 0)
 
@@ -332,20 +332,26 @@ end
 
 return Mesh
 
---- Underlying LOVE Mesh object used for rendering.
+--- 
+-- Underlying LOVE Mesh object used for rendering.
 -- @tfield love.Mesh lg_mesh
 
---- Vertex format specification used by this mesh.
+---
+-- Vertex format specification used by this mesh.
 -- @tfield table vertexformat
 
---- Material index.
+---
+-- Material index.
 -- @tfield number material_index
 
---- Cached bounding box of the mesh geometry.
--- @tfield ml.bound3 bound
+---
+-- Cached bounding box of the mesh geometry.
+-- @tfield bound3 bound
 
---- Location mapping table for vertex attributes.
+---
+-- Location mapping table for vertex attributes.
 -- @tfield table used_locations
 
---- Index of the VertexPosition attribute in the vertex format.
+---
+-- Index of the VertexPosition attribute in the vertex format.
 -- @tfield number vertex_attribute_index
