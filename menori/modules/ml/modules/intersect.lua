@@ -8,11 +8,9 @@
 	https://github.com/excessive/cpml/blob/master/modules/intersect.lua
 --]]
 
---[[--
-Intersect.
-menori.ml.intersect
-]]
--- @classmod intersect
+--- Intersect.
+-- menori.ml.intersect
+-- @module intersect
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3 = require (modules .. "vec3")
@@ -281,7 +279,7 @@ intersect.__index = intersect
 
 ----
 -- Tests intersection between a ray and a triangle.
--- @tparam table ray Ray definition {origin=vec3|table, dir=vec3|table}
+-- @tparam table ray Ray definition {origin=vec3|table, direction=vec3|table}
 -- @tparam table triangle Triangle vertices {vec3|table, vec3|table, vec3|table}
 -- @tparam[opt=nil] boolean backface_cull If true, ignores back-facing triangles
 -- @treturn table|false Intersection data {point=vec3, normal=vec3, t=number} or false if no hit
@@ -724,20 +722,12 @@ function intersect.capsule_capsule(a0, a1, a_radius, b0, b1, b_radius)
       local bx0, by0, bz0 = vt_unpack(b0)
       local bx1, by1, bz1 = vt_unpack(b1)
 
-      local s, t = closest_point_segment_segment_scalar(
+      local pax, pay, paz, pbx, pby, pbz = closest_point_segment_segment_scalar(
             ax0, ay0, az0,
             ax1, ay1, az1,
             bx0, by0, bz0,
             bx1, by1, bz1
       )
-
-      local pax = ax0 + (ax1 - ax0) * s
-      local pay = ay0 + (ay1 - ay0) * s
-      local paz = az0 + (az1 - az0) * s
-
-      local pbx = bx0 + (bx1 - bx0) * t
-      local pby = by0 + (by1 - by0) * t
-      local pbz = bz0 + (bz1 - bz0) * t
 
       local vx, vy, vz = pbx - pax, pby - pay, pbz - paz
       local dist2 = vx*vx + vy*vy + vz*vz

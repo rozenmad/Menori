@@ -6,6 +6,7 @@ local example_list = {
 	{ title = "Basic Lighting", path = "examples.basic_lighting.scene" },
 	{ title = "SSAO", path = "examples.SSAO.scene" },
 	{ title = "RaycastBVH", path = "examples.raycast_bvh.scene" },
+	{ title = "CollisionDemo", path = "examples.сollision_demo.scene" },
 }
 for _, v in ipairs(example_list) do
 	local Scene = require(v.path)
@@ -29,8 +30,8 @@ function love.draw()
 	love.graphics.setColor(1, 0.5, 0, 1)
 	love.graphics.print(love.timer.getFPS(), 10, 10)
 	love.graphics.setColor(1, 1, 1, 1)
-	local prev_str = "Prev scene (press A)"
-	local next_str = "Next scene (press D)"
+	local prev_str = "Prev scene (press Q)"
+	local next_str = "Next scene (press E)"
 	love.graphics.print("Example: " .. example_list[scene_iterator].title, 10, 25)
 	love.graphics.print(prev_str, 10, h-30)
 	love.graphics.print(next_str, w - font:getWidth(next_str) - 10, h-30)
@@ -58,12 +59,12 @@ function love.wheelmoved(...)
 	menori.app:handle_event('wheelmoved', ...)
 end
 function love.keyreleased(key, ...)
-	if key == 'a' then
+	if key == 'q' then
 		scene_iterator = scene_iterator - 1
 		if scene_iterator < 1 then scene_iterator = #example_list end
 		set_scene()
 	end
-	if key == 'd' then
+	if key == 'e' then
 		scene_iterator = scene_iterator + 1
 		if scene_iterator > #example_list then scene_iterator = 1 end
 		set_scene()

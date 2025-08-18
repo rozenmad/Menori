@@ -184,7 +184,7 @@ function scene:render()
 		love.graphics.print(v.text .. (v.boolean and "On" or "Off"), 10, y)
 		y = y + 15
 	end
-	love.graphics.print("SSAO radius (hold Q or E): " .. self.ssao_radius, 10, y)
+	love.graphics.print("SSAO radius (hold A or D): " .. self.ssao_radius, 10, y)
 	love.graphics.print("Hold the right mouse button to rotate the camera.", 10, y+30)
 	love.graphics.print("Use mousewheel for zoom.", 10, y+45)
 	love.graphics.setColor(1, 1, 1, 1)
@@ -214,10 +214,10 @@ end
 function scene:update(dt)
 	self:update_nodes(self.root_node, self.environment)
 
-	if love.keyboard.isDown('q') then
+	if love.keyboard.isDown('a') then
 		self.ssao_radius = self.ssao_radius + 0.001
 	end
-	if love.keyboard.isDown('e') and self.ssao_radius > 0.001 then
+	if love.keyboard.isDown('d') and self.ssao_radius > 0.001 then
 		self.ssao_radius = self.ssao_radius - 0.001
 	end
 
