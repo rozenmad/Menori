@@ -39,7 +39,7 @@ function love.load()
 				node.material:set("baseColor", {0.85, 0.95, 1.0, 1})
 			end
 		end)
-      end)
+	end)
 
 	root_node:attach(scenes[1])
 end
@@ -52,7 +52,7 @@ function love.draw()
 		node_sort_comp = menori.Scene.alpha_mode_comp
 	})
 
-      love.graphics.print(love.timer.getFPS(), 10, 10)
+	love.graphics.print(love.timer.getFPS(), 10, 10)
 end
 
 function love.update(dt)

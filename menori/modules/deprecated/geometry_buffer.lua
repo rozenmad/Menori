@@ -1,8 +1,8 @@
 --[[
 -------------------------------------------------------------------------------
-      Menori
-      @author rozenmad
-      2025
+	Menori
+	@author rozenmad
+	2025
 -------------------------------------------------------------------------------
 ]]
 
@@ -14,44 +14,44 @@ local ffi  = require (modules .. 'libs.ffi')
 local geometry_buffer = class('GeometryBuffer')
 
 local data_format = {
-      ["float"] = 4,
-      ["floatvec2"] = 8,
-      ["floatvec3"] = 12,
-      ["floatvec4"] = 16,
-      ["floatmat2x2"] = 16,
-      ["floatmat2x3"] = 24,
-      ["floatmat2x4"] = 32,
-      ["floatmat3x2"] = 24,
-      ["floatmat3x3"] = 36,
-      ["floatmat3x4"] = 48,
-      ["floatmat4x2"] = 32,
-      ["floatmat4x3"] = 48,
-      ["floatmat4x4"] = 64,
-      ["int32"] = 4,
-      ["int32vec2"] = 8,
-      ["int32vec3"] = 12,
-      ["int32vec4"] = 16,
-      ["uint32"] = 4,
-      ["uint32vec2"] = 8,
-      ["uint32vec3"] = 12,
-      ["uint32vec4"] = 16,
-      ["snorm8vec4"] = 4,
-      ["unorm8vec4"] = 4,
-      ["int8vec4"] = 4,
-      ["uint8vec4"] = 4,
-      ["snorm16vec2"] = 4,
-      ["snorm16vec4"] = 8,
-      ["unorm16vec2"] = 4,
-      ["unorm16vec4"] = 8,
-      ["int16vec2"] = 4,
-      ["int16vec4"] = 8,
-      ["uint16"] = 2,
-      ["uint16vec2"] = 4,
-      ["uint16vec4"] = 8,
-      ["bool"] = 4,
-      ["boolvec2"] = 8,
-      ["boolvec3"] = 12,
-      ["boolvec4"] = 16,
+	["float"] = 4,
+	["floatvec2"] = 8,
+	["floatvec3"] = 12,
+	["floatvec4"] = 16,
+	["floatmat2x2"] = 16,
+	["floatmat2x3"] = 24,
+	["floatmat2x4"] = 32,
+	["floatmat3x2"] = 24,
+	["floatmat3x3"] = 36,
+	["floatmat3x4"] = 48,
+	["floatmat4x2"] = 32,
+	["floatmat4x3"] = 48,
+	["floatmat4x4"] = 64,
+	["int32"] = 4,
+	["int32vec2"] = 8,
+	["int32vec3"] = 12,
+	["int32vec4"] = 16,
+	["uint32"] = 4,
+	["uint32vec2"] = 8,
+	["uint32vec3"] = 12,
+	["uint32vec4"] = 16,
+	["snorm8vec4"] = 4,
+	["unorm8vec4"] = 4,
+	["int8vec4"] = 4,
+	["uint8vec4"] = 4,
+	["snorm16vec2"] = 4,
+	["snorm16vec4"] = 8,
+	["unorm16vec2"] = 4,
+	["unorm16vec4"] = 8,
+	["int16vec2"] = 4,
+	["int16vec4"] = 8,
+	["uint16"] = 2,
+	["uint16vec2"] = 4,
+	["uint16vec4"] = 8,
+	["bool"] = 4,
+	["boolvec2"] = 8,
+	["boolvec3"] = 12,
+	["boolvec4"] = 16,
 }
 
 function geometry_buffer:init(size, format, mode)

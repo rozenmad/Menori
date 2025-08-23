@@ -1,5 +1,5 @@
 #ifdef USE_SKINNING
-      uniform sampler2D joints_texture;
+	uniform sampler2D joints_texture;
 
 	mat4 getBoneMatrix(const in float i) {
 		int size = textureSize(joints_texture, 0).x;

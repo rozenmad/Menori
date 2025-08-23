@@ -295,7 +295,7 @@ end
 --- to euler angles
 function quat_mt:to_euler(order)
 	order = order or 'XYZ'
-      local m = mat4():rotate(self)
+	local m = mat4():rotate(self)
 	local e = m.e
 	local m11, m12, m13 = e[1], e[5], e[ 9]
 	local m21, m22, m23 = e[2], e[6], e[10]

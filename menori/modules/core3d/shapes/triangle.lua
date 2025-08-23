@@ -40,7 +40,7 @@ local function Triangle(v1, v2, v3)
 	local vertices
 
 	if type(v1) ~= 'table' then
-            local size = v1 or 1
+		local size = v1 or 1
 		local h = size * math.sqrt(3) / 2
 		vertices = {
 			{      0, h * 2/3, 0, 0, 0, 1, 1, 1, 1, 1, 0.5, 0},
@@ -68,7 +68,7 @@ local function Triangle(v1, v2, v3)
 	local indices = {1, 2, 3}
 
 	return Mesh {
-            vertices = vertices,
+		vertices = vertices,
 		vertexformat = vertexformat,
 		indices = indices
 	}

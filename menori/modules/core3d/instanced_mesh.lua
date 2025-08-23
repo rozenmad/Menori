@@ -23,7 +23,7 @@ local lg = love.graphics
 local InstancedMesh = class('InstancedMesh')
 
 local default_format = {
-      {name = "InstancePosition", format = "floatvec3"},
+	{name = "InstancePosition", format = "floatvec3"},
 }
 
 ----

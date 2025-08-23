@@ -13,16 +13,16 @@ uniform mat4 m_projection;
 #menori_include <skinning_vertex_base.glsl>
 
 void vertexmain() {
-      vec3 vert_normal = VertexNormal;
-      vec4 vert_position = vec4((m_model * vec4(VertexPosition.xyz, 1.0)).xyz, 1.0);
+	vec3 vert_normal = VertexNormal;
+	vec4 vert_position = vec4((m_model * vec4(VertexPosition.xyz, 1.0)).xyz, 1.0);
 
-      #menori_include <texcoord.glsl>
-      #menori_include <color.glsl>
-      #menori_include <skinning_vertex.glsl>
-      #menori_include <normal.glsl>
+	#menori_include <texcoord.glsl>
+	#menori_include <color.glsl>
+	#menori_include <skinning_vertex.glsl>
+	#menori_include <normal.glsl>
 
-      normal = vert_normal;
+	normal = vert_normal;
 
-      frag_position = m_view * vert_position;
-      gl_Position = m_projection * frag_position;
+	frag_position = m_view * vert_position;
+	gl_Position = m_projection * frag_position;
 }

@@ -72,10 +72,10 @@ local function get_sampler_data(accumulator, sampler, target)
 end
 
 local target_path = {
-      rotation = Node.set_rotation,
-      translation = Node.set_position,
-      scale = Node.set_scale,
-      weights = function ()
+	rotation = Node.set_rotation,
+	translation = Node.set_position,
+	scale = Node.set_scale,
+	weights = function ()
 	end
 }
 

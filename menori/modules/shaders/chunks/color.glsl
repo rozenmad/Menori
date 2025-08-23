@@ -1,5 +1,5 @@
 #ifdef USE_COLOR
-      VaryingColor = VertexColor;
+	VaryingColor = VertexColor;
 #else
-      VaryingColor = vec4(1.0);
+	VaryingColor = vec4(1.0);
 #endif

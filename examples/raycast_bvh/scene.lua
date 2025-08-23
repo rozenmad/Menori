@@ -22,9 +22,9 @@ local scene = menori.Scene:extend('raycast_bvh_scene')
 
 local function debug_bvh(tree, aabb_root)
 	local nodes = {tree.root_node}
-      while #nodes > 0 do
-            local node = table.remove(nodes)
-            if node:element_count() > 0 then
+	while #nodes > 0 do
+		local node = table.remove(nodes)
+		if node:element_count() > 0 then
 			local size = node.extents:size()
 			local boxshape = menori.BoxShape(size.x, size.y, size.z)
 			local material = menori.Material()
@@ -35,14 +35,14 @@ local function debug_bvh(tree, aabb_root)
 			local t = menori.ModelNode(boxshape, material)
 			t:set_position(node.extents:center())
 			aabb_root:attach(t)
-            end
-            if node._node0 then
-                  nodes[#nodes+1] = node._node0
-            end
-            if node._node1 then
-                  nodes[#nodes+1] = node._node1
-            end
-      end
+		end
+		if node._node0 then
+			nodes[#nodes+1] = node._node0
+		end
+		if node._node1 then
+			nodes[#nodes+1] = node._node1
+		end
+	end
 end
 
 function scene:init()

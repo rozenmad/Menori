@@ -14,14 +14,14 @@ attribute vec4 VertexWeights;
 #menori_include <skinning_vertex_base.glsl>
 
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
-      vec3 vert_normal = VertexNormal;
-      vec4 vert_position = vec4((m_model * vertex_position + vertex_position * 0.01).xyz, 1.0);
+	vec3 vert_normal = VertexNormal;
+	vec4 vert_position = vec4((m_model * vertex_position + vertex_position * 0.01).xyz, 1.0);
 
-      #menori_include <skinning_vertex.glsl>
-      #menori_include <normal.glsl>
+	#menori_include <skinning_vertex.glsl>
+	#menori_include <normal.glsl>
 
-      normal = vert_normal;
+	normal = vert_normal;
 
-      frag_position = vert_position.xyz;
-      return m_projection * m_view * vert_position;
+	frag_position = vert_position.xyz;
+	return m_projection * m_view * vert_position;
 }

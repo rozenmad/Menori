@@ -20,7 +20,7 @@ local UniformList = require (modules .. 'core3d.uniform_list')
 local ShaderUtils = require (modules .. 'shaders.utils')
 
 local Material = UniformList:extend('Material', {
-      clone = utils.copy
+	clone = utils.copy
 })
 
 ----
@@ -51,24 +51,24 @@ local Material = UniformList:extend('Material', {
 -- -- Create a ModelNode with material
 -- local model_node = menori.ModelNode(mesh, material)
 function Material:init(opt)
-      Material.super.init(self)
-      opt = opt or {}
+	Material.super.init(self)
+	opt = opt or {}
 
-      self.name = opt.name or 'base_material'
-      self.attributes = {}
+	self.name = opt.name or 'base_material'
+	self.attributes = {}
 
-      self.depth_test = true
-      self.depth_func = 'less'
+	self.depth_test = true
+	self.depth_func = 'less'
 
-      self.wireframe = false
-      self.mesh_cull_mode = 'back'
+	self.wireframe = false
+	self.mesh_cull_mode = 'back'
 
-      self.alpha_mode = 'OPAQUE'
-      self.main_texture = nil
+	self.alpha_mode = 'OPAQUE'
+	self.main_texture = nil
 
-      self.shader_vertcode = opt.shader_vertcode or ShaderUtils.cache['default_mesh_vert']
-      self.shader_fragcode = opt.shader_fragcode or ShaderUtils.cache['default_mesh_frag']
-      self.shader = opt.shader
+	self.shader_vertcode = opt.shader_vertcode or ShaderUtils.cache['default_mesh_vert']
+	self.shader_fragcode = opt.shader_fragcode or ShaderUtils.cache['default_mesh_frag']
+	self.shader = opt.shader
 end
 
 --- Default material instance.
