@@ -20,6 +20,8 @@ local uniform_types = {
 	[1] = 'any', [2] = 'color', [3] = 'matrix', [4] = 'vector',
 }
 
+local _temp = {}
+
 local function locate_uniform(list, name, constant, type)
 	local uniform = list[name]
 	if uniform == nil then
@@ -108,14 +110,11 @@ function UniformList:send_to(shader, concat_str)
 				shader:send(name, v.value.data)
 			elseif
 			v.type == 4 then
-				shader:send(name, {v.value:unpack()})
-			--[[elseif
-			v.type == 5 then
-				local t = {}
-				for i = 1, #v.value do
-					table.insert(t, {v.value[i]:unpack()})
-				end
-				shader:send(name, unpack(t))]]
+				_temp[1] = v.value.x
+				_temp[2] = v.value.y
+				_temp[3] = v.value.z
+				_temp[4] = v.value.w
+				shader:send(name, _temp)
 			end
 		end
 	end
