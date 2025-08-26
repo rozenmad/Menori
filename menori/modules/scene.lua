@@ -85,8 +85,8 @@ function scene:render_nodes(node, environment, renderstates, filter)
 	while #node_stack_t > 0 do
 		local n = table.remove(node_stack_t)
 		if n.render_flag then
-			local need_transform = n._transform_flag
-			if need_transform then
+			local needs_transform = n._transform_flag
+			if needs_transform then
 				n:update_transform()
 			end
 
@@ -94,7 +94,7 @@ function scene:render_nodes(node, environment, renderstates, filter)
 				table.insert(self.list_drawable_nodes, n)
 			end
 
-			if need_transform then
+			if needs_transform then
 				for _, v in ipairs(n.children) do
 					v._transform_flag = true
 					table.insert(node_stack_t, v)

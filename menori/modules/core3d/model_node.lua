@@ -43,11 +43,12 @@ function ModelNode:init(mesh, material)
 	material = material or Material.default
 
 	self.is_model_node = true
-
 	self.material = material:clone()
 	self.material.attributes = mesh.vertexformat
-	self.material.shader = self.material.shader or ShaderUtils.create_shader(self.material)
 	self.mesh = mesh
+
+	self.material._needs_update = true
+	self:update_shader()
 end
 
 function ModelNode:_ensure_joints_texture()
@@ -57,6 +58,14 @@ function ModelNode:_ensure_joints_texture()
 		self.joints_data = love.image.newImageData(self.joints_size, self.joints_size, 'rgba32f')
 		self.joints_texture = love.graphics.newImage(self.joints_data)
 	end
+end
+
+function ModelNode:update_shader()
+	if self.material.shader and not self.material._needs_update then
+		return
+	end
+	self.material.shader = ShaderUtils.create_shader(self.material, self.mesh)
+	self.material._needs_update = false
 end
 
 ----
@@ -119,7 +128,9 @@ end
 -- -- Or manually for custom rendering
 -- model_node:render(scene, environment)
 function ModelNode:render(scene, environment)
+	self:update_shader()
 	local shader = self.material.shader
+
 	environment:apply_shader(shader)
 	shader:send('m_model', 'column', self.world_matrix.data)
 

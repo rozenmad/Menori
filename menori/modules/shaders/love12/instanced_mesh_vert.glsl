@@ -11,7 +11,11 @@ uniform mat4 m_model;
 
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
 	vec3 vert_normal = VertexNormal;
-	vec4 vert_position = vec4((m_model * vertex_position).xyz, 1.0);
+	vec4 vert_position = vec4(VertexPosition.xyz, 1.0);
+	
+	#menori_include <morph.glsl>
+
+	vert_position = m_model * vert_position;
 
 	#menori_include <color.glsl>
 	#menori_include <billboard.glsl>

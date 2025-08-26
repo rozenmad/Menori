@@ -40,6 +40,7 @@ local function get_sampler_data(accumulator, sampler, target)
 	local frame1_index = utils.binsearch(sampler.time_array, accumulator)
 	local frame2_index = math.min(#sampler.time_array, frame1_index + 1)
 
+	-- print(frame1_index, frame2_index)
 	local frame1 = sampler.data_array[frame1_index]
 	local frame2 = sampler.data_array[frame2_index]
 
@@ -47,7 +48,6 @@ local function get_sampler_data(accumulator, sampler, target)
 		if target == 'rotation' then
 			return quat(frame1)
 		elseif target == 'weights' then
-
 		else
 			return vec3(frame1)
 		end
@@ -62,7 +62,19 @@ local function get_sampler_data(accumulator, sampler, target)
 		if target == 'rotation' then
 			return quat.slerp(quat(frame1), quat(frame2), s)
 		elseif target == 'weights' then
+			local weights = {}
+			local length = #sampler.data_array / #sampler.time_array
 
+			for i = 1, length do
+				local a = (frame1_index-1) * length + i
+				local b = (frame2_index-1) * length + i
+
+				frame1 = sampler.data_array[a]
+				frame2 = sampler.data_array[b]
+
+				table.insert(weights, frame1 + (frame2 - frame1) * s)
+			end
+			return weights
 		else
 			return vec3.lerp(vec3(frame1), vec3(frame2), s)
 		end
@@ -75,7 +87,8 @@ local target_path = {
 	rotation = Node.set_rotation,
 	translation = Node.set_position,
 	scale = Node.set_scale,
-	weights = function ()
+	weights = function (node, data)
+		node.mesh.target_weights = data
 	end
 }
 

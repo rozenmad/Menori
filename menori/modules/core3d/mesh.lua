@@ -25,6 +25,9 @@ local lg = love.graphics
 local Mesh = class('Mesh')
 
 local default_template = {1, 2, 3, 2, 4, 3}
+local convert_format
+
+Mesh.MAX_MORPH_TARGETS = 8
 
 if love._version_major > 11 then
 	Mesh.default_vertexformat = {
@@ -32,12 +35,23 @@ if love._version_major > 11 then
 		{format = "floatvec2", name = "VertexTexCoord", location = 1},
 		{format = "floatvec3", name = "VertexNormal"  , location = 2},
 	}
+	convert_format = function(attribute)
+		return attribute.format
+	end
 else
 	Mesh.default_vertexformat = {
 		{"VertexPosition", "float", 3},
 		{"VertexTexCoord", "float", 2},
 		{"VertexNormal"  , "float", 3},
 	}
+	convert_format = function(attribute)
+		local count = attribute[3]
+		if count > 1 then
+			return 'vec' .. count
+		else
+			return 'float'
+		end
+	end
 end
 
 local function calculate_bound(lg_mesh_obj)
@@ -110,12 +124,14 @@ end
 -- @tparam table used_locations Optional table of already used location indices
 -- @treturn table,table Modified vertex format and updated used locations table
 function Mesh.set_locations(vertexformat, used_locations)
-	used_locations = used_locations and utils.copy(used_locations) or {}
+	used_locations = used_locations or {}
 	vertexformat = utils.copy(vertexformat)
 
 	for _, v in ipairs(vertexformat) do
-		if v.location then
-			used_locations[v.location] = v.name
+		if v.location and not used_locations[v.location] then
+			used_locations[v.location] = {
+				name = v.name or v[1], format = convert_format(v), location = v.location,
+			}
 		end
 	end
 
@@ -126,7 +142,10 @@ function Mesh.set_locations(vertexformat, used_locations)
 				next_location = next_location + 1
 			end
 			v.location = next_location
-			used_locations[next_location] = v.name
+			used_locations[next_location] = {
+				name = v.name or v[1], format = convert_format(v), location = v.location,
+			}
+
 		end
 	end
 	return vertexformat, used_locations
@@ -161,19 +180,65 @@ function Mesh:init(primitive)
 		lg_mesh:setVertexMap(primitive.indices, idatatype)
 	end
 
+	self.morph_targets = {}
+	self:_init_morph_targets(used_locations, primitive, lg_mesh)
+
 	self.vertex_attribute_index = Mesh.get_attribute_index('VertexPosition', lg_mesh:getVertexFormat())
 	self.lg_mesh = lg_mesh
 	self.vertexformat = vertexformat
 	self.material_index = primitive.material_index
 	self.bound = calculate_bound(lg_mesh)
 	self.used_locations = used_locations
+
+	self.target_weights = primitive.target_weights
+end
+
+function Mesh:_init_morph_targets(used_locations, primitive, lg_mesh)
+	local morph_count = 0
+	local morph_target_vertexformat
+	if primitive.targets then
+		for i, target in ipairs(primitive.targets) do
+			for _, attribute in pairs(target) do
+				local attribute_name
+				if love._version_major > 11 then
+					local name = attribute.format.name
+					attribute_name = 'Target' .. name  .. (i - 1)
+					attribute.format.name = attribute_name
+				else
+					local name = attribute.format[1]
+					attribute_name = 'Target' .. name  .. (i - 1)
+					attribute.format[1] = attribute_name
+				end
+				local vertexformat = {
+					attribute.format
+				}
+				morph_target_vertexformat, used_locations = Mesh.set_locations(vertexformat, used_locations)
+				local morph_target_mesh = love.graphics.newMesh(morph_target_vertexformat, attribute.data, 'triangles', 'static')
+
+				table.insert(self.morph_targets, morph_target_vertexformat[1])
+
+				lg_mesh:attachAttribute(attribute_name, morph_target_mesh)
+				morph_count = morph_count + 1
+				if morph_count >= Mesh.MAX_MORPH_TARGETS then
+					return
+				end
+			end
+		end
+	end
 end
 
 ----
 -- Renders the mesh using the specified material.
 -- @tparam menori.Material material The material to use when drawing the mesh
 function Mesh:draw(material)
-	material:send_to(material.shader)
+	local shader = material.shader
+	material:send_to(shader)
+
+	if self.target_weights then
+		if shader:hasUniform("TargetWeights") then
+			shader:send("TargetWeights", unpack(self.target_weights))
+		end
+	end
 
 	if material.wireframe ~= lg.isWireframe() then
 		lg.setWireframe(material.wireframe)
@@ -192,6 +257,10 @@ function Mesh:draw(material)
 	local mesh = self.lg_mesh
 	mesh:setTexture(material.main_texture)
 	lg.draw(mesh)
+end
+
+function Mesh:has_attribute(attribute_name)
+	return Mesh.get_attribute_index(attribute_name, self.vertexformat)
 end
 
 ----

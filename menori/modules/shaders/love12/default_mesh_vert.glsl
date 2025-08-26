@@ -8,13 +8,19 @@ uniform mat4 m_model;
 uniform mat4 m_view;
 uniform mat4 m_projection;
 
+#menori_include <morph_base.glsl>
+
 #menori_include <transpose.glsl>
 #menori_include <inverse.glsl>
 #menori_include <skinning_vertex_base.glsl>
 
 void vertexmain() {
-	vec3 vert_normal = VertexNormal;
-	vec4 vert_position = vec4((m_model * vec4(VertexPosition.xyz, 1.0)).xyz, 1.0);
+	#menori_include <normal_base.glsl>
+	vec4 vert_position = vec4(VertexPosition.xyz, 1.0);
+	
+	#menori_include <morph.glsl>
+
+	vert_position = m_model * vert_position;
 
 	#menori_include <texcoord.glsl>
 	#menori_include <color.glsl>

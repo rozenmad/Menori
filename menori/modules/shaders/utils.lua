@@ -13,6 +13,26 @@ local ffi = require (menori_modules .. 'libs.ffi')
 
 local features = love.graphics.getSupported()
 
+local shader_program_cache = {}
+
+local shader_defines = {
+	VertexNormal   = "USE_NORMAL",
+	VertexColor    = "USE_COLOR",
+	VertexJoints   = "USE_SKINNING",
+	VertexTexCoord = "USE_TEXCOORD",
+}
+
+local attribute_ignore_list = {
+	["VertexPosition"] = true,
+	["VertexTexCoord"] = true,
+	["VertexColor"] = true,
+}
+
+local morph_target_mappings = {
+	["TargetVertexPosition"] = 'vert_position',
+	["TargetVertexNormal"] = 'vert_normal',
+}
+
 local data_format = {
 	["float"]       = "float",
 	["floatvec2"]   = "vec2",
@@ -60,14 +80,21 @@ end
 
 local shaders_path = love._version_major > 11 and '.love12.' or ''
 local md5_hash
+local get_attribute_name
 
 if love._version_major > 11 then
 	md5_hash = function (s)
 		return love.data.hash('string', 'md5', s)
 	end
+	get_attribute_name = function (attribute)
+		return attribute.name
+	end
 else
 	md5_hash = function (s)
 		return love.data.hash('md5', s)
+	end
+	get_attribute_name = function (attribute)
+		return attribute[1]
 	end
 end
 
@@ -76,6 +103,8 @@ add_shader_chunk(modules .. 'chunks.', 'billboard')
 add_shader_chunk(modules .. 'chunks.', 'color')
 add_shader_chunk(modules .. 'chunks.', 'inverse')
 add_shader_chunk(modules .. 'chunks.', 'normal')
+add_shader_chunk(modules .. 'chunks.', 'normal_base')
+add_shader_chunk(modules .. 'chunks.', 'morph_base')
 add_shader_chunk(modules .. 'chunks.', 'skinning_vertex_base')
 add_shader_chunk(modules .. 'chunks.', 'skinning_vertex')
 add_shader_chunk(modules .. 'chunks.', 'texcoord')
@@ -128,21 +157,13 @@ local cache = {
 	deferred_mesh_frag = readfile(modules .. shaders_path, 'deferred_mesh_frag'),
 }
 
-local shader_defines = {
-	VertexColor    = "USE_COLOR",
-	VertexJoints   = "USE_SKINNING",
-	VertexTexCoord = "USE_TEXCOORD",
-}
-
-local shader_program_cache = {}
-
-local function create_shader(material)
+local function create_shader(material, mesh)
 	local opt = {
 		definitions = {}, attributes = {},
 	}
 
 	if love._version_major > 11 then
-		for _, element in ipairs(material.attributes) do
+		for _, element in pairs(mesh.used_locations) do
 			local define = shader_defines[element.name]
 			if define then
 				table.insert(opt.definitions, define)
@@ -156,12 +177,36 @@ local function create_shader(material)
 				))
 		end
 	else
-		for _, element in ipairs(material.attributes) do
-			local define = shader_defines[element[1]]
+		for _, element in pairs(mesh.used_locations) do
+			local define = shader_defines[element.name]
 			if define then
 				table.insert(opt.definitions, define)
 			end
+
+			if not attribute_ignore_list[element.name] then
+				table.insert(opt.attributes,
+					string.format("attribute %s %s;",
+						element.format,
+						element.name
+					))
+			end
 		end
+	end
+
+	local morph_targets = mesh.morph_targets
+	if morph_targets and #morph_targets > 0 then
+		local chunk_morph = {}
+		for _, target in pairs(morph_targets) do
+			local target_name = get_attribute_name(target)
+			local name, index = target_name:match("(.+)(%d+)$")
+			table.insert(chunk_morph, string.format(
+				"%s.xyz += %s * TargetWeights[%d];", morph_target_mappings[name], target_name, index
+			))
+		end
+		table.insert(opt.definitions, "USE_MORPH")
+		chunks["morph.glsl"] = table.concat(chunk_morph, "\n")
+	else
+		chunks["morph.glsl"] = ""
 	end
 
 	local vertcode = material.shader_vertcode
@@ -175,6 +220,8 @@ local function create_shader(material)
 	fragcode = preprocess_shader(fragcode, opt)
 
 	local cache_key = md5_hash(vertcode .. fragcode)
+
+	-- print(vertcode .. fragcode)
 
 	local shader = shader_program_cache[cache_key]
 	if not shader then

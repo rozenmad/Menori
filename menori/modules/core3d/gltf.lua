@@ -56,7 +56,7 @@ local component_types = {
 	[5126] = 'float',
 }
 
-local add_vertex_format
+local get_vertex_format
 local get_bytedata_buffer = function(data)
 	return data
 end
@@ -74,11 +74,11 @@ local types = {
 }
 
 if love._version_major > 11 then
-	add_vertex_format = function(vertexformat, attribute_name, buffer, location)
+	get_vertex_format = function(attribute_name, buffer, location)
 		local format = component_types[buffer.component_type] .. types[buffer.type]
-		table.insert(vertexformat, {
+		return {
 			name = attribute_name, format = format
-		})
+		}
 	end
 
 else
@@ -89,11 +89,11 @@ else
 		'float',
 	}
 
-	add_vertex_format = function(vertexformat, attribute_name, buffer)
+	get_vertex_format = function(attribute_name, buffer)
 		local format = component_types[buffer.component_type] .. types[buffer.type]
-		table.insert(vertexformat, {
+		return {
 			attribute_name, love11_types[buffer.component_size], buffer.type_elements_count, format = format,
-		})
+		}
 	end
 
 	if not ffi then
@@ -112,7 +112,6 @@ else
 	end
 end
 
-
 local attribute_aliases = {
 	['POSITION'] = 'VertexPosition',
 	['TEXCOORD'] = 'VertexTexCoord',
@@ -122,6 +121,30 @@ local attribute_aliases = {
 	['WEIGHTS']  = 'VertexWeights',
 	['TANGENT']  = 'VertexTangent',
 }
+
+local attribute_order = {
+	['POSITION'] = 0,
+	['NORMAL']   = 10,
+	['TANGENT']  = 20,
+	['TEXCOORD'] = 30,
+	['COLOR']    = 40,
+	['JOINTS']   = 50,
+	['WEIGHTS']  = 60,
+}
+
+local function get_attribute_name(attribute_string)
+	local attribute, value = attribute_string:match('(%w+)(.*)')
+	local attribute_name
+	if value == '_0' then
+		attribute_name = attribute_aliases[attribute]
+	elseif attribute_aliases[attribute] then
+		attribute_name = attribute_aliases[attribute] .. value
+	else
+		attribute_name = attribute_string
+	end
+
+	return attribute_name
+end
 
 local function get_primitive_modes_constants(mode)
 	if mode == 0 then
@@ -276,24 +299,19 @@ local function get_attributes(gltf, attributes_array)
 		local buffer = get_buffer(gltf, attribute_index)
 
 		local element_size = buffer.component_size * buffer.type_elements_count
-		local bytedata = love.data.newByteData(element_size)
+		local bytedata = love.data.newByteData(element_size*buffer.count)
 		copy_buffer_data(bytedata, buffer, 0, element_size, element_size)
 
-		attributes[name] = get_bytedata_buffer(bytedata)
+		local attribute_name = get_attribute_name(name)
+		local format = get_vertex_format(attribute_name, buffer)
+		attributes[attribute_name] = {
+			format = format,
+			data = get_bytedata_buffer(bytedata)
+		}
 	end
 
 	return attributes
 end
-
-local attribute_order = {
-	['POSITION'] = 0,
-	['NORMAL']   = 10,
-	['TANGENT']  = 20,
-	['TEXCOORD'] = 30,
-	['COLOR']    = 40,
-	['JOINTS']   = 50,
-	['WEIGHTS']  = 60,
-}
 
 local function init_mesh(gltf, mesh)
 	local primitives = {}
@@ -324,15 +342,7 @@ local function init_mesh(gltf, mesh)
 		end)
 
 		for i, v in ipairs(attributes) do
-			local attribute, value = v.attribute:match('(%w+)(.*)')
-			local attribute_name
-			if value == '_0' then
-				attribute_name = attribute_aliases[attribute]
-			elseif attribute_aliases[attribute] then
-				attribute_name = attribute_aliases[attribute] .. value
-			else
-				attribute_name = v.attribute
-			end
+			local attribute_name = get_attribute_name(v.attribute)
 
 			local buffer = get_buffer(gltf, v.value)
 			attribute_buffers[#attribute_buffers+1] = buffer
@@ -343,13 +353,14 @@ local function init_mesh(gltf, mesh)
 			length = length + buffer.count * element_size
 			components_stride = components_stride + element_size
 
-			add_vertex_format(vertexformat, attribute_name, buffer, i - 1)
+			table.insert(vertexformat, get_vertex_format(attribute_name, buffer, i - 1))
 		end
 
 		local vertices = get_vertices_data(attribute_buffers, components_stride, length)
 
-		local targets = {}
+		local targets
 		if primitive.targets then
+			targets = {}
 			for _, attributes in ipairs(primitive.targets) do
 				table.insert(targets, get_attributes(gltf, attributes))
 			end
@@ -364,6 +375,7 @@ local function init_mesh(gltf, mesh)
 			indices_tsize = indices_tsize,
 			material_index = primitive.material,
 			count = count,
+			target_weights = mesh.weights,
 		}
 	end
 	return {

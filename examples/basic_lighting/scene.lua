@@ -53,8 +53,7 @@ function scene:init()
 		-- Create AABB for each node and add it to the aabb_root node.
 		scene:traverse(function (node)
 			if node.mesh then
-				node.material.shader_fragcode = lighting_frag
-				node.material.shader = menori.ShaderUtils.create_shader(node.material)
+				node.material:set_shader_code(nil, lighting_frag)
 
 				--local bound = node:get_aabb()
 				--local size = bound:size()

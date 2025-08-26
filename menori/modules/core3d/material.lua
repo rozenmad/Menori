@@ -71,6 +71,31 @@ function Material:init(opt)
 	self.shader = opt.shader
 end
 
+--- Sets a custom LOVE shader object directly.
+-- Use this method if you already created a shader with `love.graphics.newShader`.
+-- This bypasses automatic shader building and disables `_needs_update`.
+-- @tparam Shader shader A [LOVE Shader](https://love2d.org/wiki/Shader) object
+function Material:set_shader(shader)
+	self.shader = shader
+	self._needs_update = false
+end
+
+--- Sets custom shader code for this material.
+-- Clears the current shader and marks it for update in the next render.
+-- If `vertcode` or `fragcode` is `nil`, the previous value is preserved.
+-- @tparam[opt] string vertcode Vertex shader GLSL code
+-- @tparam[opt] string fragcode Fragment shader GLSL code
+function Material:set_shader_code(vertcode, fragcode)
+	if vertcode then
+		self.shader_vertcode = vertcode
+	end
+	if fragcode then
+		self.shader_fragcode = fragcode
+	end
+	self.shader = nil
+	self._needs_update = true
+end
+
 --- Default material instance.
 -- Pre-configured material with white base color.
 -- @field default Material

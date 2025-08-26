@@ -93,27 +93,27 @@ end
 ----
 -- Send all Uniform values from the list to the Shader.
 -- @param shader [LOVE Shader](https://love2d.org/wiki/Shader)
--- @param[opt=''] concat_str A string to be added before each Uniform name.
-function UniformList:send_to(shader, concat_str)
-	concat_str = concat_str or ''
+-- @param[opt=''] prefix_s A string to be added before each Uniform name.
+function UniformList:send_to(shader, prefix_s)
 	for k, v in pairs(self.list) do
-		local name = concat_str .. k
+		local name = prefix_s and (prefix_s .. k) or k
 		if shader:hasUniform(name) then
+			local type = v.type
 			if
-			v.type == 1 then
+			type == 1 then
 				shader:send(name, unpack(v.value))
 			elseif
-			v.type == 2 then
+			type == 2 then
 				shader:sendColor(name, unpack(v.value))
 			elseif
-			v.type == 3 then
+			type == 3 then
 				shader:send(name, v.value.data)
 			elseif
-			v.type == 4 then
-				_temp[1] = v.value.x
-				_temp[2] = v.value.y
-				_temp[3] = v.value.z
-				_temp[4] = v.value.w
+			type == 4 then
+				_temp[1] = v.value.x or v.value[1]
+				_temp[2] = v.value.y or v.value[2]
+				_temp[3] = v.value.z or v.value[3]
+				_temp[4] = v.value.w or v.value[4]
 				shader:send(name, _temp)
 			end
 		end

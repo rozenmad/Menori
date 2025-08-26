@@ -98,9 +98,7 @@ function scene:init()
 	local scenes = menori.NodeTreeBuilder.create(gltf, function (scene, builder)
 		scene:traverse(function (node)
 			if node.mesh then
-				-- use deferred shader
-				node.material.shader_fragcode = menori.ShaderUtils.cache['deferred_mesh_frag']
-				node.material.shader = menori.ShaderUtils.create_shader(node.material)
+				node.material:set_shader_code(nil, menori.ShaderUtils.cache['deferred_mesh_frag'])
 			end
 		end)
 	end)
