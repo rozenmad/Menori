@@ -19,7 +19,6 @@ local ml    = require (modules .. 'ml')
 
 local mat4 = ml.mat4
 local vec3 = ml.vec3
-local vec2 = ml.vec2
 local quat = ml.quat
 
 local camera = class('Camera')

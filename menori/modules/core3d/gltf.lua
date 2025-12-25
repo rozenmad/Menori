@@ -648,7 +648,7 @@ function glTFLoader.load(filename, io_read)
 	io_read = io_read or love.filesystem.read
 
 	local path = filename:match(".+/")
-	local name, extension = filename:match("([^/]+)%.(.+)$")
+	local extension = filename:match("[^/]+%.(.+)$")
 	assert(love.filesystem.getInfo(filename), 'in function <glTFLoader.load> file "' .. filename .. '" not found.')
 
 	local gltf = {}
