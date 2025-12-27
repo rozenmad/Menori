@@ -17,6 +17,15 @@ local physics = menori.Physics()
 
 local scene = menori.Scene:extend('physics_scene')
 
+local BoxModel = menori.ModelNode:extend('BoxModel')
+
+function BoxModel:init(x, y, z, w, h, d)
+	BoxModel.super.init(self, menori.Box(w, h, d))
+
+	self:set_position(x, y, z)
+	self.is_box = true
+end
+
 function scene:init()
 	scene.super.init(self)
 
@@ -26,14 +35,31 @@ function scene:init()
 
 	self.root_node = menori.Node()
 
-	local world = physics.world(0, -9.81, 0, false)
+	local world = physics.world(-9.81, false)
+	self.world = world
 
-	local platform_body = physics.body(world, 2, 0.5, 0, 'static')
-	local platform = physics.box(2, 0.5, 0, 1, 1, 1)
+	local platform_body = physics.box(1, 1, 1)
+	platform_body:set_body_type('dynamic')
+	platform_body.restitution = 0.0
+	world:add_body(platform_body)
+	-- platform_body.is_sleeping = true
+
+	local platform = BoxModel(2, 0.5, 0, 1, 1, 1)
+	platform_body:set_position(2, 0.5, 0)
 	platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
-	self.root_node:attach(platform)
 	self.platform = platform
-	platform_body:add_shape(platform)
+	self.root_node:attach(platform)
+	platform.body = platform_body
+
+	local platform2_body = physics.box(1, 1, 1)
+	world:add_body(platform2_body)
+
+	local platform2 = BoxModel(2, -5, 0, 1, 1, 1)
+	platform2_body:set_position(2, -5, 0)
+	platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+	self.platform2 = platform2
+	self.root_node:attach(platform2)
+	platform2.body = platform2_body
 
 	self.x_angle = 0
 	self.y_angle = -30
@@ -43,11 +69,22 @@ end
 function scene:update(dt)
 	self:update_camera()
 	self:update_nodes(self.root_node, self.environment)
+
+	local platform_body_position = self.platform.body.position
+	self.platform:set_position(platform_body_position.x, platform_body_position.y, platform_body_position.z)
+
+	self.world:step(dt)
+end
+
+function scene:keypressed(key)
+	if key == 'w' then
+		self.platform.body:set_velocity(0, 10, 0)
+	end
 end
 
 function scene:update_camera()
 	local q = quat.from_euler_angles(0, math.rad(self.x_angle), math.rad(self.y_angle)) * vec3.unit_z * self.view_scale
-	local v = vec3(0, 0.5, 0)
+	local v = self.platform.position
 	self.camera.center = v
 	self.camera.eye = q + v
 	self.camera:update_view_matrix()
@@ -64,6 +101,16 @@ function scene:render()
 
 	local mx, my = love.mouse.getPosition()
 	love.graphics.circle('line', mx, my, 8)
+end
+
+function scene:mousemoved(x, y, dx, dy)
+	self.y_angle = self.y_angle - dy * 0.5
+	self.x_angle = self.x_angle - dx * 0.5
+	self.y_angle = ml.utils.clamp(self.y_angle, -45, 45)
+end
+
+function scene:wheelmoved(x, y)
+	self.view_scale = self.view_scale - y * 0.2
 end
 
 return scene
