@@ -276,7 +276,7 @@ function World:_check_collision(body_a, body_b)
         if sphere_pos.y - body_a.radius < plane_pos.y + 0.5 then
             return {
                 normal = {0, 1, 0},
-                depth = (plane_pos.y + 0.5) - (sphere_pos.y - body_a.radius),
+                depth = (plane_pos.y + 0.1) - (sphere_pos.y - body_a.radius),
                 point = {sphere_pos.x, plane_pos.y + 0.5, sphere_pos.z}
             }
         end
@@ -290,7 +290,7 @@ function World:_check_collision(body_a, body_b)
         if bottom < plane_pos.y + 0.5 then
             return {
                 normal = {0, 1, 0},
-                depth = (plane_pos.y + 0.5) - bottom,
+                depth = (plane_pos.y + 0.1) - bottom,
                 point = {p0.x, plane_pos.y + 0.5, p0.z}
             }
         end
@@ -298,7 +298,7 @@ function World:_check_collision(body_a, body_b)
 
     return {
         normal = {0, 1, 0},
-        depth = 0.1,
+        depth = 0.01,
         point = {
             (aabb_a.min.x + aabb_a.max.x) * 0.5,
             math.min(aabb_a.min.y, aabb_b.min.y),
