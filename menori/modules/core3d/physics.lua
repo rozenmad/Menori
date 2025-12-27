@@ -26,6 +26,8 @@ local intersect = ml.intersect
 local bvh       = ml.bvh
 local quat      = ml.quat
 
+local thread = love.thread
+
 function Body(self, body_type)
     self.body_type        = body_type or 'static'
     self.mass             = 1
@@ -33,6 +35,7 @@ function Body(self, body_type)
     self.restitution      = 0.5
     self.friction         = 0.3
     self.is_sleeping      = false
+    self.sleep_timer      = 1
     self.use_gravity      = true
 
     self.velocity         = vec3()
@@ -72,14 +75,12 @@ function Body(self, body_type)
         self.force.x = self.force.x + fx
         self.force.y = self.force.y + fy
         self.force.z = self.force.z + fz
-        self.is_sleeping = false
     end
 
     function self:set_velocity(vx, vy, vz)
         self.velocity.x = vx
         self.velocity.y = vy
         self.velocity.z = vz
-        self.is_sleeping = false
     end
 
     function self:get_hemisphere_centers() -- получения центра полусфер капсулы
@@ -207,15 +208,28 @@ function World:step(dt)
         end
     end
 
-    self:_resolve_collisions()
+    self:_resolve_collisions(dt)
 end
 
-function World:_resolve_collisions()
+function World:_resolve_collisions(dt)
     for i, body_a in ipairs(self.bodies) do
         for j, body_b in ipairs(self.static_bodies) do
             local collision = self:_check_collision(body_a, body_b)
             if collision then
                 self:_resolve_collision(body_a, body_b, collision)
+            end
+        end
+
+        if self.sleep then
+            local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
+            if velocity < 0.01 and velocity > -0.01  then
+                body_a.sleep_timer = body_a.sleep_timer - dt
+                if body_a.sleep_timer < 0 then
+                    body_a.is_sleeping = true
+                end
+            else
+                body_a.sleep_timer = 1
+                body_a.is_sleeping = false
             end
         end
     end

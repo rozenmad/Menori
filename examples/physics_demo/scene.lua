@@ -35,7 +35,7 @@ function scene:init()
 
 	self.root_node = menori.Node()
 
-	local world = physics.world(-9.81, false)
+	local world = physics.world(-9.81, true)
 	self.world = world
 
 	local platform_body = physics.box(1, 1, 1)
