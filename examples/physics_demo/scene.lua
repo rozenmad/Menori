@@ -81,6 +81,9 @@ function scene:update(dt)
 	local platform_body_position = self.platform.body.position
 	self.platform:set_position(platform_body_position.x, platform_body_position.y, platform_body_position.z)
 
+	local platform_body_rotation = self.platform.body.rotation
+	self.platform:set_rotation(platform_body_rotation)
+
 	self.world:step(dt)
 end
 
@@ -91,6 +94,8 @@ function scene:keypressed(key)
 		self.platform.body:set_velocity(-3, self.platform.body.velocity.y, self.platform.body.velocity.z)
 	elseif key == 'd' then
 		self.platform.body:set_velocity(3, self.platform.body.velocity.y, self.platform.body.velocity.z)
+	elseif key == 'z' then
+		self.platform.body:set_angular_velocity(3, 3, 3)
 	end
 end
 

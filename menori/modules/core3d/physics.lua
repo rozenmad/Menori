@@ -39,9 +39,32 @@ function Body(self, body_type)
     self.use_gravity      = true
 
     self.velocity         = vec3()
-    self.angular_velocity = vec3()
     self.force            = vec3()
+
+    self.angular_velocity = vec3()
     self.torque           = vec3()
+
+    local inertia = vec3(1, 1, 1)
+    if self.is_sphere then
+        local i = 0.4 * self.mass * self.radius * self.radius
+        inertia:set(i, i, i)
+    elseif self.is_box then
+        local w2 = self.w * self.w
+        local h2 = self.h * self.h
+        local d2 = self.d * self.d
+        inertia.x = (1/12) * self.mass * (h2 + d2)
+        inertia.y = (1/12) * self.mass * (w2 + d2)
+        inertia.z = (1/12) * self.mass * (w2 + h2)
+    elseif self.is_capsule then
+        local r2 = self.radius * self.radius
+        local h2 = self.height * self.height
+        local i_axial = 0.5 * self.mass * r2
+        local i_radial = self.mass * (0.25 * r2 + (1/12) * h2)
+        inertia:set(i_radial, i_axial, i_radial)
+    end
+
+    self.inertia = inertia
+    self.inv_inertia = vec3():div(vec3(1, 1, 1), inertia)
 
     function self:set_body_type(body_type)
         self.inv_mass = (body_type == 'static') and 0 or (1 / self.mass)
@@ -77,13 +100,36 @@ function Body(self, body_type)
         self.force.z = self.force.z + fz
     end
 
+    function self:apply_force_at_point(fx, fy, fz, px, py, pz)
+        self:apply_force(fx, fy, fz)
+
+        -- torque = r × F
+        local world_pos = self:get_world_position()
+        local rx, ry, rz = px - world_pos.x, py - world_pos.y, pz - world_pos.z
+
+        -- r × F
+        local tx = ry * fz - rz * fy
+        local ty = rz * fx - rx * fz
+        local tz = rx * fy - ry * fx
+
+        self.torque.x = self.torque.x + tx
+        self.torque.y = self.torque.y + ty
+        self.torque.z = self.torque.z + tz
+    end
+
     function self:set_velocity(vx, vy, vz)
         self.velocity.x = vx
         self.velocity.y = vy
         self.velocity.z = vz
     end
 
-    function self:get_hemisphere_centers() -- получения центра полусфер капсулы
+    function self:set_angular_velocity(vx, vy, vz)
+        self.angular_velocity.x = vx
+        self.angular_velocity.y = vy
+        self.angular_velocity.z = vz
+    end
+
+    function self:get_hemisphere_centers()
         if self.is_capsule then
             local half = self.height * 0.5
             local mat = self.world_matrix
@@ -167,15 +213,15 @@ function World:add_body(body)
     body.world = self
 end
 
-function World:remove_body(body)
-    for i, v in ipairs(self.bodies) do
-        if v == body then
-            table.remove(self.bodies, i)
-            body.world = nil
-            break
-        end
-    end
-end
+-- function World:remove_body(body)
+--     for i, v in ipairs(self.bodies) do
+--         if v == body then
+--             table.remove(self.bodies, i)
+--             body.world = nil
+--             break
+--         end
+--     end
+-- end
 
 function World:step(dt)
     for _, body in ipairs(self.bodies) do
@@ -184,17 +230,15 @@ function World:step(dt)
                 body.force.y = body.force.y + self.gravity.y * body.mass
             end
 
-            -- скорость (F = ma => a = F/m, v = v0 + a*dt)
+            -- F = ma => a = F/m, v = v0 + a*dt
             body.velocity.x = body.velocity.x + body.force.x * body.inv_mass * dt
             body.velocity.y = body.velocity.y + body.force.y * body.inv_mass * dt
             body.velocity.z = body.velocity.z + body.force.z * body.inv_mass * dt
 
-            -- сопротивление воздуха
             body.velocity.x = body.velocity.x * 0.99
             body.velocity.y = body.velocity.y * 0.99
             body.velocity.z = body.velocity.z * 0.99
 
-            -- позиция
             local pos = body.position
             body:set_position(
                 pos.x + body.velocity.x * dt,
@@ -205,6 +249,33 @@ function World:step(dt)
             body.force.x = 0
             body.force.y = 0
             body.force.z = 0
+
+            -- τ = Iα => α = τ/I, ω = ω0 + α*dt
+            local alpha_x = body.torque.x * body.inv_inertia.x
+            local alpha_y = body.torque.y * body.inv_inertia.y
+            local alpha_z = body.torque.z * body.inv_inertia.z
+
+            body.angular_velocity.x = body.angular_velocity.x + alpha_x * dt
+            body.angular_velocity.y = body.angular_velocity.y + alpha_y * dt
+            body.angular_velocity.z = body.angular_velocity.z + alpha_z * dt
+
+            body.angular_velocity.x = body.angular_velocity.x * 0.99
+            body.angular_velocity.y = body.angular_velocity.y * 0.99
+            body.angular_velocity.z = body.angular_velocity.z * 0.99
+
+            local angular_speed = body.angular_velocity:length()
+            if angular_speed > 0.0001 then
+                local angle = angular_speed * dt
+                local axis = body.angular_velocity:clone():normalize()
+
+                local delta_rotation = quat.from_angle_axis(angle, axis)
+                local current_rotation = body.rotation:clone()
+                body:set_rotation(delta_rotation * current_rotation)
+            end
+
+            body.torque.x = 0
+            body.torque.y = 0
+            body.torque.z = 0
         end
     end
 
@@ -222,7 +293,8 @@ function World:_resolve_collisions(dt)
 
         if self.sleep then
             local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
-            if velocity < 0.01 and velocity > -0.01  then
+            local angular_velocity = body_a.angular_velocity.x + body_a.angular_velocity.y + body_a.angular_velocity.z
+            if velocity < 0.01 and velocity > -0.01 and angular_velocity < 0.01 and angular_velocity > -0.01  then
                 body_a.sleep_timer = body_a.sleep_timer - dt
                 if body_a.sleep_timer < 0 then
                     body_a.is_sleeping = true
@@ -242,7 +314,6 @@ function World:_resolve_collision(body_a, body_b, collision)
 
     local nx, ny, nz = collision.normal[1], collision.normal[2], collision.normal[3]
 
-    -- отталкивание
     local pos = body_a.position
     body_a:set_position(
         pos.x + nx * collision.depth,
@@ -250,7 +321,6 @@ function World:_resolve_collision(body_a, body_b, collision)
         pos.z + nz * collision.depth
     )
 
-    -- отражение скорости
     local dot_product = body_a.velocity.x * nx + body_a.velocity.y * ny + body_a.velocity.z * nz
     if dot_product < 0 then
         body_a.velocity.x = body_a.velocity.x - nx * dot_product * (1 + body_a.restitution)
@@ -258,7 +328,6 @@ function World:_resolve_collision(body_a, body_b, collision)
         body_a.velocity.z = body_a.velocity.z - nz * dot_product * (1 + body_a.restitution)
     end
 
-    -- трение
     body_a.velocity.x = body_a.velocity.x * (1 - body_a.friction)
     body_a.velocity.z = body_a.velocity.z * (1 - body_a.friction)
 end
