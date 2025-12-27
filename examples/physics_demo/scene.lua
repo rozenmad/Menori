@@ -39,9 +39,9 @@ function scene:init()
 	self.world = world
 
 	local platform_body = physics.box(1, 1, 1)
+	world:add_body(platform_body)
 	platform_body:set_body_type('dynamic')
 	platform_body.restitution = 0.0
-	world:add_body(platform_body)
 	-- platform_body.is_sleeping = true
 
 	local platform = BoxModel(2, 0.5, 0, 1, 1, 1)
@@ -57,7 +57,15 @@ function scene:init()
 	local platform2 = BoxModel(2, -5, 0, 1, 1, 1)
 	platform2_body:set_position(2, -5, 0)
 	platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
-	self.platform2 = platform2
+	self.root_node:attach(platform2)
+	platform2.body = platform2_body
+
+	local platform2_body = physics.box(1, 1, 1)
+	world:add_body(platform2_body)
+
+	local platform2 = BoxModel(1, -4, 0, 1, 1, 1)
+	platform2_body:set_position(1, -4, 0)
+	platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
 	self.root_node:attach(platform2)
 	platform2.body = platform2_body
 
@@ -78,7 +86,11 @@ end
 
 function scene:keypressed(key)
 	if key == 'w' then
-		self.platform.body:set_velocity(0, 10, 0)
+		self.platform.body:set_velocity(self.platform.body.velocity.x, 5, self.platform.body.velocity.z)
+	elseif key == 'a' then
+		self.platform.body:set_velocity(-3, self.platform.body.velocity.y, self.platform.body.velocity.z)
+	elseif key == 'd' then
+		self.platform.body:set_velocity(3, self.platform.body.velocity.y, self.platform.body.velocity.z)
 	end
 end
 

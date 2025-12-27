@@ -41,8 +41,31 @@ function Body(self, body_type)
     self.torque           = vec3()
 
     function self:set_body_type(body_type)
-        self.body_type = body_type
         self.inv_mass = (body_type == 'static') and 0 or (1 / self.mass)
+        if body_type ~= self.body_type then
+            if self.body_type == 'dynamic' then
+                for index, body in ipairs(self.world.bodies) do
+                    if body == self then
+                        table.remove(self.world.bodies, index)
+                        break
+                    end
+                end
+            else
+                for index, body in ipairs(self.world.static_bodies) do
+                    if body == self then
+                        table.remove(self.world.static_bodies, index)
+                        break
+                    end
+                end
+            end
+            if body_type == 'dynamic' then
+                table.insert(self.world.bodies, self)
+                self.force.y = self.world.gravity.y * self.mass
+            else
+                table.insert(self.world.static_bodies, self)
+            end
+        end
+        self.body_type = body_type
     end
 
     function self:apply_force(fx, fy, fz)
@@ -126,16 +149,21 @@ end
 local World = class('World')
 
 function World:init(gravity_y, sleep)
-    self.gravity    = vec3(0, gravity_y or -9.81, 0)
-    self.sleep      = sleep
-    self.bodies     = {}
-    self.iterations = 3
+    self.gravity       = vec3(0, gravity_y or -9.81, 0)
+    self.sleep         = sleep
+    self.bodies        = {}
+    self.static_bodies = {}
+    self.iterations    = 3
 end
 
 function World:add_body(body)
-    table.insert(self.bodies, body)
+    if body.body_type == 'dynamic' then
+        table.insert(self.bodies, body)
+        body.force.y = self.gravity.y * body.mass
+    else
+        table.insert(self.static_bodies, body)
+    end
     body.world = self
-    body.force.y = body.force.y + self.gravity.y * body.mass
 end
 
 function World:remove_body(body)
@@ -150,12 +178,9 @@ end
 
 function World:step(dt)
     for _, body in ipairs(self.bodies) do
-        if body.body_type == 'dynamic' and not body.is_sleeping then
-            if body.use_gravity --[[and not self:_is_touching_ground(body, 0.05)]] then
-                local speed = ((body.velocity.y + body.angular_velocity.y) / 2)
-                if speed < -0.01 or speed > 0.01 then
-                    body.force.y = body.force.y + self.gravity.y * body.mass
-                end
+        if not body.is_sleeping then
+            if body.use_gravity then
+                body.force.y = body.force.y + self.gravity.y * body.mass
             end
 
             -- скорость (F = ma => a = F/m, v = v0 + a*dt)
@@ -165,6 +190,7 @@ function World:step(dt)
 
             -- сопротивление воздуха
             body.velocity.x = body.velocity.x * 0.99
+            body.velocity.y = body.velocity.y * 0.99
             body.velocity.z = body.velocity.z * 0.99
 
             -- позиция
@@ -184,33 +210,12 @@ function World:step(dt)
     self:_resolve_collisions()
 end
 
--- function World:_is_touching_ground(body, tolerance)
---     for _, other in ipairs(self.bodies) do
---         if other.body_type == 'static' then
---             local aabb_a = body:get_aabb()
---             local aabb_b = other:get_aabb()
-
---             if math.abs(aabb_a.min.y - aabb_b.max.y) < tolerance then
---                 if aabb_a.max.x > aabb_b.min.x and aabb_a.min.x < aabb_b.max.x and
---                    aabb_a.max.z > aabb_b.min.z and aabb_a.min.z < aabb_b.max.z then
---                     return true
---                 end
---             end
---         end
---     end
---     return false
--- end
-
 function World:_resolve_collisions()
     for i, body_a in ipairs(self.bodies) do
-        if body_a.body_type == 'dynamic' then
-            for j, body_b in ipairs(self.bodies) do
-                if not (i == j or body_b.body_type == 'dynamic') then
-                    local collision = self:_check_collision(body_a, body_b)
-                    if collision then
-                        self:_resolve_collision(body_a, body_b, collision)
-                    end
-                end
+        for j, body_b in ipairs(self.static_bodies) do
+            local collision = self:_check_collision(body_a, body_b)
+            if collision then
+                self:_resolve_collision(body_a, body_b, collision)
             end
         end
     end
@@ -250,6 +255,10 @@ function World:_check_collision(body_a, body_b)
 
     if not intersect.aabb_aabb(aabb_a, aabb_b) then
         return nil
+    end
+
+    if body_a.is_box and body_b.is_box then
+        return intersect.aabb_aabb_collision(aabb_a, aabb_b)
     end
 
     if body_a.is_sphere and body_b.is_sphere then

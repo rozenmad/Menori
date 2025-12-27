@@ -885,6 +885,42 @@ function intersect.capsule_triangle(p0, p1, radius, triangle)
 end
 
 ----
+-- Tests intersection between two AABBs with collision data.
+-- @tparam table a AABB {min=vec3, max=vec3}
+-- @tparam table b AABB {min=vec3, max=vec3}
+-- @treturn table|false Collision data {normal=vec3, depth=number, point=vec3} or false if no collision
+function intersect.aabb_aabb_collision(a, b)
+    if not intersect.aabb_aabb(a, b) then
+        return false
+    end
+
+    local overlap_x = math_min(a.max.x - b.min.x, b.max.x - a.min.x)
+    local overlap_y = math_min(a.max.y - b.min.y, b.max.y - a.min.y)
+    local overlap_z = math_min(a.max.z - b.min.z, b.max.z - a.min.z)
+
+    local min_overlap = math_min(overlap_x, overlap_y, overlap_z)
+
+    local normal = vec3(0, 0, 0)
+    if min_overlap == overlap_x then
+        normal.x = a.max.x - b.min.x < b.max.x - a.min.x and -1 or 1
+    elseif min_overlap == overlap_y then
+        normal.y = a.max.y - b.min.y < b.max.y - a.min.y and -1 or 1
+    else
+        normal.z = a.max.z - b.min.z < b.max.z - a.min.z and -1 or 1
+    end
+
+    local contact_x = math_max(a.min.x, b.min.x) + math_min(a.max.x, b.max.x)
+    local contact_y = math_max(a.min.y, b.min.y) + math_min(a.max.y, b.max.y)
+    local contact_z = math_max(a.min.z, b.min.z) + math_min(a.max.z, b.max.z)
+
+    return {
+        normal = {normal.x, normal.y, normal.z},
+        depth = min_overlap,
+        point = {contact_x * 0.5, contact_y * 0.5, contact_z * 0.5}
+    }
+end
+
+----
 -- Tests intersection between two AABBs.
 -- @tparam table a AABB {min=vec3, max=vec3}
 -- @tparam table b AABB {min=vec3, max=vec3}
