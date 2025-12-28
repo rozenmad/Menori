@@ -41,31 +41,6 @@ function Body(self, body_type)
     self.velocity         = vec3()
     self.force            = vec3()
 
-    self.angular_velocity = vec3()
-    self.torque           = vec3()
-
-    local inertia = vec3(1, 1, 1)
-    if self.is_sphere then
-        local i = 0.4 * self.mass * self.radius * self.radius
-        inertia:set(i, i, i)
-    elseif self.is_box then
-        local w2 = self.w * self.w
-        local h2 = self.h * self.h
-        local d2 = self.d * self.d
-        inertia.x = (1/12) * self.mass * (h2 + d2)
-        inertia.y = (1/12) * self.mass * (w2 + d2)
-        inertia.z = (1/12) * self.mass * (w2 + h2)
-    elseif self.is_capsule then
-        local r2 = self.radius * self.radius
-        local h2 = self.height * self.height
-        local i_axial = 0.5 * self.mass * r2
-        local i_radial = self.mass * (0.25 * r2 + (1/12) * h2)
-        inertia:set(i_radial, i_axial, i_radial)
-    end
-
-    self.inertia = inertia
-    self.inv_inertia = vec3():div(vec3(1, 1, 1), inertia)
-
     function self:set_body_type(body_type)
         self.inv_mass = (body_type == 'static') and 0 or (1 / self.mass)
         if body_type ~= self.body_type then
@@ -100,48 +75,10 @@ function Body(self, body_type)
         self.force.z = self.force.z + fz
     end
 
-    function self:apply_force_at_point(fx, fy, fz, px, py, pz)
-        self:apply_force(fx, fy, fz)
-
-        -- torque = r × F
-        local world_pos = self:get_world_position()
-        local rx, ry, rz = px - world_pos.x, py - world_pos.y, pz - world_pos.z
-
-        -- r × F
-        local tx = ry * fz - rz * fy
-        local ty = rz * fx - rx * fz
-        local tz = rx * fy - ry * fx
-
-        self.torque.x = self.torque.x + tx
-        self.torque.y = self.torque.y + ty
-        self.torque.z = self.torque.z + tz
-    end
-
     function self:set_velocity(vx, vy, vz)
         self.velocity.x = vx
         self.velocity.y = vy
         self.velocity.z = vz
-    end
-
-    function self:set_angular_velocity(vx, vy, vz)
-        self.angular_velocity.x = vx
-        self.angular_velocity.y = vy
-        self.angular_velocity.z = vz
-    end
-
-    function self:get_hemisphere_centers()
-        if self.is_capsule then
-            local half = self.height * 0.5
-            local mat = self.world_matrix
-            local p0_world = mat:multiply_vec3(vec3(0, -half, 0))
-            local p1_world = mat:multiply_vec3(vec3(0, half, 0))
-            return p0_world, p1_world
-        end
-        return self:get_world_position(), self:get_world_position()
-    end
-
-    function self:get_world_position()
-        return self:get_world_position()
     end
 end
 
@@ -180,6 +117,33 @@ function CapsuleModel:init(radius, height)
 	self.is_capsule = true
 	self.radius = radius
 	self.height = height
+
+    function self:update_capsule_points()
+        local half = self.height * 0.5
+        local mat = self.world_matrix
+        self.p0 = mat:multiply_vec3(vec3(0, -half, 0))
+        self.p1 = mat:multiply_vec3(vec3(0, half, 0))
+    end
+
+    local _set_position = self.set_position
+    function self:set_position(x, y, z)
+        _set_position(self, x, y, z)
+        self:update_capsule_points()
+    end
+    self:set_position(0, 0, 0)
+
+    -- local _set_rotation = self.set_rotation
+    -- function self:set_rotation(q)
+    --     _set_rotation(self, q)
+    --     self:update_capsule_points()
+    -- end
+
+    local _set_scale = self.set_scale
+    function self:set_scale(sx, sy, sz)
+        _set_scale(self, sx, sy, sz)
+        self:update_capsule_points()
+    end
+
     Body(self, 'static')
 end
 
@@ -213,15 +177,16 @@ function World:add_body(body)
     body.world = self
 end
 
--- function World:remove_body(body)
---     for i, v in ipairs(self.bodies) do
---         if v == body then
---             table.remove(self.bodies, i)
---             body.world = nil
---             break
---         end
---     end
--- end
+function World:remove_body(body)
+    local body_table = body.body_type == 'dynamic' and self.bodies or self.static_bodies
+    for index, v_body in ipairs(body_table) do
+        if v_body == body then
+            table.remove(self.bodies, index)
+            break
+        end
+    end
+    body.world = nil
+end
 
 function World:step(dt)
     for _, body in ipairs(self.bodies) do
@@ -249,33 +214,6 @@ function World:step(dt)
             body.force.x = 0
             body.force.y = 0
             body.force.z = 0
-
-            -- τ = Iα => α = τ/I, ω = ω0 + α*dt
-            local alpha_x = body.torque.x * body.inv_inertia.x
-            local alpha_y = body.torque.y * body.inv_inertia.y
-            local alpha_z = body.torque.z * body.inv_inertia.z
-
-            body.angular_velocity.x = body.angular_velocity.x + alpha_x * dt
-            body.angular_velocity.y = body.angular_velocity.y + alpha_y * dt
-            body.angular_velocity.z = body.angular_velocity.z + alpha_z * dt
-
-            body.angular_velocity.x = body.angular_velocity.x * 0.99
-            body.angular_velocity.y = body.angular_velocity.y * 0.99
-            body.angular_velocity.z = body.angular_velocity.z * 0.99
-
-            local angular_speed = body.angular_velocity:length()
-            if angular_speed > 0.0001 then
-                local angle = angular_speed * dt
-                local axis = body.angular_velocity:clone():normalize()
-
-                local delta_rotation = quat.from_angle_axis(angle, axis)
-                local current_rotation = body.rotation:clone()
-                body:set_rotation(delta_rotation * current_rotation)
-            end
-
-            body.torque.x = 0
-            body.torque.y = 0
-            body.torque.z = 0
         end
     end
 
@@ -293,8 +231,7 @@ function World:_resolve_collisions(dt)
 
         if self.sleep then
             local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
-            local angular_velocity = body_a.angular_velocity.x + body_a.angular_velocity.y + body_a.angular_velocity.z
-            if velocity < 0.01 and velocity > -0.01 and angular_velocity < 0.01 and angular_velocity > -0.01  then
+            if velocity < 0.01 and velocity > -0.01 then
                 body_a.sleep_timer = body_a.sleep_timer - dt
                 if body_a.sleep_timer < 0 then
                     body_a.is_sleeping = true
@@ -344,6 +281,154 @@ function World:_check_collision(body_a, body_b)
         return intersect.aabb_aabb_collision(aabb_a, aabb_b)
     end
 
+    if body_a.is_capsule and (body_b.is_box or body_b.is_plane) then
+        local hit = intersect.capsule_aabb(body_a.p0, body_a.p1, body_a.radius, aabb_b)
+
+        if hit then
+            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+            local to_capsule = (capsule_center - hit_point):normalize()
+
+            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+
+            if vec3.dot(normal, to_capsule) < 0 then
+                normal = -normal
+            end
+
+            return {
+                normal = {normal.x, normal.y, normal.z},
+                depth = hit.depth,
+                point = {hit_point.x, hit_point.y, hit_point.z}
+            }
+        end
+        return nil
+    end
+
+    if (body_a.is_box or body_b.is_plane) and body_b.is_capsule then
+        body_b:update_capsule_points()
+        return intersect.capsule_aabb(body_b.p0, body_b.p1, body_b.radius, aabb_a)
+    end
+
+    if body_a.is_capsule and body_b.is_capsule then
+        body_b:update_capsule_points()
+        local hit = intersect.capsule_capsule(body_a.p0, body_a.p1, body_a.radius, body_b.p0, body_b.p1, body_b.radius)
+
+        if hit then
+            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+            local to_capsule = (capsule_center - hit_point):normalize()
+            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+            if vec3.dot(normal, to_capsule) < 0 then
+                normal = -normal
+            end
+            return {
+                normal = {normal.x, normal.y, normal.z},
+                depth = hit.depth,
+                point = {hit_point.x, hit_point.y, hit_point.z}
+            }
+        end
+        return nil
+    end
+
+    if body_a.is_capsule and body_b.is_triangle then
+        local mat_b = body_b.world_matrix
+        local world_v1 = mat_b:multiply_vec3(vec3(body_b.v1[1], body_b.v1[2], body_b.v1[3]))
+        local world_v2 = mat_b:multiply_vec3(vec3(body_b.v2[1], body_b.v2[2], body_b.v2[3]))
+        local world_v3 = mat_b:multiply_vec3(vec3(body_b.v3[1], body_b.v3[2], body_b.v3[3]))
+
+        local triangle_vertices = {
+            {world_v1.x, world_v1.y, world_v1.z},
+            {world_v2.x, world_v2.y, world_v2.z},
+            {world_v3.x, world_v3.y, world_v3.z}
+        }
+
+        local hit = intersect.capsule_triangle(body_a.p0, body_a.p1, body_a.radius, triangle_vertices)
+
+        if hit then
+            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+            local to_capsule = (capsule_center - hit_point):normalize()
+
+            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+
+            if vec3.dot(normal, to_capsule) < 0 then
+                normal = -normal
+            end
+
+            return {
+                normal = {normal.x, normal.y, normal.z},
+                depth = hit.depth,
+                point = {hit_point.x, hit_point.y, hit_point.z}
+            }
+        end
+        return nil
+    end
+
+    if body_a.is_triangle and body_b.is_capsule then
+        body_b:update_capsule_points()
+
+        local mat_a = body_a.world_matrix
+        local world_v1 = mat_a:multiply_vec3(vec3(body_a.v1[1], body_a.v1[2], body_a.v1[3]))
+        local world_v2 = mat_a:multiply_vec3(vec3(body_a.v2[1], body_a.v2[2], body_a.v2[3]))
+        local world_v3 = mat_a:multiply_vec3(vec3(body_a.v3[1], body_a.v3[2], body_a.v3[3]))
+
+        local triangle_vertices = {
+            {world_v1.x, world_v1.y, world_v1.z},
+            {world_v2.x, world_v2.y, world_v2.z},
+            {world_v3.x, world_v3.y, world_v3.z}
+        }
+
+        local hit = intersect.capsule_triangle(body_b.p0, body_b.p1, body_b.radius, triangle_vertices)
+
+        if hit then
+            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+            local capsule_center = (body_b.p0 + body_b.p1) * 0.5
+            local to_capsule = (capsule_center - hit_point):normalize()
+
+            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+
+            if vec3.dot(normal, to_capsule) > 0 then
+                normal = -normal
+            end
+
+            return {
+                normal = {normal.x, normal.y, normal.z},
+                depth = hit.depth,
+                point = {hit_point.x, hit_point.y, hit_point.z},
+            }
+        end
+        return nil
+    end
+
+    if body_a.is_capsule and body_b.is_sphere then
+        local hit = intersect.capsule_sphere(body_a.p0, body_a.p1, body_a.radius, body_b.position, body_b.radius)
+
+        if hit then
+            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+            local to_capsule = (capsule_center - hit_point):normalize()
+
+            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+
+            if vec3.dot(normal, to_capsule) < 0 then
+                normal = -normal
+            end
+
+            return {
+                normal = {normal.x, normal.y, normal.z},
+                depth = hit.depth,
+                point = {hit_point.x, hit_point.y, hit_point.z}
+            }
+        end
+        return nil
+    end
+
+    if body_a.is_sphere and body_b.is_capsule then
+        body_b:update_capsule_points()
+
+        return intersect.capsule_sphere(body_b.p0, body_b.p1, body_b.radius, body_a.position, body_a.radius)
+    end
+
     if body_a.is_sphere and body_b.is_sphere then
         return intersect.sphere_sphere(
             body_a:get_world_position(),
@@ -388,15 +473,7 @@ function World:_check_collision(body_a, body_b)
         end
     end
 
-    return {
-        normal = {0, 1, 0},
-        depth = 0.01,
-        point = {
-            (aabb_a.min.x + aabb_a.max.x) * 0.5,
-            math.min(aabb_a.min.y, aabb_b.min.y),
-            (aabb_a.min.z + aabb_a.max.z) * 0.5
-        }
-    }
+    return intersect.aabb_aabb_collision(aabb_a, aabb_b)
 end
 
 local Physics = class('Physics')

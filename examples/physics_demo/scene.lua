@@ -18,12 +18,49 @@ local physics = menori.Physics()
 local scene = menori.Scene:extend('physics_scene')
 
 local BoxModel = menori.ModelNode:extend('BoxModel')
-
 function BoxModel:init(x, y, z, w, h, d)
 	BoxModel.super.init(self, menori.Box(w, h, d))
 
 	self:set_position(x, y, z)
 	self.is_box = true
+end
+
+local CapsuleModel = menori.ModelNode:extend('CapsuleModel')
+function CapsuleModel:init(x, y, z, radius, height)
+	CapsuleModel.super.init(self, menori.Capsule(radius, height))
+	self.is_capsule = true
+	self.radius = radius
+	self.height = height
+	self:set_position(x, y, z)
+end
+
+local TriangleModel = menori.ModelNode:extend('TriangleModel')
+function TriangleModel:init(x, y, z, v1, v2, v3)
+	TriangleModel.super.init(self, menori.Triangle(v1, v2, v3))
+	self.v1 = v1
+    self.v2 = v2
+    self.v3 = v3
+    self.is_triangle = true
+	self:set_position(x, y, z)
+end
+
+local SphereModel = menori.ModelNode:extend('SphereModel')
+function SphereModel:init(x, y, z, radius)
+	SphereModel.super.init(self, menori.Sphere(radius))
+	self.radius = radius
+    self.is_sphere = true
+	self:set_position(x, y, z)
+end
+
+local PlaneModel = menori.ModelNode:extend('PlaneModel')
+function PlaneModel:init(x, y, z, width, height, v_segments, h_segments)
+	PlaneModel.super.init(self, menori.Plane(width, height, v_segments, h_segments))
+	self.width = width
+    self.height = height
+    self.v_segments = v_segments
+    self.h_segments = h_segments
+    self.is_plane = true
+	self:set_position(x, y, z)
 end
 
 function scene:init()
@@ -38,19 +75,61 @@ function scene:init()
 	local world = physics.world(-9.81, true)
 	self.world = world
 
-	local platform_body = physics.box(1, 1, 1)
+	-------------- PLAYER BOX ---------------
+	-- local platform_body = physics.box(1, 1, 1)
+	-- world:add_body(platform_body)
+	-- platform_body:set_body_type('dynamic')
+	-- platform_body.restitution = 0.0
+	-- -- platform_body.is_sleeping = true
+
+	-- local platform = BoxModel(2, 0.5, 0, 1, 1, 1)
+	-- platform_body:set_position(2, 0.5, 0)
+	-- platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
+	-- self.platform = platform
+	-- self.root_node:attach(platform)
+	-- platform.body = platform_body
+
+	-------------- PLAYER CAPSULE ---------------
+	local platform_body = physics.capsule(0.5, 1)
 	world:add_body(platform_body)
 	platform_body:set_body_type('dynamic')
 	platform_body.restitution = 0.0
+	platform_body:set_position(2, 0.5, 0)
 	-- platform_body.is_sleeping = true
 
-	local platform = BoxModel(2, 0.5, 0, 1, 1, 1)
-	platform_body:set_position(2, 0.5, 0)
+	local platform = CapsuleModel(2, 0.5, 0, 0.5, 1)
 	platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
 	self.platform = platform
 	self.root_node:attach(platform)
 	platform.body = platform_body
 
+	-------------- PLAYER TRIANGLE ---------------
+	-- local platform_body = physics.triangle({0, 2, 0},{-2, 0, 1}, {2, 0, -1})
+	-- world:add_body(platform_body)
+	-- platform_body:set_body_type('dynamic')
+	-- platform_body.restitution = 0.0
+	-- platform_body:set_position(2, 0.5, 0)
+
+	-- local platform = TriangleModel(2, 0.5, 0, {0, 2, 0},{-2, 0, 1}, {2, 0, -1})
+	-- platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
+	-- self.platform = platform
+	-- self.root_node:attach(platform)
+	-- platform.body = platform_body
+
+	-------------- PLAYER SPHERE ---------------
+	-- local platform_body = physics.sphere(0.5)
+	-- world:add_body(platform_body)
+	-- platform_body:set_body_type('dynamic')
+	-- platform_body.restitution = 0.0
+	-- platform_body:set_position(2, 0.5, 0)
+
+	-- local platform = SphereModel(2, 0.5, 0, 0.5)
+	-- platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
+	-- self.platform = platform
+	-- self.root_node:attach(platform)
+	-- platform.body = platform_body
+
+	------------- STATIC BOX ---------------
 	local platform2_body = physics.box(1, 1, 1)
 	world:add_body(platform2_body)
 
@@ -60,11 +139,42 @@ function scene:init()
 	self.root_node:attach(platform2)
 	platform2.body = platform2_body
 
+	------------- STATIC BOX ---------------
 	local platform2_body = physics.box(1, 1, 1)
 	world:add_body(platform2_body)
 
 	local platform2 = BoxModel(1, -4, 0, 1, 1, 1)
 	platform2_body:set_position(1, -4, 0)
+	platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+	self.root_node:attach(platform2)
+	platform2.body = platform2_body
+
+	------------- STATIC CAPSULE ---------------
+	local platform2_body = physics.capsule(1, 2)
+	world:add_body(platform2_body)
+	platform2_body:set_position(-2, -4, 0)
+
+	local platform2 = CapsuleModel(-2, -4, 0, 1, 2)
+	platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+	self.root_node:attach(platform2)
+	platform2.body = platform2_body
+
+	------------- STATIC TRIANGLE ---------------
+	local platform2_body = physics.triangle({1, 0, 0}, {0, 1, 0}, {0, 0, 1})
+	world:add_body(platform2_body)
+	platform2_body:set_position(6, -4, 0)
+
+	local platform2 = TriangleModel(6, -4, 0, {1, 0, 0}, {0, 1, 0}, {0, 0, 1})
+	platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+	self.root_node:attach(platform2)
+	platform2.body = platform2_body
+
+	------------- STATIC SPHERE ---------------
+	local platform2_body = physics.sphere(0.5)
+	world:add_body(platform2_body)
+	platform2_body:set_position(-2, 0, 0)
+
+	local platform2 = SphereModel(-2, 0, 0, 0.5)
 	platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
 	self.root_node:attach(platform2)
 	platform2.body = platform2_body
@@ -81,21 +191,22 @@ function scene:update(dt)
 	local platform_body_position = self.platform.body.position
 	self.platform:set_position(platform_body_position.x, platform_body_position.y, platform_body_position.z)
 
-	local platform_body_rotation = self.platform.body.rotation
-	self.platform:set_rotation(platform_body_rotation)
-
 	self.world:step(dt)
-end
 
-function scene:keypressed(key)
-	if key == 'w' then
+	if love.keyboard.isDown('space') then
 		self.platform.body:set_velocity(self.platform.body.velocity.x, 5, self.platform.body.velocity.z)
-	elseif key == 'a' then
+	end
+	if love.keyboard.isDown('s') then
+		self.platform.body:set_velocity(self.platform.body.velocity.x, self.platform.body.velocity.y, 3)
+	end
+	if love.keyboard.isDown('w') then
+		self.platform.body:set_velocity(self.platform.body.velocity.x, self.platform.body.velocity.y, -3)
+	end
+	if love.keyboard.isDown('a') then
 		self.platform.body:set_velocity(-3, self.platform.body.velocity.y, self.platform.body.velocity.z)
-	elseif key == 'd' then
+	end
+	if love.keyboard.isDown('d') then
 		self.platform.body:set_velocity(3, self.platform.body.velocity.y, self.platform.body.velocity.z)
-	elseif key == 'z' then
-		self.platform.body:set_angular_velocity(3, 3, 3)
 	end
 end
 
