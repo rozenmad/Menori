@@ -19,6 +19,14 @@ local Triangle = require(modules .. 'core3d.shapes.triangle')
 local Plane    = require(modules .. 'core3d.shapes.plane')
 local Capsule  = require(modules .. 'core3d.shapes.capsule')
 
+local SHAPE = {
+    BOX = 1,
+    CAPSULE = 2,
+    PLANE = 3,
+    SPHERE = 4,
+    TRIANGLE = 5
+}
+
 local vec3      = ml.vec3
 local mat4      = ml.mat4
 local bound3    = ml.bound3
@@ -89,14 +97,25 @@ function BoxModel:init(w, h, d)
     self.h = h
     self.d = d
     self.is_box = true
+    self.shape_id = SHAPE.BOX
     Body(self, 'static')
 end
 
-local SphereModel = ModelNode:extend('SphereModel')
-function SphereModel:init(radius)
-	SphereModel.super.init(self, Sphere(radius))
+local CapsuleModel = ModelNode:extend('CapsuleModel')
+function CapsuleModel:init(radius, height)
+	CapsuleModel.super.init(self, Capsule(radius, height))
+	self.is_capsule = true
 	self.radius = radius
-    self.is_sphere = true
+	self.height = height
+    self.shape_id = SHAPE.CAPSULE
+
+    function self:update_capsule_points()
+        local half = self.height * 0.5
+        local mat = self.world_matrix
+        self.p0 = mat:multiply_vec3(vec3(0, -half, 0))
+        self.p1 = mat:multiply_vec3(vec3(0, half, 0))
+    end
+
     Body(self, 'static')
 end
 
@@ -108,42 +127,16 @@ function PlaneModel:init(width, height, v_segments, h_segments)
     self.v_segments = v_segments
     self.h_segments = h_segments
     self.is_plane = true
+    self.shape_id = SHAPE.PLANE
     Body(self, 'static')
 end
 
-local CapsuleModel = ModelNode:extend('CapsuleModel')
-function CapsuleModel:init(radius, height)
-	CapsuleModel.super.init(self, Capsule(radius, height))
-	self.is_capsule = true
+local SphereModel = ModelNode:extend('SphereModel')
+function SphereModel:init(radius)
+	SphereModel.super.init(self, Sphere(radius))
 	self.radius = radius
-	self.height = height
-
-    function self:update_capsule_points()
-        local half = self.height * 0.5
-        local mat = self.world_matrix
-        self.p0 = mat:multiply_vec3(vec3(0, -half, 0))
-        self.p1 = mat:multiply_vec3(vec3(0, half, 0))
-    end
-
-    local _set_position = self.set_position
-    function self:set_position(x, y, z)
-        _set_position(self, x, y, z)
-        self:update_capsule_points()
-    end
-    self:set_position(0, 0, 0)
-
-    -- local _set_rotation = self.set_rotation
-    -- function self:set_rotation(q)
-    --     _set_rotation(self, q)
-    --     self:update_capsule_points()
-    -- end
-
-    local _set_scale = self.set_scale
-    function self:set_scale(sx, sy, sz)
-        _set_scale(self, sx, sy, sz)
-        self:update_capsule_points()
-    end
-
+    self.is_sphere = true
+    self.shape_id = SHAPE.SPHERE
     Body(self, 'static')
 end
 
@@ -154,6 +147,7 @@ function TriangleModel:init(v1, v2, v3)
     self.v2 = v2
     self.v3 = v3
     self.is_triangle = true
+    self.shape_id = SHAPE.TRIANGLE
     Body(self, 'static')
 end
 
@@ -269,37 +263,206 @@ function World:_resolve_collision(body_a, body_b, collision)
     body_a.velocity.z = body_a.velocity.z * (1 - body_a.friction)
 end
 
---[[
-box - box
-box - capsule
-box - plane?
-box - sphere
-box - triangle
+local collison_handlers = {
+    [SHAPE.BOX] = {
+        [SHAPE.BOX] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+        end,
+        [SHAPE.CAPSULE] = function (aabb_a, aabb_b, body_a, body_b)
+            body_b:update_capsule_points()
+            return intersect.capsule_aabb(body_b.p0, body_b.p1, body_b.radius, aabb_a)
+        end,
+        [SHAPE.PLANE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+        end,
+        [SHAPE.SPHERE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.sphere_aabb(body_b.position, body_b.radius, aabb_a)
+        end,
+        [SHAPE.TRIANGLE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+        end
+    },
+    [SHAPE.CAPSULE] = {
+        [SHAPE.BOX] = function (aabb_a, aabb_b, body_a, body_b)
+            body_a:update_capsule_points()
+            local hit = intersect.capsule_aabb(body_a.p0, body_a.p1, body_a.radius, aabb_b)
+            if hit then
+                local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+                local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+                local to_capsule = (capsule_center - hit_point):normalize()
+                local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+                if vec3.dot(normal, to_capsule) < 0 then
+                    normal = -normal
+                end
+                return {
+                    normal = {normal.x, normal.y, normal.z},
+                    depth = hit.depth,
+                    point = {hit_point.x, hit_point.y, hit_point.z}
+                }
+            end
+        end,
+        [SHAPE.CAPSULE] = function (aabb_a, aabb_b, body_a, body_b)
+            body_a:update_capsule_points()
+            body_b:update_capsule_points()
+            local hit = intersect.capsule_capsule(body_a.p0, body_a.p1, body_a.radius, body_b.p0, body_b.p1, body_b.radius)
+            if hit then
+                local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+                local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+                local to_capsule = (capsule_center - hit_point):normalize()
+                local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+                if vec3.dot(normal, to_capsule) < 0 then
+                    normal = -normal
+                end
+                return {
+                    normal = {normal.x, normal.y, normal.z},
+                    depth = hit.depth,
+                    point = {hit_point.x, hit_point.y, hit_point.z}
+                }
+            end
+        end,
+        [SHAPE.PLANE] = function (aabb_a, aabb_b, body_a, body_b)
+            body_a:update_capsule_points()
+            local hit = intersect.capsule_aabb(body_a.p0, body_a.p1, body_a.radius, aabb_b)
+            if hit then
+                local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+                local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+                local to_capsule = (capsule_center - hit_point):normalize()
+                local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+                if vec3.dot(normal, to_capsule) < 0 then
+                    normal = -normal
+                end
+                return {
+                    normal = {normal.x, normal.y, normal.z},
+                    depth = hit.depth,
+                    point = {hit_point.x, hit_point.y, hit_point.z}
+                }
+            end
+        end,
+        [SHAPE.SPHERE] = function (aabb_a, aabb_b, body_a, body_b)
+            body_a:update_capsule_points()
+            local hit = intersect.capsule_sphere(body_a.p0, body_a.p1, body_a.radius, body_b.position, body_b.radius)
+            if hit then
+                local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+                local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+                local to_capsule = (capsule_center - hit_point):normalize()
+                local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+                if vec3.dot(normal, to_capsule) < 0 then
+                    normal = -normal
+                end
+                return {
+                    normal = {normal.x, normal.y, normal.z},
+                    depth = hit.depth,
+                    point = {hit_point.x, hit_point.y, hit_point.z}
+                }
+            end
+        end,
+        [SHAPE.TRIANGLE] = function (aabb_a, aabb_b, body_a, body_b)
+            body_a:update_capsule_points()
+            local mat_b = body_b.world_matrix
+            local world_v1 = mat_b:multiply_vec3(vec3(body_b.v1[1], body_b.v1[2], body_b.v1[3]))
+            local world_v2 = mat_b:multiply_vec3(vec3(body_b.v2[1], body_b.v2[2], body_b.v2[3]))
+            local world_v3 = mat_b:multiply_vec3(vec3(body_b.v3[1], body_b.v3[2], body_b.v3[3]))
+            local triangle_vertices = {
+                {world_v1.x, world_v1.y, world_v1.z},
+                {world_v2.x, world_v2.y, world_v2.z},
+                {world_v3.x, world_v3.y, world_v3.z}
+            }
+            local hit = intersect.capsule_triangle(body_a.p0, body_a.p1, body_a.radius, triangle_vertices)
+            if hit then
+                local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+                local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+                local to_capsule = (capsule_center - hit_point):normalize()
+                local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+                if vec3.dot(normal, to_capsule) < 0 then
+                    normal = -normal
+                end
+                return {
+                    normal = {normal.x, normal.y, normal.z},
+                    depth = hit.depth,
+                    point = {hit_point.x, hit_point.y, hit_point.z}
+                }
+            end
+        end
+    },
+    [SHAPE.PLANE] = {
+        [SHAPE.BOX] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+        end,
+        [SHAPE.CAPSULE] = function (aabb_a, aabb_b, body_a, body_b)
+            body_b:update_capsule_points()
+            return intersect.capsule_aabb(body_b.p0, body_b.p1, body_b.radius, aabb_a)
+        end,
+        [SHAPE.PLANE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+        end,
+        [SHAPE.SPHERE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.sphere_aabb(body_b.position, body_b.radius, aabb_a)
+        end,
+        [SHAPE.TRIANGLE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+        end
+    },
+    [SHAPE.SPHERE] = {
+        [SHAPE.BOX] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.sphere_aabb( body_a.position, body_a.radius, aabb_b)
+        end,
+        [SHAPE.CAPSULE] = function (aabb_a, aabb_b, body_a, body_b)
+            body_b:update_capsule_points()
+            return intersect.capsule_sphere(body_b.p0, body_b.p1, body_b.radius, body_a.position, body_a.radius)
+        end,
+        [SHAPE.PLANE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.sphere_aabb( body_a.position, body_a.radius, aabb_b)
+        end,
+        [SHAPE.SPHERE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.sphere_aabb( body_b.position, body_b.radius, aabb_a)
+        end,
+        [SHAPE.TRIANGLE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.sphere_aabb( body_a.position, body_a.radius, aabb_b)
+        end
+    },
+    [SHAPE.TRIANGLE] = {
+        [SHAPE.BOX] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.sphere_aabb( body_a.position, body_a.radius, aabb_b)
+        end,
+        [SHAPE.CAPSULE] = function (aabb_a, aabb_b, body_a, body_b)
+            body_b:update_capsule_points()
+            local mat_a = body_a.world_matrix
+            local world_v1 = mat_a:multiply_vec3(vec3(body_a.v1[1], body_a.v1[2], body_a.v1[3]))
+            local world_v2 = mat_a:multiply_vec3(vec3(body_a.v2[1], body_a.v2[2], body_a.v2[3]))
+            local world_v3 = mat_a:multiply_vec3(vec3(body_a.v3[1], body_a.v3[2], body_a.v3[3]))
+            local triangle_vertices = {
+                {world_v1.x, world_v1.y, world_v1.z},
+                {world_v2.x, world_v2.y, world_v2.z},
+                {world_v3.x, world_v3.y, world_v3.z}
+            }
+            local hit = intersect.capsule_triangle(body_b.p0, body_b.p1, body_b.radius, triangle_vertices)
+            if hit then
+                local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+                local capsule_center = (body_b.p0 + body_b.p1) * 0.5
+                local to_capsule = (capsule_center - hit_point):normalize()
+                local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+                if vec3.dot(normal, to_capsule) > 0 then
+                    normal = -normal
+                end
+                return {
+                    normal = {normal.x, normal.y, normal.z},
+                    depth = hit.depth,
+                    point = {hit_point.x, hit_point.y, hit_point.z},
+                }
+            end
+        end,
+        [SHAPE.PLANE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+        end,
+        [SHAPE.SPHERE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.sphere_aabb( body_b.position, body_b.radius, aabb_a)
+        end,
+        [SHAPE.TRIANGLE] = function (aabb_a, aabb_b, body_a, body_b)
+            return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+        end
+    }
+}
 
-capsule - box
-capsule - capsule
-capsule - plane?
-capsule - sphere
-capsule - triangle
-
-plane - box
-plane? - capsule
-plane - plane
-plane - sphere
-plane - triangle
-
-sphere - box
-sphere - capsule
-sphere - plane?
-sphere - sphere
-sphere - triangle
-
-triangle - box
-triangle - capsule
-triangle - plane
-triangle - sphere
-triangle - triangle
-]]
 function World:_check_collision(body_a, body_b)
     local aabb_a = body_a:get_aabb()
     local aabb_b = body_b:get_aabb()
@@ -308,181 +471,11 @@ function World:_check_collision(body_a, body_b)
         return nil
     end
 
-    if (body_a.is_box or body_a.is_plane or body_a.is_triangle) and (body_b.is_box or body_b.is_plane or body_b.is_triangle) then
-        return intersect.aabb_aabb_collision(aabb_a, aabb_b)
-    end
-
-    if (body_a.is_box or body_b.is_plane) and body_b.is_capsule then
-        body_b:update_capsule_points()
-        return intersect.capsule_aabb(body_b.p0, body_b.p1, body_b.radius, aabb_a)
-    end
-
-    if (body_a.is_box or body_a.is_plane or body_a.is_triangle) and body_b.is_sphere then
-        return intersect.sphere_aabb(
-            body_b.position,
-            body_b.radius,
-            aabb_a
-        )
-    end
-
-    if body_a.is_capsule and (body_b.is_box or body_b.is_plane) then
-        local hit = intersect.capsule_aabb(body_a.p0, body_a.p1, body_a.radius, aabb_b)
-
-        if hit then
-            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
-            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
-            local to_capsule = (capsule_center - hit_point):normalize()
-
-            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
-
-            if vec3.dot(normal, to_capsule) < 0 then
-                normal = -normal
-            end
-
-            return {
-                normal = {normal.x, normal.y, normal.z},
-                depth = hit.depth,
-                point = {hit_point.x, hit_point.y, hit_point.z}
-            }
+    if collison_handlers[body_a.shape_id] then
+        local handler = collison_handlers[body_a.shape_id][body_b.shape_id]
+        if handler then
+            return handler(aabb_a, aabb_b, body_a, body_b)
         end
-        return nil
-    end
-
-    if body_a.is_capsule and body_b.is_capsule then
-        body_b:update_capsule_points()
-        local hit = intersect.capsule_capsule(body_a.p0, body_a.p1, body_a.radius, body_b.p0, body_b.p1, body_b.radius)
-
-        if hit then
-            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
-            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
-            local to_capsule = (capsule_center - hit_point):normalize()
-            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
-            if vec3.dot(normal, to_capsule) < 0 then
-                normal = -normal
-            end
-            return {
-                normal = {normal.x, normal.y, normal.z},
-                depth = hit.depth,
-                point = {hit_point.x, hit_point.y, hit_point.z}
-            }
-        end
-        return nil
-    end
-
-    if body_a.is_capsule and body_b.is_triangle then
-        local mat_b = body_b.world_matrix
-        local world_v1 = mat_b:multiply_vec3(vec3(body_b.v1[1], body_b.v1[2], body_b.v1[3]))
-        local world_v2 = mat_b:multiply_vec3(vec3(body_b.v2[1], body_b.v2[2], body_b.v2[3]))
-        local world_v3 = mat_b:multiply_vec3(vec3(body_b.v3[1], body_b.v3[2], body_b.v3[3]))
-
-        local triangle_vertices = {
-            {world_v1.x, world_v1.y, world_v1.z},
-            {world_v2.x, world_v2.y, world_v2.z},
-            {world_v3.x, world_v3.y, world_v3.z}
-        }
-
-        local hit = intersect.capsule_triangle(body_a.p0, body_a.p1, body_a.radius, triangle_vertices)
-
-        if hit then
-            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
-            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
-            local to_capsule = (capsule_center - hit_point):normalize()
-
-            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
-
-            if vec3.dot(normal, to_capsule) < 0 then
-                normal = -normal
-            end
-
-            return {
-                normal = {normal.x, normal.y, normal.z},
-                depth = hit.depth,
-                point = {hit_point.x, hit_point.y, hit_point.z}
-            }
-        end
-        return nil
-    end
-
-    if body_a.is_capsule and body_b.is_sphere then
-        local hit = intersect.capsule_sphere(body_a.p0, body_a.p1, body_a.radius, body_b.position, body_b.radius)
-
-        if hit then
-            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
-            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
-            local to_capsule = (capsule_center - hit_point):normalize()
-
-            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
-
-            if vec3.dot(normal, to_capsule) < 0 then
-                normal = -normal
-            end
-
-            return {
-                normal = {normal.x, normal.y, normal.z},
-                depth = hit.depth,
-                point = {hit_point.x, hit_point.y, hit_point.z}
-            }
-        end
-        return nil
-    end
-
-    if body_a.is_triangle and body_b.is_capsule then
-        body_b:update_capsule_points()
-
-        local mat_a = body_a.world_matrix
-        local world_v1 = mat_a:multiply_vec3(vec3(body_a.v1[1], body_a.v1[2], body_a.v1[3]))
-        local world_v2 = mat_a:multiply_vec3(vec3(body_a.v2[1], body_a.v2[2], body_a.v2[3]))
-        local world_v3 = mat_a:multiply_vec3(vec3(body_a.v3[1], body_a.v3[2], body_a.v3[3]))
-
-        local triangle_vertices = {
-            {world_v1.x, world_v1.y, world_v1.z},
-            {world_v2.x, world_v2.y, world_v2.z},
-            {world_v3.x, world_v3.y, world_v3.z}
-        }
-
-        local hit = intersect.capsule_triangle(body_b.p0, body_b.p1, body_b.radius, triangle_vertices)
-
-        if hit then
-            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
-            local capsule_center = (body_b.p0 + body_b.p1) * 0.5
-            local to_capsule = (capsule_center - hit_point):normalize()
-
-            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
-
-            if vec3.dot(normal, to_capsule) > 0 then
-                normal = -normal
-            end
-
-            return {
-                normal = {normal.x, normal.y, normal.z},
-                depth = hit.depth,
-                point = {hit_point.x, hit_point.y, hit_point.z},
-            }
-        end
-        return nil
-    end
-
-    if body_a.is_sphere and body_b.is_capsule then
-        body_b:update_capsule_points()
-
-        return intersect.capsule_sphere(body_b.p0, body_b.p1, body_b.radius, body_a.position, body_a.radius)
-    end
-
-    if body_a.is_sphere and body_b.is_sphere then
-        return intersect.sphere_sphere(
-            body_a:get_world_position(),
-            body_a.radius,
-            body_b:get_world_position(),
-            body_b.radius
-        )
-    end
-
-    if body_a.is_sphere and (body_b.is_box or body_b.is_plane or body_a.is_triangle) then
-        return intersect.sphere_aabb(
-            body_a.position,
-            body_a.radius,
-            aabb_b
-        )
     end
 
     return intersect.aabb_aabb_collision(aabb_a, aabb_b)
