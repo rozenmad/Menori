@@ -179,6 +179,17 @@ function scene:init()
 	self.root_node:attach(platform2)
 	platform2.body = platform2_body
 
+	------------- STATIC PLANE ---------------
+	local plane_body = physics.plane(10, 10, 1, 1)
+	world:add_body(plane_body)
+	plane_body:set_position(0, -10, 0)
+
+	local plane_visual = PlaneModel(0, -10, 0, 10, 10, 1, 1)
+	plane_visual.material:set('baseColor', {0.4, 0.7, 0.9, 1})
+	plane_visual.material:set('emissive', {0.1, 0.1, 0.1, 1})
+	self.root_node:attach(plane_visual)
+	plane_visual.body = plane_body
+
 	self.x_angle = 0
 	self.y_angle = -30
 	self.view_scale = 10

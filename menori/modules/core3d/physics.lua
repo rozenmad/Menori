@@ -269,6 +269,37 @@ function World:_resolve_collision(body_a, body_b, collision)
     body_a.velocity.z = body_a.velocity.z * (1 - body_a.friction)
 end
 
+--[[
+box - box
+box - capsule
+box - plane?
+box - sphere
+box - triangle
+
+capsule - box
+capsule - capsule
+capsule - plane?
+capsule - sphere
+capsule - triangle
+
+plane - box
+plane? - capsule
+plane - plane
+plane - sphere
+plane - triangle
+
+sphere - box
+sphere - capsule
+sphere - plane?
+sphere - sphere
+sphere - triangle
+
+triangle - box
+triangle - capsule
+triangle - plane
+triangle - sphere
+triangle - triangle
+]]
 function World:_check_collision(body_a, body_b)
     local aabb_a = body_a:get_aabb()
     local aabb_b = body_b:get_aabb()
@@ -277,8 +308,21 @@ function World:_check_collision(body_a, body_b)
         return nil
     end
 
-    if body_a.is_box and body_b.is_box then
+    if (body_a.is_box or body_a.is_plane or body_a.is_triangle) and (body_b.is_box or body_b.is_plane or body_b.is_triangle) then
         return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+    end
+
+    if (body_a.is_box or body_b.is_plane) and body_b.is_capsule then
+        body_b:update_capsule_points()
+        return intersect.capsule_aabb(body_b.p0, body_b.p1, body_b.radius, aabb_a)
+    end
+
+    if (body_a.is_box or body_a.is_plane or body_a.is_triangle) and body_b.is_sphere then
+        return intersect.sphere_aabb(
+            body_b.position,
+            body_b.radius,
+            aabb_a
+        )
     end
 
     if body_a.is_capsule and (body_b.is_box or body_b.is_plane) then
@@ -302,11 +346,6 @@ function World:_check_collision(body_a, body_b)
             }
         end
         return nil
-    end
-
-    if (body_a.is_box or body_b.is_plane) and body_b.is_capsule then
-        body_b:update_capsule_points()
-        return intersect.capsule_aabb(body_b.p0, body_b.p1, body_b.radius, aabb_a)
     end
 
     if body_a.is_capsule and body_b.is_capsule then
@@ -364,6 +403,29 @@ function World:_check_collision(body_a, body_b)
         return nil
     end
 
+    if body_a.is_capsule and body_b.is_sphere then
+        local hit = intersect.capsule_sphere(body_a.p0, body_a.p1, body_a.radius, body_b.position, body_b.radius)
+
+        if hit then
+            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
+            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
+            local to_capsule = (capsule_center - hit_point):normalize()
+
+            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
+
+            if vec3.dot(normal, to_capsule) < 0 then
+                normal = -normal
+            end
+
+            return {
+                normal = {normal.x, normal.y, normal.z},
+                depth = hit.depth,
+                point = {hit_point.x, hit_point.y, hit_point.z}
+            }
+        end
+        return nil
+    end
+
     if body_a.is_triangle and body_b.is_capsule then
         body_b:update_capsule_points()
 
@@ -400,29 +462,6 @@ function World:_check_collision(body_a, body_b)
         return nil
     end
 
-    if body_a.is_capsule and body_b.is_sphere then
-        local hit = intersect.capsule_sphere(body_a.p0, body_a.p1, body_a.radius, body_b.position, body_b.radius)
-
-        if hit then
-            local hit_point = vec3(hit.point[1], hit.point[2], hit.point[3])
-            local capsule_center = (body_a.p0 + body_a.p1) * 0.5
-            local to_capsule = (capsule_center - hit_point):normalize()
-
-            local normal = vec3(hit.normal[1], hit.normal[2], hit.normal[3])
-
-            if vec3.dot(normal, to_capsule) < 0 then
-                normal = -normal
-            end
-
-            return {
-                normal = {normal.x, normal.y, normal.z},
-                depth = hit.depth,
-                point = {hit_point.x, hit_point.y, hit_point.z}
-            }
-        end
-        return nil
-    end
-
     if body_a.is_sphere and body_b.is_capsule then
         body_b:update_capsule_points()
 
@@ -438,39 +477,12 @@ function World:_check_collision(body_a, body_b)
         )
     end
 
-    if body_a.is_sphere and body_b.is_box then
+    if body_a.is_sphere and (body_b.is_box or body_b.is_plane or body_a.is_triangle) then
         return intersect.sphere_aabb(
-            body_a:get_world_position(),
+            body_a.position,
             body_a.radius,
             aabb_b
         )
-    end
-
-    if body_a.is_sphere and body_b.is_plane then
-        local sphere_pos = body_a:get_world_position()
-        local plane_pos = body_b:get_world_position()
-
-        if sphere_pos.y - body_a.radius < plane_pos.y + 0.5 then
-            return {
-                normal = {0, 1, 0},
-                depth = (plane_pos.y + 0.1) - (sphere_pos.y - body_a.radius),
-                point = {sphere_pos.x, plane_pos.y + 0.5, sphere_pos.z}
-            }
-        end
-    end
-
-    if body_a.is_capsule and body_b.is_plane then
-        local p0, p1 = body_a:get_hemisphere_centers()
-        local plane_pos = body_b:get_world_position()
-
-        local bottom = math.min(p0.y, p1.y) - body_a.radius
-        if bottom < plane_pos.y + 0.5 then
-            return {
-                normal = {0, 1, 0},
-                depth = (plane_pos.y + 0.1) - bottom,
-                point = {p0.x, plane_pos.y + 0.5, p0.z}
-            }
-        end
     end
 
     return intersect.aabb_aabb_collision(aabb_a, aabb_b)

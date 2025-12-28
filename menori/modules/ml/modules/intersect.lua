@@ -1,7 +1,7 @@
 --[[
 -------------------------------------------------------------------------------
 	Menori
-	@author rozenmad
+	@author rozenmad, Max-Dil
 	2025
 -------------------------------------------------------------------------------
 	this module based on CPML - Cirno's Perfect Math Library
