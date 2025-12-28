@@ -10,7 +10,6 @@ local modules = (...):match('(.*%menori.modules.)')
 
 local class        = require (modules .. 'libs.class')
 local ml           = require (modules .. 'ml')
-local vertexformat = require (modules .. 'core3d.shapes.vertexformat')
 local ModelNode    = require (modules .. 'core3d.model_node')
 
 local Box      = require(modules .. 'core3d.shapes.box')
@@ -28,13 +27,7 @@ local SHAPE = {
 }
 
 local vec3      = ml.vec3
-local mat4      = ml.mat4
-local bound3    = ml.bound3
 local intersect = ml.intersect
-local bvh       = ml.bvh
-local quat      = ml.quat
-
-local thread = love.thread
 
 function Body(self, body_type)
     self.body_type        = body_type or 'static'
@@ -77,6 +70,29 @@ function Body(self, body_type)
         self.body_type = body_type
     end
 
+    function self:set_friction(friction)
+        self.friction = friction
+    end
+
+    function self:set_mass(mass)
+        self.mass = mass
+    end
+
+    function self:set_inverse_mass(inverse_mass)
+        self.inv_mass = inverse_mass
+    end
+
+    function self:set_restitution(restitution)
+        self.restitution = restitution
+    end
+
+    function self:set_awake(awake)
+        self.is_sleeping = awake
+        if not awake then
+            self.sleep_timer = 1
+        end
+    end
+
     function self:apply_force(fx, fy, fz)
         self.force.x = self.force.x + fx
         self.force.y = self.force.y + fy
@@ -87,6 +103,16 @@ function Body(self, body_type)
         self.velocity.x = vx
         self.velocity.y = vy
         self.velocity.z = vz
+    end
+
+    function self:remove()
+        if self.parent then
+            self.parent:detach(self)
+        end
+        self:remove_children()
+        if self.world then
+            self.world:remove_body(self)
+        end
     end
 end
 
@@ -479,6 +505,19 @@ function World:_check_collision(body_a, body_b)
     end
 
     return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+end
+
+function World:remove()
+    for _, body in ipairs(self.bodies) do
+        body:remove()
+    end
+
+    for _, body in ipairs(self.static_bodies) do
+        body:remove()
+    end
+
+    self.bodies = {}
+    self.static_bodies = {}
 end
 
 local Physics = class('Physics')
