@@ -202,6 +202,10 @@ function scene:init()
 		platform2.body = platform2_body
 	end
 
+	local node = menori.objLoader.load('examples/assets/cube.obj')
+	node.children[1].material:set('baseColor', {0.7, 0.7, 0.9, 1})
+	self.root_node:attach(node)
+
 	self.x_angle = 0
 	self.y_angle = -30
 	self.view_scale = 10
@@ -246,9 +250,9 @@ end
 function scene:render()
 	love.graphics.clear(0.3, 0.25, 0.2)
 
-	-- self:render_nodes(self.root_node, self.environment, {
-	-- 	node_sort_comp = menori.Scene.alpha_mode_comp
-	-- })
+	self:render_nodes(self.root_node, self.environment, {
+		node_sort_comp = menori.Scene.alpha_mode_comp
+	})
 
 	self.world:render(self, self.environment)
 

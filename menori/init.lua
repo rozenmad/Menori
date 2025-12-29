@@ -20,6 +20,7 @@ local menori = {
 	UniformList             = require(modules .. 'core3d.uniform_list'),
 	glTFAnimations          = require(modules .. 'core3d.gltf_animations'),
 	glTFLoader              = require(modules .. 'core3d.gltf'),
+	objLoader               = require(modules .. 'core3d.obj'),
 	Material                = require(modules .. 'core3d.material'),
 	Mesh                    = require(modules .. 'core3d.mesh'),
 	ModelNode               = require(modules .. 'core3d.model_node'),
