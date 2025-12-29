@@ -190,6 +190,18 @@ function scene:init()
 	self.root_node:attach(plane_visual)
 	plane_visual.body = plane_body
 
+	for i = 1, 1000, 1 do
+		------------- STATIC BOX ---------------
+		local platform2_body = physics.box(1, 1, 1)
+		world:add_body(platform2_body)
+		platform2_body:set_position(i, -4 - i, 0)
+
+		local platform2 = BoxModel(i, -4 - i, 0, 1, 1, 1)
+		platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+		self.root_node:attach(platform2)
+		platform2.body = platform2_body
+	end
+
 	self.x_angle = 0
 	self.y_angle = -30
 	self.view_scale = 10

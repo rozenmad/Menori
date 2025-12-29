@@ -44,6 +44,10 @@ function Body(self, body_type)
 
     function self:update_aabb()
         self.aabb = self:get_aabb()
+        self.aabb_min_x = self.aabb.min.x
+        self.aabb_max_x = self.aabb.max.x
+        self.aabb_min_z = self.aabb.min.z
+        self.aabb_max_z = self.aabb.max.z
     end
 
     local _set_position = self.set_position
@@ -242,75 +246,83 @@ function World:remove_body(body)
 end
 
 function World:step(dt)
-    for _, body in ipairs(self.bodies) do
-        if not body.is_sleeping then
-            if body.use_gravity then
-                body.force.y = body.force.y + self.gravity.y * body.mass
+    local bodies = self.bodies
+    local l = #bodies
+
+    for i = 2, l do
+        local key = bodies[i]
+        local j = i - 1
+
+        if bodies[j].aabb_min_x > key.aabb_min_x then
+            while j >= 1 and bodies[j].aabb_min_x > key.aabb_min_x do
+                bodies[j+1] = bodies[j]
+                j = j - 1
             end
-
-            -- F = ma => a = F/m, v = v0 + a*dt
-            body.velocity.x = body.velocity.x + body.force.x * body.inv_mass * dt
-            body.velocity.y = body.velocity.y + body.force.y * body.inv_mass * dt
-            body.velocity.z = body.velocity.z + body.force.z * body.inv_mass * dt
-
-            body.velocity.x = body.velocity.x * 0.99
-            body.velocity.y = body.velocity.y * 0.99
-            body.velocity.z = body.velocity.z * 0.99
-
-            local pos = body.position
-            body:set_position(
-                pos.x + body.velocity.x * dt,
-                pos.y + body.velocity.y * dt,
-                pos.z + body.velocity.z * dt
-            )
-
-            body.force.x = 0
-            body.force.y = 0
-            body.force.z = 0
+            bodies[j+1] = key
         end
     end
 
-    self:_resolve_collisions(dt)
-end
-
-function World:_resolve_collisions(dt)
-    table.sort(self.bodies, function (a, b)
-        return a.aabb.min.x < b.aabb.min.x
-    end)
-
-    local l = #self.bodies
-
     for i = 1, l do
-        local body_a = self.bodies[i]
+        local body_a = bodies[i]
         for i2 = i + 1, l do
-            local body_b = self.bodies[i2]
+            local body_b = bodies[i2]
 
-            if body_a.aabb.min.x > body_b.aabb.max.x then
+            if body_a.aabb_max_x < body_b.aabb_min_x then
                 break
             end
 
-            local collision = self:_check_collision(body_a, body_b)
-            if collision then
-                body_a:resolve_collision(collision)
-                if body_b.inv_mass ~= 0 then
-                    collision.normal[1] = -collision.normal[1]
-                    collision.normal[2] = -collision.normal[2]
-                    collision.normal[3] = -collision.normal[3]
-                    body_b:resolve_collision(collision)
+            if (body_b.inv_mass ~= 0 or body_a.inv_mass ~= 0) and (body_a.aabb_min_z < body_b.aabb_max_z or body_b.aabb_min_z < body_a.aabb_max_z) then
+                local collision = self:_check_collision(body_a, body_b)
+                if collision then
+                    body_a:resolve_collision(collision)
+                    if body_b.inv_mass ~= 0 then
+                        collision.normal[1] = -collision.normal[1]
+                        collision.normal[2] = -collision.normal[2]
+                        collision.normal[3] = -collision.normal[3]
+                        body_b:resolve_collision(collision)
+                    end
                 end
             end
         end
 
-        if self.sleep and body_a.body_type == 'dynamic' then
-            local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
-            if velocity < 0.01 and velocity > -0.01 then
-                body_a.sleep_timer = body_a.sleep_timer - dt
-                if body_a.sleep_timer < 0 then
-                    body_a.is_sleeping = true
+        if body_a.inv_mass ~= 0 then
+            if self.sleep then
+                local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
+                if velocity < 0.01 and velocity > -0.01 then
+                    body_a.sleep_timer = body_a.sleep_timer - dt
+                    if body_a.sleep_timer < 0 then
+                        body_a.is_sleeping = true
+                    end
+                else
+                    body_a.sleep_timer = 1
+                    body_a.is_sleeping = false
                 end
-            else
-                body_a.sleep_timer = 1
-                body_a.is_sleeping = false
+            end
+
+            if not body_a.is_sleeping then
+                if body_a.use_gravity then
+                    body_a.force.y = body_a.force.y + self.gravity.y * body_a.mass
+                end
+
+                -- F = ma => a = F/m, v = v0 + a*dt
+                body_a.velocity.x = body_a.velocity.x + body_a.force.x * body_a.inv_mass * dt
+                body_a.velocity.y = body_a.velocity.y + body_a.force.y * body_a.inv_mass * dt
+                body_a.velocity.z = body_a.velocity.z + body_a.force.z * body_a.inv_mass * dt
+
+                body_a.velocity.x = body_a.velocity.x * 0.99
+                body_a.velocity.y = body_a.velocity.y * 0.99
+                body_a.velocity.z = body_a.velocity.z * 0.99
+
+                local pos = body_a.position
+                body_a:set_position(
+                    pos.x + body_a.velocity.x * dt,
+                    pos.y + body_a.velocity.y * dt,
+                    pos.z + body_a.velocity.z * dt
+                )
+
+                body_a.force.x = 0
+                body_a.force.y = 0
+                body_a.force.z = 0
             end
         end
     end
