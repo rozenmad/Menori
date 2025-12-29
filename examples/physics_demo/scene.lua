@@ -194,9 +194,9 @@ function scene:init()
 		------------- STATIC BOX ---------------
 		local platform2_body = physics.box(1, 1, 1)
 		world:add_body(platform2_body)
-		platform2_body:set_position(i, -4 - i, 0)
+		platform2_body:set_position(0, -4 - i, i)
 
-		local platform2 = BoxModel(i, -4 - i, 0, 1, 1, 1)
+		local platform2 = BoxModel(0, -4 - i, i, 1, 1, 1)
 		platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
 		self.root_node:attach(platform2)
 		platform2.body = platform2_body
@@ -246,9 +246,11 @@ end
 function scene:render()
 	love.graphics.clear(0.3, 0.25, 0.2)
 
-	self:render_nodes(self.root_node, self.environment, {
-		node_sort_comp = menori.Scene.alpha_mode_comp
-	})
+	-- self:render_nodes(self.root_node, self.environment, {
+	-- 	node_sort_comp = menori.Scene.alpha_mode_comp
+	-- })
+
+	self.world:render(self, self.environment)
 
 	local mx, my = love.mouse.getPosition()
 	love.graphics.circle('line', mx, my, 8)

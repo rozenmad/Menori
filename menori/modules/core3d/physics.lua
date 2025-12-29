@@ -10,6 +10,8 @@ local modules = (...):match('(.*%menori.modules.)')
 
 local class        = require (modules .. 'libs.class')
 local ml           = require (modules .. 'ml')
+local node         = require (modules .. 'node')
+local Scene        = require (modules .. 'scene')
 local ModelNode    = require (modules .. 'core3d.model_node')
 
 local Box      = require(modules .. 'core3d.shapes.box')
@@ -24,6 +26,12 @@ local SHAPE = {
     PLANE = 3,
     SPHERE = 4,
     TRIANGLE = 5
+}
+
+local BODY_COLORS = {
+    static = {0.9, 0.2, 0.2, 1},
+    dynamic = {0.4, 0.9, 0.4, 1},
+    sleep = {0.4, 0.4, 0.4, 1}
 }
 
 local vec3      = ml.vec3
@@ -41,6 +49,8 @@ function Body(self, body_type)
 
     self.velocity         = vec3()
     self.force            = vec3()
+
+    self.material:set('baseColor', BODY_COLORS.static)
 
     function self:update_aabb()
         self.aabb = self:get_aabb()
@@ -70,17 +80,11 @@ function Body(self, body_type)
 
     function self:set_body_type(body_type)
         self.inv_mass = (body_type == 'static') and 0 or (1 / self.mass)
-        if body_type ~= self.body_type then
-            for index, body in ipairs(self.world.bodies) do
-                if body == self then
-                    table.remove(self.world.bodies, index)
-                    break
-                end
-            end
-            if body_type == 'dynamic' then
-                self.force.y = self.world.gravity.y * self.mass
-            end
-            table.insert(self.world.bodies, self)
+        if body_type == 'dynamic' then
+            self.force.y = self.world.gravity.y * self.mass
+            self.material:set('baseColor', BODY_COLORS.dynamic)
+        else
+            self.material:set('baseColor', BODY_COLORS.static)
         end
         self.body_type = body_type
     end
@@ -225,6 +229,7 @@ function World:init(gravity_y, sleep)
     self.bodies        = {}
     self.static_bodies = {}
     self.iterations    = 3
+    self.node          = node('Physics World')
 end
 
 function World:add_body(body)
@@ -232,6 +237,7 @@ function World:add_body(body)
         body.force.y = self.gravity.y * body.mass
     end
     table.insert(self.bodies, body)
+    self.node:attach(body)
     body.world = self
 end
 
@@ -242,6 +248,7 @@ function World:remove_body(body)
             break
         end
     end
+    self.node:detach(body)
     body.world = nil
 end
 
@@ -292,10 +299,14 @@ function World:step(dt)
                     body_a.sleep_timer = body_a.sleep_timer - dt
                     if body_a.sleep_timer < 0 then
                         body_a.is_sleeping = true
+                        body_a.material:set('baseColor', BODY_COLORS.sleep)
                     end
                 else
                     body_a.sleep_timer = 1
-                    body_a.is_sleeping = false
+                    if body_a.is_sleeping then
+                        body_a.material:set('baseColor', BODY_COLORS.dynamic)
+                        body_a.is_sleeping = false
+                    end
                 end
             end
 
@@ -547,11 +558,19 @@ function World:_check_collision(body_a, body_b)
 end
 
 function World:remove()
+    self.node:remove_children()
+
     for _, body in ipairs(self.bodies) do
         body:remove()
     end
 
     self.bodies = {}
+end
+
+function World:render(scene, environment)
+	scene:render_nodes(self.node, environment, {
+		node_sort_comp = Scene.alpha_mode_comp
+	})
 end
 
 local Physics = class('Physics')
