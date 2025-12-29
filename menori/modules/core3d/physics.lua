@@ -260,8 +260,8 @@ function World:step(dt)
         local key = bodies[i]
         local j = i - 1
 
-        if bodies[j].aabb_min_x > key.aabb_min_x then
-            while j >= 1 and bodies[j].aabb_min_x > key.aabb_min_x do
+        if (bodies[j].aabb_min_x > key.aabb_min_x or (bodies[j].aabb_min_x == key.aabb_min_x and bodies[j].aabb_min_z > key.aabb_min_z)) then
+            while j >= 1 and (bodies[j].aabb_min_x > key.aabb_min_x or (bodies[j].aabb_min_x == key.aabb_min_x and bodies[j].aabb_min_z > key.aabb_min_z)) do
                 bodies[j+1] = bodies[j]
                 j = j - 1
             end
@@ -278,7 +278,12 @@ function World:step(dt)
                 break
             end
 
-            if (body_b.inv_mass ~= 0 or body_a.inv_mass ~= 0) and (body_a.aabb_min_z < body_b.aabb_max_z or body_b.aabb_min_z < body_a.aabb_max_z) then
+            if body_b.aabb_min_x == body_a.aabb_min_x and
+               body_a.aabb_max_z < body_b.aabb_min_z then
+                break
+            end
+
+            if body_b.inv_mass ~= 0 or body_a.inv_mass ~= 0 then
                 local collision = self:_check_collision(body_a, body_b)
                 if collision then
                     body_a:resolve_collision(collision)
