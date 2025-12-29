@@ -42,30 +42,41 @@ function Body(self, body_type)
     self.velocity         = vec3()
     self.force            = vec3()
 
+    function self:update_aabb()
+        self.aabb = self:get_aabb()
+    end
+
+    local _set_position = self.set_position
+    function self:set_position(x, y, z)
+        _set_position(self, x, y, z)
+        self:update_aabb()
+    end
+
+    local _set_rotation = self.set_rotation
+    function self:set_rotation(q)
+        _set_rotation(self, q)
+        self:update_aabb()
+    end
+
+    local _set_scale = self.set_scale
+    function self:set_scale(sx, sy, sz)
+        _set_scale(self, sx, sy, sz)
+        self:update_aabb()
+    end
+
     function self:set_body_type(body_type)
         self.inv_mass = (body_type == 'static') and 0 or (1 / self.mass)
         if body_type ~= self.body_type then
-            if self.body_type == 'dynamic' then
-                for index, body in ipairs(self.world.bodies) do
-                    if body == self then
-                        table.remove(self.world.bodies, index)
-                        break
-                    end
-                end
-            else
-                for index, body in ipairs(self.world.static_bodies) do
-                    if body == self then
-                        table.remove(self.world.static_bodies, index)
-                        break
-                    end
+            for index, body in ipairs(self.world.bodies) do
+                if body == self then
+                    table.remove(self.world.bodies, index)
+                    break
                 end
             end
             if body_type == 'dynamic' then
-                table.insert(self.world.bodies, self)
                 self.force.y = self.world.gravity.y * self.mass
-            else
-                table.insert(self.world.static_bodies, self)
             end
+            table.insert(self.world.bodies, self)
         end
         self.body_type = body_type
     end
@@ -113,6 +124,31 @@ function Body(self, body_type)
         if self.world then
             self.world:remove_body(self)
         end
+    end
+
+    function self:resolve_collision(collision)
+        if self.inv_mass == 0 then
+            return
+        end
+
+        local nx, ny, nz = collision.normal[1], collision.normal[2], collision.normal[3]
+
+        local pos = self.position
+        self:set_position(
+            pos.x + nx * collision.depth,
+            pos.y + ny * collision.depth,
+            pos.z + nz * collision.depth
+        )
+
+        local dot_product = self.velocity.x * nx + self.velocity.y * ny + self.velocity.z * nz
+        if dot_product < 0 then
+            self.velocity.x = self.velocity.x - nx * dot_product * (1 + self.restitution)
+            self.velocity.y = self.velocity.y - ny * dot_product * (1 + self.restitution)
+            self.velocity.z = self.velocity.z - nz * dot_product * (1 + self.restitution)
+        end
+
+        self.velocity.x = self.velocity.x * (1 - self.friction)
+        self.velocity.z = self.velocity.z * (1 - self.friction)
     end
 end
 
@@ -189,17 +225,14 @@ end
 
 function World:add_body(body)
     if body.body_type == 'dynamic' then
-        table.insert(self.bodies, body)
         body.force.y = self.gravity.y * body.mass
-    else
-        table.insert(self.static_bodies, body)
     end
+    table.insert(self.bodies, body)
     body.world = self
 end
 
 function World:remove_body(body)
-    local body_table = body.body_type == 'dynamic' and self.bodies or self.static_bodies
-    for index, v_body in ipairs(body_table) do
+    for index, v_body in ipairs(self.bodies) do
         if v_body == body then
             table.remove(self.bodies, index)
             break
@@ -241,15 +274,34 @@ function World:step(dt)
 end
 
 function World:_resolve_collisions(dt)
-    for i, body_a in ipairs(self.bodies) do
-        for j, body_b in ipairs(self.static_bodies) do
+    table.sort(self.bodies, function (a, b)
+        return a.aabb.min.x < b.aabb.min.x
+    end)
+
+    local l = #self.bodies
+
+    for i = 1, l do
+        local body_a = self.bodies[i]
+        for i2 = i + 1, l do
+            local body_b = self.bodies[i2]
+
+            if body_a.aabb.min.x > body_b.aabb.max.x then
+                break
+            end
+
             local collision = self:_check_collision(body_a, body_b)
             if collision then
-                self:_resolve_collision(body_a, body_b, collision)
+                body_a:resolve_collision(collision)
+                if body_b.inv_mass ~= 0 then
+                    collision.normal[1] = -collision.normal[1]
+                    collision.normal[2] = -collision.normal[2]
+                    collision.normal[3] = -collision.normal[3]
+                    body_b:resolve_collision(collision)
+                end
             end
         end
 
-        if self.sleep then
+        if self.sleep and body_a.body_type == 'dynamic' then
             local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
             if velocity < 0.01 and velocity > -0.01 then
                 body_a.sleep_timer = body_a.sleep_timer - dt
@@ -262,31 +314,6 @@ function World:_resolve_collisions(dt)
             end
         end
     end
-end
-
-function World:_resolve_collision(body_a, body_b, collision)
-    if body_a.inv_mass == 0 then
-        return
-    end
-
-    local nx, ny, nz = collision.normal[1], collision.normal[2], collision.normal[3]
-
-    local pos = body_a.position
-    body_a:set_position(
-        pos.x + nx * collision.depth,
-        pos.y + ny * collision.depth,
-        pos.z + nz * collision.depth
-    )
-
-    local dot_product = body_a.velocity.x * nx + body_a.velocity.y * ny + body_a.velocity.z * nz
-    if dot_product < 0 then
-        body_a.velocity.x = body_a.velocity.x - nx * dot_product * (1 + body_a.restitution)
-        body_a.velocity.y = body_a.velocity.y - ny * dot_product * (1 + body_a.restitution)
-        body_a.velocity.z = body_a.velocity.z - nz * dot_product * (1 + body_a.restitution)
-    end
-
-    body_a.velocity.x = body_a.velocity.x * (1 - body_a.friction)
-    body_a.velocity.z = body_a.velocity.z * (1 - body_a.friction)
 end
 
 local collison_handlers = {
@@ -490,8 +517,8 @@ local collison_handlers = {
 }
 
 function World:_check_collision(body_a, body_b)
-    local aabb_a = body_a:get_aabb()
-    local aabb_b = body_b:get_aabb()
+    local aabb_a = body_a.aabb
+    local aabb_b = body_b.aabb
 
     if not intersect.aabb_aabb(aabb_a, aabb_b) then
         return nil
@@ -512,12 +539,7 @@ function World:remove()
         body:remove()
     end
 
-    for _, body in ipairs(self.static_bodies) do
-        body:remove()
-    end
-
     self.bodies = {}
-    self.static_bodies = {}
 end
 
 local Physics = class('Physics')
