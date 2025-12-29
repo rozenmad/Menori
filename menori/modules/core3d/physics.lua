@@ -50,7 +50,7 @@ function Body(self, body_type)
     self.velocity         = vec3()
     self.force            = vec3()
 
-    self.material:set('baseColor', BODY_COLORS.static)
+    self.material:set('baseColor', (body_type == 'static') and BODY_COLORS.static or BODY_COLORS.dynamic)
 
     function self:update_aabb()
         self.aabb = self:get_aabb()
