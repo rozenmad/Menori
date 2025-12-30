@@ -36,8 +36,6 @@ local BODY_COLORS = {
 
 local vec3      = ml.vec3
 local intersect = ml.intersect
-local floor     = math.floor
-local ceil      = math.ceil
 
 function Body(self, body_type)
     self.body_type        = body_type or 'static'
@@ -48,8 +46,6 @@ function Body(self, body_type)
     self.is_sleeping      = false
     self.sleep_timer      = 1
     self.use_gravity      = true
-    self.in_cells         = {}
-    self.link_name        = tostring(self)
 
     self.velocity         = vec3()
     self.force            = vec3()
@@ -60,15 +56,9 @@ function Body(self, body_type)
         self.aabb = self:get_aabb()
         self.aabb_min_x = self.aabb.min.x
         self.aabb_max_x = self.aabb.max.x
-        self.aabb_min_y = self.aabb.min.y
-        self.aabb_max_y = self.aabb.max.y
         self.aabb_min_z = self.aabb.min.z
         self.aabb_max_z = self.aabb.max.z
-        if self.world then
-            self.world:add_body_in_cells(self)
-        end
     end
-    self:update_aabb()
 
     local _set_position = self.set_position
     function self:set_position(x, y, z)
@@ -89,7 +79,6 @@ function Body(self, body_type)
     end
 
     function self:set_body_type(body_type)
-        local old_body = self.body_type
         self.inv_mass = (body_type == 'static') and 0 or (1 / self.mass)
         if body_type == 'dynamic' then
             self.force.y = self.world.gravity.y * self.mass
@@ -98,23 +87,6 @@ function Body(self, body_type)
             self.material:set('baseColor', BODY_COLORS.static)
         end
         self.body_type = body_type
-        if old_body ~= body_type then
-            if old_body == 'dynamic' and body_type == 'static' then
-                for index, v_body in pairs(self.world.dynamic_bodies) do
-                    if v_body == self then
-                        table.remove(self.world.dynamic_bodies, index)
-                    end
-                end
-                table.insert(self.world.static_bodies, self)
-            elseif old_body == 'static' and body_type == 'dynamic' then
-                for index, v_body in pairs(self.world.static_bodies) do
-                    if v_body == self then
-                        table.remove(self.world.static_bodies, index)
-                    end
-                end
-                table.insert(self.world.dynamic_bodies, self)
-            end
-        end
     end
 
     function self:set_friction(friction)
@@ -251,83 +223,27 @@ end
 
 local World = class('World')
 
-function World:init(cell_size, gravity_y, sleep)
-    self.gravity         = vec3(0, gravity_y or -9.81, 0)
-    self.sleep           = sleep
-    self.dynamic_bodies  = {}
-    self.static_bodies   = {}
-    self.cells           = {}
-    self.non_empty_cells = {}
-    self.cell_size       = cell_size or 64
-    self.node            = node('Physics World')
-end
-
-function World:remove_body_in_cells(body)
-    for i = #body.in_cells, 1, -1 do
-        local arr = body.in_cells[i]
-        for index, v_body in pairs(arr) do
-            if v_body == body then
-                table.remove(arr, index)
-                -- if not arr[1] then
-                --     self.non_empty_cells[arr] = nil
-                --     self.cells[cell_pos.z][cell_pos.y][cell_pos.x] = nil
-                -- end
-                break
-            end
-        end
-    end
-    body.in_cells = {}
-end
-
-function World:add_body_in_cells(body)
-    self:remove_body_in_cells(body)
-    local startCellX, startCellY, startCellZ,
-          width, height, depth = self:aabb_to_cell_cube(
-        body.aabb_min_x, body.aabb_min_y, body.aabb_min_z,
-        body.aabb_max_x, body.aabb_max_y, body.aabb_max_z
-    )
-    local processd_cells = {}
-    for z = startCellZ, startCellZ + depth - 1 do
-        for y = startCellY, startCellY + height - 1 do
-            for x = startCellX, startCellX + width - 1 do
-                local cell = self:get_cell(x, y, z)
-                if not processd_cells[cell] then
-                    table.insert(cell, body)
-                    table.insert(body.in_cells, cell)
-                    processd_cells[cell] = true
-                end
-            end
-        end
-    end
+function World:init(gravity_y, sleep)
+    self.gravity       = vec3(0, gravity_y or -9.81, 0)
+    self.sleep         = sleep
+    self.bodies        = {}
+    self.node          = node('Physics World')
 end
 
 function World:add_body(body)
     if body.body_type == 'dynamic' then
         body.force.y = self.gravity.y * body.mass
-        table.insert(self.dynamic_bodies, body)
-    else
-        table.insert(self.static_bodies, body)
     end
-    self:add_body_in_cells(body)
+    table.insert(self.bodies, body)
     self.node:attach(body)
     body.world = self
 end
 
 function World:remove_body(body)
-    self:remove_body_in_cells(body)
-    if body.body_type == 'dynamic' then
-        for index, v_body in ipairs(self.dynamic_bodies) do
-            if v_body == body then
-                table.remove(self.dynamic_bodies, index)
-                break
-            end
-        end
-    else
-        for index, v_body in ipairs(self.static_bodies) do
-            if v_body == body then
-                table.remove(self.static_bodies, index)
-                break
-            end
+    for index, v_body in ipairs(self.bodies) do
+        if v_body == body then
+            table.remove(self.bodies, index)
+            break
         end
     end
     self.node:detach(body)
@@ -335,176 +251,95 @@ function World:remove_body(body)
 end
 
 function World:step(dt)
-    local processed_collision = {}
+    local bodies = self.bodies
+    local l = #bodies
 
-    for cell, position in pairs(self.non_empty_cells) do
-        local l = #cell
-        for i = 1, l do
-            local body_a = cell[i]
-            for j = i + 1, l do
-                local body_b = cell[j]
+    for i = 2, l do
+        local key = bodies[i]
+        local j = i - 1
 
-                local key = body_a.link_name .. body_b.link_name
+        if (bodies[j].aabb_min_x > key.aabb_min_x or (bodies[j].aabb_min_x == key.aabb_min_x and bodies[j].aabb_min_z > key.aabb_min_z)) then
+            while j >= 1 and (bodies[j].aabb_min_x > key.aabb_min_x or (bodies[j].aabb_min_x == key.aabb_min_x and bodies[j].aabb_min_z > key.aabb_min_z)) do
+                bodies[j+1] = bodies[j]
+                j = j - 1
+            end
+            bodies[j+1] = key
+        end
+    end
 
-                if not processed_collision[key] then
-                    processed_collision[key] = true
+    for i = 1, l do
+        local body_a = bodies[i]
+        for i2 = i + 1, l do
+            local body_b = bodies[i2]
 
-                    if body_b.inv_mass ~= 0 or body_a.inv_mass ~= 0 then
-                        local collision = self:_check_collision(body_a, body_b)
-                        if collision then
-                            body_a:resolve_collision(collision)
-                            if body_b.inv_mass ~= 0 then
-                                collision.normal[1] = -collision.normal[1]
-                                collision.normal[2] = -collision.normal[2]
-                                collision.normal[3] = -collision.normal[3]
-                                body_b:resolve_collision(collision)
-                            end
-                        end
+            if body_a.aabb_max_x < body_b.aabb_min_x then
+                break
+            end
+
+            if body_b.aabb_min_x == body_a.aabb_min_x and
+               body_a.aabb_max_z < body_b.aabb_min_z then
+                break
+            end
+
+            if body_b.inv_mass ~= 0 or body_a.inv_mass ~= 0 then
+                local collision = self:_check_collision(body_a, body_b)
+                if collision then
+                    body_a:resolve_collision(collision)
+                    if body_b.inv_mass ~= 0 then
+                        collision.normal[1] = -collision.normal[1]
+                        collision.normal[2] = -collision.normal[2]
+                        collision.normal[3] = -collision.normal[3]
+                        body_b:resolve_collision(collision)
                     end
                 end
             end
         end
-        if l == 0 then
-            if self.cells[position[1]] and self.cells[position[1]][position[2]] then
-                self.cells[position[1]][position[2]][position[3]] = nil
-            end
-            self.non_empty_cells[cell] = nil
-        end
-    end
 
-    for index, body_a in pairs(self.dynamic_bodies) do
-        if self.sleep then
-            local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
-            if velocity < 0.01 and velocity > -0.01 then
-                body_a.sleep_timer = body_a.sleep_timer - dt
-                if body_a.sleep_timer < 0 then
-                    body_a.is_sleeping = true
-                    body_a.material:set('baseColor', BODY_COLORS.sleep)
-                end
-            else
-                body_a.sleep_timer = 1
-                if body_a.is_sleeping then
-                    body_a.material:set('baseColor', BODY_COLORS.dynamic)
-                    body_a.is_sleeping = false
+        if body_a.inv_mass ~= 0 then
+            if self.sleep then
+                local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
+                if velocity < 0.01 and velocity > -0.01 then
+                    body_a.sleep_timer = body_a.sleep_timer - dt
+                    if body_a.sleep_timer < 0 then
+                        body_a.is_sleeping = true
+                        body_a.material:set('baseColor', BODY_COLORS.sleep)
+                    end
+                else
+                    body_a.sleep_timer = 1
+                    if body_a.is_sleeping then
+                        body_a.material:set('baseColor', BODY_COLORS.dynamic)
+                        body_a.is_sleeping = false
+                    end
                 end
             end
-        end
 
-        if not body_a.is_sleeping then
-            if body_a.use_gravity then
-                body_a.force.y = body_a.force.y + self.gravity.y * body_a.mass
+            if not body_a.is_sleeping then
+                if body_a.use_gravity then
+                    body_a.force.y = body_a.force.y + self.gravity.y * body_a.mass
+                end
+
+                -- F = ma => a = F/m, v = v0 + a*dt
+                body_a.velocity.x = body_a.velocity.x + body_a.force.x * body_a.inv_mass * dt
+                body_a.velocity.y = body_a.velocity.y + body_a.force.y * body_a.inv_mass * dt
+                body_a.velocity.z = body_a.velocity.z + body_a.force.z * body_a.inv_mass * dt
+
+                body_a.velocity.x = body_a.velocity.x * 0.99
+                body_a.velocity.y = body_a.velocity.y * 0.99
+                body_a.velocity.z = body_a.velocity.z * 0.99
+
+                local pos = body_a.position
+                body_a:set_position(
+                    pos.x + body_a.velocity.x * dt,
+                    pos.y + body_a.velocity.y * dt,
+                    pos.z + body_a.velocity.z * dt
+                )
+
+                body_a.force.x = 0
+                body_a.force.y = 0
+                body_a.force.z = 0
             end
-            -- F = ma => a = F/m, v = v0 + a*dt
-            body_a.velocity.x = body_a.velocity.x + body_a.force.x * body_a.inv_mass * dt
-            body_a.velocity.y = body_a.velocity.y + body_a.force.y * body_a.inv_mass * dt
-            body_a.velocity.z = body_a.velocity.z + body_a.force.z * body_a.inv_mass * dt
-
-            body_a.velocity.x = body_a.velocity.x * 0.99
-            body_a.velocity.y = body_a.velocity.y * 0.99
-            body_a.velocity.z = body_a.velocity.z * 0.99
-
-            local pos = body_a.position
-            body_a:set_position(
-                pos.x + body_a.velocity.x * dt,
-                pos.y + body_a.velocity.y * dt,
-                pos.z + body_a.velocity.z * dt
-            )
-
-            body_a.force.x = 0
-            body_a.force.y = 0
-            body_a.force.z = 0
         end
     end
-
-    -- local bodies = self.bodies
-    -- local l = #bodies
-
-    -- for i = 2, l do
-    --     local key = bodies[i]
-    --     local j = i - 1
-
-    --     if (bodies[j].aabb_min_x > key.aabb_min_x or (bodies[j].aabb_min_x == key.aabb_min_x and bodies[j].aabb_min_z > key.aabb_min_z)) then
-    --         while j >= 1 and (bodies[j].aabb_min_x > key.aabb_min_x or (bodies[j].aabb_min_x == key.aabb_min_x and bodies[j].aabb_min_z > key.aabb_min_z)) do
-    --             bodies[j+1] = bodies[j]
-    --             j = j - 1
-    --         end
-    --         bodies[j+1] = key
-    --     end
-    -- end
-
-    -- for i = 1, l do
-    --     local body_a = bodies[i]
-    --     for i2 = i + 1, l do
-    --         local body_b = bodies[i2]
-
-    --         if body_a.aabb_max_x < body_b.aabb_min_x then
-    --             break
-    --         end
-
-    --         if body_b.aabb_min_x == body_a.aabb_min_x and
-    --            body_a.aabb_max_z < body_b.aabb_min_z then
-    --             break
-    --         end
-
-    --         if body_b.inv_mass ~= 0 or body_a.inv_mass ~= 0 then
-    --             local collision = self:_check_collision(body_a, body_b)
-    --             if collision then
-    --                 body_a:resolve_collision(collision)
-    --                 if body_b.inv_mass ~= 0 then
-    --                     collision.normal[1] = -collision.normal[1]
-    --                     collision.normal[2] = -collision.normal[2]
-    --                     collision.normal[3] = -collision.normal[3]
-    --                     body_b:resolve_collision(collision)
-    --                 end
-    --             end
-    --         end
-    --     end
-
-    --     if body_a.inv_mass ~= 0 then
-    --         if self.sleep then
-    --             local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
-    --             if velocity < 0.01 and velocity > -0.01 then
-    --                 body_a.sleep_timer = body_a.sleep_timer - dt
-    --                 if body_a.sleep_timer < 0 then
-    --                     body_a.is_sleeping = true
-    --                     body_a.material:set('baseColor', BODY_COLORS.sleep)
-    --                 end
-    --             else
-    --                 body_a.sleep_timer = 1
-    --                 if body_a.is_sleeping then
-    --                     body_a.material:set('baseColor', BODY_COLORS.dynamic)
-    --                     body_a.is_sleeping = false
-    --                 end
-    --             end
-    --         end
-
-    --         if not body_a.is_sleeping then
-    --             if body_a.use_gravity then
-    --                 body_a.force.y = body_a.force.y + self.gravity.y * body_a.mass
-    --             end
-
-    --             -- F = ma => a = F/m, v = v0 + a*dt
-    --             body_a.velocity.x = body_a.velocity.x + body_a.force.x * body_a.inv_mass * dt
-    --             body_a.velocity.y = body_a.velocity.y + body_a.force.y * body_a.inv_mass * dt
-    --             body_a.velocity.z = body_a.velocity.z + body_a.force.z * body_a.inv_mass * dt
-
-    --             body_a.velocity.x = body_a.velocity.x * 0.99
-    --             body_a.velocity.y = body_a.velocity.y * 0.99
-    --             body_a.velocity.z = body_a.velocity.z * 0.99
-
-    --             local pos = body_a.position
-    --             body_a:set_position(
-    --                 pos.x + body_a.velocity.x * dt,
-    --                 pos.y + body_a.velocity.y * dt,
-    --                 pos.z + body_a.velocity.z * dt
-    --             )
-
-    --             body_a.force.x = 0
-    --             body_a.force.y = 0
-    --             body_a.force.z = 0
-    --         end
-    --     end
-    -- end
 end
 
 local collison_handlers = {
@@ -728,63 +563,17 @@ end
 function World:remove()
     self.node:remove_children()
 
-    for _, body in ipairs(self.dynamic_bodies) do
+    for _, body in ipairs(self.bodies) do
         body:remove()
     end
 
-    for _, body in ipairs(self.static_bodies) do
-        body:remove()
-    end
-
-    self.dynamic_bodies = {}
-    self.static_bodies  = {}
+    self.bodies = {}
 end
 
 function World:render(scene, environment)
 	scene:render_nodes(self.node, environment, {
 		node_sort_comp = Scene.alpha_mode_comp
 	})
-end
-
-function World:grid_to_cell(x, y, z)
-    return floor(x / self.cell_size) + 1,
-           floor(y / self.cell_size) + 1,
-           floor(z / self.cell_size) + 1
-end
-
-function World:grid_to_world(cx, cy, cz)
-    return (cx - 1) * self.cell_size,
-           (cy - 1) * self.cell_size,
-           (cz - 1) * self.cell_size
-end
-
-function World:aabb_to_cell_cube(minX, minY, minZ, maxX, maxY, maxZ)
-    local startCellX, startCellY, startCellZ = self:grid_to_cell(minX, minY, minZ)
-    local endCellX, endCellY, endCellZ = self:grid_to_cell(maxX, maxY, maxZ)
-
-    endCellX = math.max(endCellX, startCellX)
-    endCellY = math.max(endCellY, startCellY)
-    endCellZ = math.max(endCellZ, startCellZ)
-
-    return startCellX, startCellY, startCellZ,
-           endCellX - startCellX + 1,
-           endCellY - startCellY + 1,
-           endCellZ - startCellZ + 1
-end
-
-function World:get_cell(x, y, z)
-    local cx, cy, cz = self:grid_to_cell(x, y, z)
-    self.cells[cz] = self.cells[cz] or {}
-    self.cells[cz][cy] = self.cells[cz][cy] or {}
-
-    local cell = self.cells[cz][cy][cx]
-    if not cell then
-        cell = {}
-        self.cells[cz][cy][cx] = cell
-        self.non_empty_cells[cell] = {cz, cy, cx}
-    end
-
-    return cell
 end
 
 local Physics = class('Physics')

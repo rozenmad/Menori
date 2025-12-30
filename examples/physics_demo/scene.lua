@@ -72,7 +72,7 @@ function scene:init()
 
 	self.root_node = menori.Node()
 
-	local world = physics.world(-9.81, true)
+	local world = physics.world(64, -9.81, true)
 	self.world = world
 
 	-------------- PLAYER BOX ---------------
@@ -190,7 +190,7 @@ function scene:init()
 	self.root_node:attach(plane_visual)
 	plane_visual.body = plane_body
 
-	for i = 1, 1000, 1 do
+	for i = 1, 100, 1 do
 		------------- STATIC BOX ---------------
 		local platform2_body = physics.box(1, 1, 1)
 		world:add_body(platform2_body)
@@ -200,6 +200,18 @@ function scene:init()
 		platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
 		self.root_node:attach(platform2)
 		platform2.body = platform2_body
+
+		-- ------------- DYNAMIC BOX ---------------
+		-- local platform2_body = physics.box(1, 1, 1)
+		-- world:add_body(platform2_body)
+		-- platform2_body:set_body_type('dynamic')
+		-- platform2_body.restitution = 0.0
+		-- platform2_body:set_position(i, -i, 0)
+
+		-- local platform2 = BoxModel(i, -i, 0, 1, 1, 1)
+		-- platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+		-- self.root_node:attach(platform2)
+		-- platform2.body = platform2_body
 	end
 
 	local node = menori.objLoader.load('examples/assets/cube.obj')
@@ -250,9 +262,9 @@ end
 function scene:render()
 	love.graphics.clear(0.3, 0.25, 0.2)
 
-	self:render_nodes(self.root_node, self.environment, {
-		node_sort_comp = menori.Scene.alpha_mode_comp
-	})
+	-- self:render_nodes(self.root_node, self.environment, {
+	-- 	node_sort_comp = menori.Scene.alpha_mode_comp
+	-- })
 
 	self.world:render(self, self.environment)
 
