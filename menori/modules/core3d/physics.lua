@@ -21,23 +21,22 @@ local Plane    = require(modules .. 'core3d.shapes.plane')
 local Capsule  = require(modules .. 'core3d.shapes.capsule')
 
 local SHAPE = {
-    BOX = 1,
-    CAPSULE = 2,
-    PLANE = 3,
-    SPHERE = 4,
+    BOX      = 1,
+    CAPSULE  = 2,
+    PLANE    = 3,
+    SPHERE   = 4,
     TRIANGLE = 5
 }
 
 local BODY_COLORS = {
-    static = {0.9, 0.2, 0.2, 1},
+    static  = {0.9, 0.2, 0.2, 1},
     dynamic = {0.4, 0.9, 0.4, 1},
-    sleep = {0.4, 0.4, 0.4, 1}
+    sleep   = {0.4, 0.4, 0.4, 1}
 }
 
 local vec3      = ml.vec3
 local intersect = ml.intersect
 local floor     = math.floor
-local ceil      = math.ceil
 
 function Body(self, body_type)
     self.body_type        = body_type or 'static'
@@ -191,10 +190,10 @@ end
 local BoxModel = ModelNode:extend('BoxModel')
 function BoxModel:init(w, h, d)
 	BoxModel.super.init(self, Box(w, h, d))
-	self.w = w
-    self.h = h
-    self.d = d
-    self.is_box = true
+	self.w        = w
+    self.h        = h
+    self.d        = d
+    self.is_box   = true
     self.shape_id = SHAPE.BOX
     Body(self, 'static')
 end
@@ -203,9 +202,9 @@ local CapsuleModel = ModelNode:extend('CapsuleModel')
 function CapsuleModel:init(radius, height)
 	CapsuleModel.super.init(self, Capsule(radius, height))
 	self.is_capsule = true
-	self.radius = radius
-	self.height = height
-    self.shape_id = SHAPE.CAPSULE
+	self.radius     = radius
+	self.height     = height
+    self.shape_id   = SHAPE.CAPSULE
 
     function self:update_capsule_points()
         local half = self.height * 0.5
@@ -220,32 +219,32 @@ end
 local PlaneModel = ModelNode:extend('PlaneModel')
 function PlaneModel:init(width, height, v_segments, h_segments)
 	PlaneModel.super.init(self, Plane(width, height, v_segments, h_segments))
-	self.width = width
-    self.height = height
+	self.width      = width
+    self.height     = height
     self.v_segments = v_segments
     self.h_segments = h_segments
-    self.is_plane = true
-    self.shape_id = SHAPE.PLANE
+    self.is_plane   = true
+    self.shape_id   = SHAPE.PLANE
     Body(self, 'static')
 end
 
 local SphereModel = ModelNode:extend('SphereModel')
 function SphereModel:init(radius)
 	SphereModel.super.init(self, Sphere(radius))
-	self.radius = radius
+	self.radius    = radius
     self.is_sphere = true
-    self.shape_id = SHAPE.SPHERE
+    self.shape_id  = SHAPE.SPHERE
     Body(self, 'static')
 end
 
 local TriangleModel = ModelNode:extend('TriangleModel')
 function TriangleModel:init(v1, v2, v3)
 	TriangleModel.super.init(self, Triangle(v1, v2, v3))
-	self.v1 = v1
-    self.v2 = v2
-    self.v3 = v3
+	self.v1          = v1
+    self.v2          = v2
+    self.v3          = v3
     self.is_triangle = true
-    self.shape_id = SHAPE.TRIANGLE
+    self.shape_id    = SHAPE.TRIANGLE
     Body(self, 'static')
 end
 
