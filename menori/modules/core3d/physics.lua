@@ -352,7 +352,7 @@ function World:update_cell_dynamic_flag_for_body(body, is_dynamic)
         local cell_has_dynamic = is_dynamic
         if not is_dynamic then
             for body_i = #cell, 1, -1 do
-                if cell[body_i].inv_mass ~= 0 then
+                if cell[body_i].inv_mass ~= 0 and not cell[body_i].is_sleeping then
                     cell_has_dynamic = true
                 end
             end
@@ -442,12 +442,14 @@ function World:step(dt)
                 if body_a.sleep_timer < 0 then
                     body_a.is_sleeping = true
                     body_a.material:set('baseColor', BODY_COLORS.sleep)
+                    self:update_cell_dynamic_flag_for_body(body_a, false)
                 end
             else
                 body_a.sleep_timer = 1
                 if body_a.is_sleeping then
                     body_a.material:set('baseColor', BODY_COLORS.dynamic)
                     body_a.is_sleeping = false
+                    self:update_cell_dynamic_flag_for_body(body_a, true)
                 end
             end
         end
