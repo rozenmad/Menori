@@ -94,6 +94,7 @@ function scene:init()
 	world:add_body(platform_body)
 	platform_body:set_body_type('dynamic')
 	platform_body.restitution = 0.0
+	-- platform_body.friction = 0.0
 	platform_body:set_position(2, 0.5, 0)
 	-- platform_body.is_sleeping = true
 
@@ -190,28 +191,40 @@ function scene:init()
 	self.root_node:attach(plane_visual)
 	plane_visual.body = plane_body
 
-	for i = 1, 1000, 1 do
+	for i = 1, 100, 1 do
+		----------- STATIC BOX ---------------
+		local platform2_body = physics.box(1, 1, 1)
+		world:add_body(platform2_body)
+		platform2_body:set_position(i, i, i)
+
+		local platform2 = BoxModel(i, i, i, 1, 1, 1)
+		platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+		self.root_node:attach(platform2)
+		platform2.body = platform2_body
+	end
+
+	for i = 1, 10, 1 do
 		------------- STATIC BOX ---------------
 		local platform2_body = physics.box(1, 1, 1)
 		world:add_body(platform2_body)
-		platform2_body:set_position(0, -4 - i, i)
+		platform2_body:set_position(-4 + i, 0, 0)
 
-		local platform2 = BoxModel(0, -4 - i, i, 1, 1, 1)
+		local platform2 = BoxModel(-4 + i, 0, 0, 1, 1, 1)
 		platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
 		self.root_node:attach(platform2)
 		platform2.body = platform2_body
 
-		-- ------------- DYNAMIC BOX ---------------
-		-- local platform2_body = physics.box(1, 1, 1)
-		-- world:add_body(platform2_body)
-		-- platform2_body:set_body_type('dynamic')
-		-- platform2_body.restitution = 0.0
-		-- platform2_body:set_position(i, -i, 0)
+		------------- DYNAMIC BOX ---------------
+		local platform2_body = physics.box(1, 1, 1)
+		world:add_body(platform2_body)
+		platform2_body:set_body_type('dynamic')
+		platform2_body.restitution = 0.0
+		platform2_body:set_position(-4 + i, 1, 0)
 
-		-- local platform2 = BoxModel(i, -i, 0, 1, 1, 1)
-		-- platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
-		-- self.root_node:attach(platform2)
-		-- platform2.body = platform2_body
+		local platform2 = BoxModel(-4 + i, 1, 0, 1, 1, 1)
+		platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+		self.root_node:attach(platform2)
+		platform2.body = platform2_body
 	end
 
 	local node = menori.objLoader.load('examples/assets/cube.obj')

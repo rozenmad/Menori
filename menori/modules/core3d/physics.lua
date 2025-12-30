@@ -148,8 +148,19 @@ function Body(self, body_type)
 
     function self:set_awake(awake)
         self.is_sleeping = awake
+
+        local material = BODY_COLORS.sleep
+
         if not awake then
             self.sleep_timer = 1
+
+            material = BODY_COLORS.dynamic
+        end
+
+        self.material:set('baseColor', material)
+
+        if self.world then
+            self.world:update_cell_dynamic_flag_for_body(self, not awake)
         end
     end
 
@@ -433,6 +444,7 @@ end
 
 function World:step(dt)
     local processed_collision = {}
+    local empty_collision = {}
 
     for cell, position in pairs(self.non_empty_cells) do
         if position[4] then -- check flag is dynamic bodies
@@ -449,28 +461,7 @@ function World:step(dt)
 
                         if not processed_collision[key] then
                             local collision = self:_check_collision(body_a, body_b)
-                            if collision then
-                                body_a:resolve_collision(collision)
-                                if body_b.inv_mass ~= 0 then
-                                    collision.normal[1] = -collision.normal[1]
-                                    collision.normal[2] = -collision.normal[2]
-                                    collision.normal[3] = -collision.normal[3]
-
-                                    if body_a.inv_mass ~= 0 and body_b.inv_mass ~= 0 then -- a and b dynamic
-                                        local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
-                                        velocity = velocity + body_b.velocity.x + body_b.velocity.y + body_b.velocity.z
-
-                                        if velocity > 0.01 and velocity < -0.01 then
-                                            body_a:set_awake(false)
-                                            body_b:set_awake(false)
-                                        end
-                                    end
-
-                                    body_b:resolve_collision(collision)
-                                end
-                            end
-
-                            processed_collision[key] = true
+                            processed_collision[key] = collision and {body_a, body_b, collision} or empty_collision
                         end
                     end
                 end
@@ -486,11 +477,37 @@ function World:step(dt)
         end
     end
 
+    for _, collision_data in pairs(processed_collision) do
+        local body_a, body_b, collision = unpack(collision_data)
+
+        if collision then
+            body_a:resolve_collision(collision)
+
+            if body_b.inv_mass ~= 0 then
+                collision.normal[1] = -collision.normal[1]
+                collision.normal[2] = -collision.normal[2]
+                collision.normal[3] = -collision.normal[3]
+
+                if body_a.inv_mass ~= 0 and body_b.inv_mass ~= 0 then -- a and b dynamic
+                    local velocity = math.abs(body_a.velocity.x) + math.abs(body_a.velocity.y) + math.abs(body_a.velocity.z)
+                    velocity = velocity + math.abs(body_b.velocity.x) + math.abs(body_b.velocity.y) + math.abs(body_b.velocity.z)
+
+                    if velocity > 0.01 then
+                        body_a:set_awake(false)
+                        body_b:set_awake(false)
+                    end
+                end
+
+                body_b:resolve_collision(collision)
+            end
+        end
+    end
+
     for _, body_a in pairs(self.dynamic_bodies) do
         if self.sleep then
-            local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
+            local velocity = math.abs(body_a.velocity.x) + math.abs(body_a.velocity.y) + math.abs(body_a.velocity.z)
 
-            if velocity < 0.01 and velocity > -0.01 then
+            if velocity < 0.01 then
                 body_a.sleep_timer = body_a.sleep_timer - dt
 
                 if body_a.sleep_timer < 0 then
@@ -720,7 +737,7 @@ local collison_handlers = {
     },
     [SHAPE.TRIANGLE] = {
         [SHAPE.BOX] = function (aabb_a, aabb_b, body_a, body_b)
-            return intersect.sphere_aabb( body_a.position, body_a.radius, aabb_b)
+            return intersect.aabb_aabb_collision(aabb_a, aabb_b)
         end,
         [SHAPE.CAPSULE] = function (aabb_a, aabb_b, body_a, body_b)
             body_b:update_capsule_points()
