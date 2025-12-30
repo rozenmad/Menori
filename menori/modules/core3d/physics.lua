@@ -268,13 +268,12 @@ function World:remove_body_in_cells(body)
         for index, v_body in pairs(arr) do
             if v_body == body then
                 table.remove(arr, index)
-                -- if not arr[1] then
-                --     self.non_empty_cells[arr] = nil
-                --     self.cells[cell_pos.z][cell_pos.y][cell_pos.x] = nil
-                -- end
                 break
             end
         end
+    end
+    if body.inv_mass ~= 0 then
+        self:update_cell_dynamic_flag_for_body(body, false)
     end
     body.in_cells = {}
 end
@@ -295,9 +294,70 @@ function World:add_body_in_cells(body)
                     table.insert(cell, body)
                     table.insert(body.in_cells, cell)
                     processd_cells[cell] = true
+
+                    if body.inv_mass ~= 0 then
+                        self:update_cell_dynamic_flag_for_body(body, true)
+                    end
                 end
             end
         end
+    end
+end
+
+function World:grid_to_cell(x, y, z)
+    return floor(x / self.cell_size) + 1,
+           floor(y / self.cell_size) + 1,
+           floor(z / self.cell_size) + 1
+end
+
+function World:grid_to_world(cx, cy, cz)
+    return (cx - 1) * self.cell_size,
+           (cy - 1) * self.cell_size,
+           (cz - 1) * self.cell_size
+end
+
+function World:aabb_to_cell_cube(minX, minY, minZ, maxX, maxY, maxZ)
+    local startCellX, startCellY, startCellZ = self:grid_to_cell(minX, minY, minZ)
+    local endCellX, endCellY, endCellZ = self:grid_to_cell(maxX, maxY, maxZ)
+
+    endCellX = math.max(endCellX, startCellX)
+    endCellY = math.max(endCellY, startCellY)
+    endCellZ = math.max(endCellZ, startCellZ)
+
+    return startCellX, startCellY, startCellZ,
+           endCellX - startCellX + 1,
+           endCellY - startCellY + 1,
+           endCellZ - startCellZ + 1
+end
+
+function World:get_cell(x, y, z)
+    local cx, cy, cz = self:grid_to_cell(x, y, z)
+    self.cells[cz] = self.cells[cz] or {}
+    self.cells[cz][cy] = self.cells[cz][cy] or {}
+
+    local cell = self.cells[cz][cy][cx]
+    if not cell then
+        cell = {}
+        self.cells[cz][cy][cx] = cell
+        self.non_empty_cells[cell] = {cz, cy, cx, false}
+    end
+
+    return cell
+end
+
+function World:update_cell_dynamic_flag_for_body(body, is_dynamic)
+    for i = #body.in_cells, 1, -1 do
+        local cell = body.in_cells[i]
+
+        local cell_has_dynamic = is_dynamic
+        if not is_dynamic then
+            for body_i = #cell, 1, -1 do
+                if cell[body_i].inv_mass ~= 0 then
+                    cell_has_dynamic = true
+                end
+            end
+        end
+        self.non_empty_cells[cell][4] = cell_has_dynamic
     end
 end
 
@@ -338,37 +398,39 @@ function World:step(dt)
     local processed_collision = {}
 
     for cell, position in pairs(self.non_empty_cells) do
-        local l = #cell
-        for i = 1, l do
-            local body_a = cell[i]
-            for j = i + 1, l do
-                local body_b = cell[j]
-
-                local key = body_a.link_name .. body_b.link_name
-
-                if not processed_collision[key] then
-                    processed_collision[key] = true
+        if position[4] then
+            local l = #cell
+            for i = 1, l do
+                local body_a = cell[i]
+                for j = i + 1, l do
+                    local body_b = cell[j]
 
                     if body_b.inv_mass ~= 0 or body_a.inv_mass ~= 0 then
-                        local collision = self:_check_collision(body_a, body_b)
-                        if collision then
-                            body_a:resolve_collision(collision)
-                            if body_b.inv_mass ~= 0 then
-                                collision.normal[1] = -collision.normal[1]
-                                collision.normal[2] = -collision.normal[2]
-                                collision.normal[3] = -collision.normal[3]
-                                body_b:resolve_collision(collision)
+                        local key = body_a.link_name .. body_b.link_name
+
+                        if not processed_collision[key] then
+                            processed_collision[key] = true
+
+                            local collision = self:_check_collision(body_a, body_b)
+                            if collision then
+                                body_a:resolve_collision(collision)
+                                if body_b.inv_mass ~= 0 then
+                                    collision.normal[1] = -collision.normal[1]
+                                    collision.normal[2] = -collision.normal[2]
+                                    collision.normal[3] = -collision.normal[3]
+                                    body_b:resolve_collision(collision)
+                                end
                             end
                         end
                     end
                 end
             end
-        end
-        if l == 0 then
-            if self.cells[position[1]] and self.cells[position[1]][position[2]] then
-                self.cells[position[1]][position[2]][position[3]] = nil
+            if l == 0 then
+                if self.cells[position[1]] and self.cells[position[1]][position[2]] then
+                    self.cells[position[1]][position[2]][position[3]] = nil
+                end
+                self.non_empty_cells[cell] = nil
             end
-            self.non_empty_cells[cell] = nil
         end
     end
 
@@ -415,96 +477,6 @@ function World:step(dt)
             body_a.force.z = 0
         end
     end
-
-    -- local bodies = self.bodies
-    -- local l = #bodies
-
-    -- for i = 2, l do
-    --     local key = bodies[i]
-    --     local j = i - 1
-
-    --     if (bodies[j].aabb_min_x > key.aabb_min_x or (bodies[j].aabb_min_x == key.aabb_min_x and bodies[j].aabb_min_z > key.aabb_min_z)) then
-    --         while j >= 1 and (bodies[j].aabb_min_x > key.aabb_min_x or (bodies[j].aabb_min_x == key.aabb_min_x and bodies[j].aabb_min_z > key.aabb_min_z)) do
-    --             bodies[j+1] = bodies[j]
-    --             j = j - 1
-    --         end
-    --         bodies[j+1] = key
-    --     end
-    -- end
-
-    -- for i = 1, l do
-    --     local body_a = bodies[i]
-    --     for i2 = i + 1, l do
-    --         local body_b = bodies[i2]
-
-    --         if body_a.aabb_max_x < body_b.aabb_min_x then
-    --             break
-    --         end
-
-    --         if body_b.aabb_min_x == body_a.aabb_min_x and
-    --            body_a.aabb_max_z < body_b.aabb_min_z then
-    --             break
-    --         end
-
-    --         if body_b.inv_mass ~= 0 or body_a.inv_mass ~= 0 then
-    --             local collision = self:_check_collision(body_a, body_b)
-    --             if collision then
-    --                 body_a:resolve_collision(collision)
-    --                 if body_b.inv_mass ~= 0 then
-    --                     collision.normal[1] = -collision.normal[1]
-    --                     collision.normal[2] = -collision.normal[2]
-    --                     collision.normal[3] = -collision.normal[3]
-    --                     body_b:resolve_collision(collision)
-    --                 end
-    --             end
-    --         end
-    --     end
-
-    --     if body_a.inv_mass ~= 0 then
-    --         if self.sleep then
-    --             local velocity = body_a.velocity.x + body_a.velocity.y + body_a.velocity.z
-    --             if velocity < 0.01 and velocity > -0.01 then
-    --                 body_a.sleep_timer = body_a.sleep_timer - dt
-    --                 if body_a.sleep_timer < 0 then
-    --                     body_a.is_sleeping = true
-    --                     body_a.material:set('baseColor', BODY_COLORS.sleep)
-    --                 end
-    --             else
-    --                 body_a.sleep_timer = 1
-    --                 if body_a.is_sleeping then
-    --                     body_a.material:set('baseColor', BODY_COLORS.dynamic)
-    --                     body_a.is_sleeping = false
-    --                 end
-    --             end
-    --         end
-
-    --         if not body_a.is_sleeping then
-    --             if body_a.use_gravity then
-    --                 body_a.force.y = body_a.force.y + self.gravity.y * body_a.mass
-    --             end
-
-    --             -- F = ma => a = F/m, v = v0 + a*dt
-    --             body_a.velocity.x = body_a.velocity.x + body_a.force.x * body_a.inv_mass * dt
-    --             body_a.velocity.y = body_a.velocity.y + body_a.force.y * body_a.inv_mass * dt
-    --             body_a.velocity.z = body_a.velocity.z + body_a.force.z * body_a.inv_mass * dt
-
-    --             body_a.velocity.x = body_a.velocity.x * 0.99
-    --             body_a.velocity.y = body_a.velocity.y * 0.99
-    --             body_a.velocity.z = body_a.velocity.z * 0.99
-
-    --             local pos = body_a.position
-    --             body_a:set_position(
-    --                 pos.x + body_a.velocity.x * dt,
-    --                 pos.y + body_a.velocity.y * dt,
-    --                 pos.z + body_a.velocity.z * dt
-    --             )
-
-    --             body_a.force.x = 0
-    --             body_a.force.y = 0
-    --             body_a.force.z = 0
-    --         end
-    --     end
-    -- end
 end
 
 local collison_handlers = {
@@ -744,47 +716,6 @@ function World:render(scene, environment)
 	scene:render_nodes(self.node, environment, {
 		node_sort_comp = Scene.alpha_mode_comp
 	})
-end
-
-function World:grid_to_cell(x, y, z)
-    return floor(x / self.cell_size) + 1,
-           floor(y / self.cell_size) + 1,
-           floor(z / self.cell_size) + 1
-end
-
-function World:grid_to_world(cx, cy, cz)
-    return (cx - 1) * self.cell_size,
-           (cy - 1) * self.cell_size,
-           (cz - 1) * self.cell_size
-end
-
-function World:aabb_to_cell_cube(minX, minY, minZ, maxX, maxY, maxZ)
-    local startCellX, startCellY, startCellZ = self:grid_to_cell(minX, minY, minZ)
-    local endCellX, endCellY, endCellZ = self:grid_to_cell(maxX, maxY, maxZ)
-
-    endCellX = math.max(endCellX, startCellX)
-    endCellY = math.max(endCellY, startCellY)
-    endCellZ = math.max(endCellZ, startCellZ)
-
-    return startCellX, startCellY, startCellZ,
-           endCellX - startCellX + 1,
-           endCellY - startCellY + 1,
-           endCellZ - startCellZ + 1
-end
-
-function World:get_cell(x, y, z)
-    local cx, cy, cz = self:grid_to_cell(x, y, z)
-    self.cells[cz] = self.cells[cz] or {}
-    self.cells[cz][cy] = self.cells[cz][cy] or {}
-
-    local cell = self.cells[cz][cy][cx]
-    if not cell then
-        cell = {}
-        self.cells[cz][cy][cx] = cell
-        self.non_empty_cells[cell] = {cz, cy, cx}
-    end
-
-    return cell
 end
 
 local Physics = class('Physics')

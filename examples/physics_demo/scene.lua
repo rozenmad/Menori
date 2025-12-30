@@ -190,7 +190,7 @@ function scene:init()
 	self.root_node:attach(plane_visual)
 	plane_visual.body = plane_body
 
-	for i = 1, 100, 1 do
+	for i = 1, 1000, 1 do
 		------------- STATIC BOX ---------------
 		local platform2_body = physics.box(1, 1, 1)
 		world:add_body(platform2_body)
