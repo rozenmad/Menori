@@ -49,6 +49,8 @@ function Body(self, body_type)
     self.restitution      = 0.5
     self.friction         = 0.3
 
+    self.is_sensor_mode   = false
+
     self.is_sleeping      = false
     self.sleep_timer      = 1
 
@@ -58,6 +60,9 @@ function Body(self, body_type)
     self.use_gravity      = true
     self.velocity         = vec3()
     self.force            = vec3()
+
+    self.mask             = 1
+    self.category         = 1
 
     self.aabb             = self:get_aabb()
     self.aabb_min_x       = self.aabb.min.x
@@ -133,20 +138,60 @@ function Body(self, body_type)
         end
     end
 
+    function self:set_mask(mask)
+        self.mask = mask
+    end
+
+    function self:get_mask()
+        return self.mask
+    end
+
+    function self:set_category(category)
+        self.category = category
+    end
+
+    function self:get_category()
+        return self.category
+    end
+
     function self:set_friction(friction)
         self.friction = friction
+    end
+
+    function self:get_friction()
+        return self.friction
     end
 
     function self:set_mass(mass)
         self.mass = mass
     end
 
+    function self:get_mass()
+        return self.mass
+    end
+
+    function self:set_sensor(is_sensor)
+        self.is_sensor_mode = is_sensor
+    end
+
+    function self:is_sensor()
+        return self.is_sensor_mode
+    end
+
     function self:set_inverse_mass(inverse_mass)
         self.inv_mass = inverse_mass
     end
 
+    function self:get_inverse_mass()
+        return self.inv_mass
+    end
+
     function self:set_restitution(restitution)
         self.restitution = restitution
+    end
+
+    function self:get_restitution()
+        return self.restitution
     end
 
     function self:set_awake(awake)
@@ -167,16 +212,28 @@ function Body(self, body_type)
         end
     end
 
+    function self:is_awake()
+        return self.is_sleeping
+    end
+
     function self:apply_force(fx, fy, fz)
         self.force.x = self.force.x + fx
         self.force.y = self.force.y + fy
         self.force.z = self.force.z + fz
     end
 
+    function self:get_force()
+        return self.force.x, self.force.y, self.force.z
+    end
+
     function self:set_velocity(vx, vy, vz)
         self.velocity.x = vx
         self.velocity.y = vy
         self.velocity.z = vz
+    end
+
+    function self:get_velocity()
+        return self.velocity.x, self.velocity.y, self.velocity.z
     end
 
     function self:remove()
@@ -192,7 +249,7 @@ function Body(self, body_type)
     end
 
     function self:resolve_collision(collision, other_body)
-        if self.inv_mass == 0 then return end
+        if self.inv_mass == 0 or self.is_sensor_mode then return end
 
         local nx, ny, nz = collision.normal[1], collision.normal[2], collision.normal[3]
 
@@ -491,6 +548,35 @@ function World:remove_body(body)
     body.world = nil
 end
 
+local has_category = function (mask, category)
+    return floor(mask / category) % 2 == 1
+end
+do
+    local success, bit
+
+    if not success and _G['bit'] then
+        success, bit = true, _G['bit']
+    end
+
+    if not success and _G['bit32'] then
+        success, bit = true, _G['bit32']
+    end
+
+    if not success and type(jit) == 'table' and jit.status() then
+        success, bit = pcall(require, 'bit')
+    end
+
+    if not success then
+        success, bit = pcall(require, 'bit32')
+    end
+
+    if success and bit then
+        has_category = function(mask, category)
+            return bit.band(mask, category) ~= 0
+        end
+    end
+end
+
 function World:step(dt)
     local processed_collision = {}
 
@@ -507,11 +593,14 @@ function World:step(dt)
 
                 for j = i - 1, 1, -1 do
                     local body_b = cell[j]
-                    local key = body_a.link_name .. body_b.link_name
 
-                    if not processed_collision[key] then
-                        local collision = self:_check_collision(body_a, body_b)
-                        processed_collision[key] = collision and {body_a, body_b, collision} or nil
+                    if has_category(body_a.mask, body_b.category) and has_category(body_b.mask, body_a.category) then
+                        local key = body_a.link_name .. body_b.link_name
+
+                        if not processed_collision[key] then
+                            local collision = self:_check_collision(body_a, body_b)
+                            processed_collision[key] = collision and {body_a, body_b, collision} or nil
+                        end
                     end
                 end
             end

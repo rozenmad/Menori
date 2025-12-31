@@ -80,7 +80,9 @@ function scene:init()
 	world:add_body(platform_body)
 	platform_body:set_body_type('dynamic')
 	platform_body.restitution = 0.0
+	-- platform_body:set_sensor(true)
 	-- platform_body.is_sleeping = true
+	-- platform_body:set_mask(2)
 
 	local platform = BoxModel(2, 0.5, 0, 1, 1, 1)
 	platform_body:set_position(2, 0.5, 0)
@@ -153,6 +155,7 @@ function scene:init()
 	platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
 	self.root_node:attach(platform2)
 	platform2.body = platform2_body
+	-- platform2_body:set_category(2)
 
 	------------- STATIC BOX ---------------
 	local platform2_body = physics.box(1, 1, 1)
