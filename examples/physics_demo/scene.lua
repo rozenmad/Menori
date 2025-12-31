@@ -75,36 +75,50 @@ function scene:init()
 	local world = physics.world(64, -9.81, true)
 	self.world = world
 
-	-------------- PLAYER BOX ---------------
-	-- local platform_body = physics.box(1, 1, 1)
+	------------ PLAYER BOX ---------------
+	local platform_body = physics.box(1, 1, 1)
+	world:add_body(platform_body)
+	platform_body:set_body_type('dynamic')
+	platform_body.restitution = 0.0
+	-- platform_body.is_sleeping = true
+
+	local platform = BoxModel(2, 0.5, 0, 1, 1, 1)
+	platform_body:set_position(2, 0.5, 0)
+	platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
+	self.platform = platform
+	self.root_node:attach(platform)
+	platform.body = platform_body
+
+	-- ------------ PLAYER PLANE ---------------
+	-- local platform_body = physics.plane(2, 2, 1, 1)
 	-- world:add_body(platform_body)
 	-- platform_body:set_body_type('dynamic')
 	-- platform_body.restitution = 0.0
 	-- -- platform_body.is_sleeping = true
 
-	-- local platform = BoxModel(2, 0.5, 0, 1, 1, 1)
+	-- local platform = PlaneModel(2, 0.5, 0, 2, 2, 1, 1)
 	-- platform_body:set_position(2, 0.5, 0)
 	-- platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
 	-- self.platform = platform
 	-- self.root_node:attach(platform)
 	-- platform.body = platform_body
 
-	-------------- PLAYER CAPSULE ---------------
-	local platform_body = physics.capsule(0.5, 1)
-	world:add_body(platform_body)
-	platform_body:set_body_type('dynamic')
-	platform_body.restitution = 0.0
-	-- platform_body.friction = 0.0
-	platform_body:set_position(2, 0.5, 0)
-	-- platform_body.is_sleeping = true
+	-- -------------- PLAYER CAPSULE ---------------
+	-- local platform_body = physics.capsule(0.5, 1)
+	-- world:add_body(platform_body)
+	-- platform_body:set_body_type('dynamic')
+	-- platform_body.restitution = 0.0
+	-- -- platform_body.friction = 0.0
+	-- platform_body:set_position(2, 0.5, 0)
+	-- -- platform_body.is_sleeping = true
 
-	local platform = CapsuleModel(2, 0.5, 0, 0.5, 1)
-	platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
-	self.platform = platform
-	self.root_node:attach(platform)
-	platform.body = platform_body
+	-- local platform = CapsuleModel(2, 0.5, 0, 0.5, 1)
+	-- platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
+	-- self.platform = platform
+	-- self.root_node:attach(platform)
+	-- platform.body = platform_body
 
-	-------------- PLAYER TRIANGLE ---------------
+	-- ------------ PLAYER TRIANGLE ---------------
 	-- local platform_body = physics.triangle({0, 2, 0},{-2, 0, 1}, {2, 0, -1})
 	-- world:add_body(platform_body)
 	-- platform_body:set_body_type('dynamic')
@@ -117,7 +131,7 @@ function scene:init()
 	-- self.root_node:attach(platform)
 	-- platform.body = platform_body
 
-	-------------- PLAYER SPHERE ---------------
+	-- ------------ PLAYER SPHERE ---------------
 	-- local platform_body = physics.sphere(0.5)
 	-- world:add_body(platform_body)
 	-- platform_body:set_body_type('dynamic')
@@ -173,9 +187,9 @@ function scene:init()
 	------------- STATIC SPHERE ---------------
 	local platform2_body = physics.sphere(0.5)
 	world:add_body(platform2_body)
-	platform2_body:set_position(-2, 0, 0)
+	platform2_body:set_position(-10, -1, 0)
 
-	local platform2 = SphereModel(-2, 0, 0, 0.5)
+	local platform2 = SphereModel(-2, -1, 0, 0.5)
 	platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
 	self.root_node:attach(platform2)
 	platform2.body = platform2_body

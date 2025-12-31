@@ -607,7 +607,15 @@ local collison_handlers = {
             return intersect.aabb_aabb_collision(aabb_a, aabb_b)
         end,
         [SHAPE.SPHERE] = function (aabb_a, aabb_b, body_a, body_b)
-            return intersect.sphere_aabb(body_b.position, body_b.radius, aabb_a)
+            local hit = intersect.sphere_aabb(body_b.position, body_b.radius, aabb_a)
+
+            if hit then
+                hit.normal[1] = -hit.normal[1]
+                hit.normal[2] = -hit.normal[2]
+                hit.normal[3] = -hit.normal[3]
+            end
+
+            return hit
         end,
         [SHAPE.TRIANGLE] = function (aabb_a, aabb_b, body_a, body_b)
             return intersect.aabb_aabb_collision(aabb_a, aabb_b)
@@ -750,7 +758,15 @@ local collison_handlers = {
             return intersect.aabb_aabb_collision(aabb_a, aabb_b)
         end,
         [SHAPE.SPHERE] = function (aabb_a, aabb_b, body_a, body_b)
-            return intersect.sphere_aabb(body_b.position, body_b.radius, aabb_a)
+            local hit = intersect.sphere_aabb(body_b.position, body_b.radius, aabb_a)
+
+            if hit then
+                hit.normal[1] = -hit.normal[1]
+                hit.normal[2] = -hit.normal[2]
+                hit.normal[3] = -hit.normal[3]
+            end
+
+            return hit
         end,
         [SHAPE.TRIANGLE] = function (aabb_a, aabb_b, body_a, body_b)
             return intersect.aabb_aabb_collision(aabb_a, aabb_b)
@@ -768,7 +784,7 @@ local collison_handlers = {
             return intersect.sphere_aabb( body_a.position, body_a.radius, aabb_b)
         end,
         [SHAPE.SPHERE] = function (aabb_a, aabb_b, body_a, body_b)
-            return intersect.sphere_aabb( body_b.position, body_b.radius, aabb_a)
+            return intersect.sphere_sphere( body_b.position, body_b.radius, body_a.position, body_a.radius)
         end,
         [SHAPE.TRIANGLE] = function (aabb_a, aabb_b, body_a, body_b)
             return intersect.sphere_aabb( body_a.position, body_a.radius, aabb_b)
@@ -815,7 +831,15 @@ local collison_handlers = {
             return intersect.aabb_aabb_collision(aabb_a, aabb_b)
         end,
         [SHAPE.SPHERE] = function (aabb_a, aabb_b, body_a, body_b)
-            return intersect.sphere_aabb( body_b.position, body_b.radius, aabb_a)
+            local hit = intersect.sphere_aabb(body_b.position, body_b.radius, aabb_a)
+
+            if hit then
+                hit.normal[1] = -hit.normal[1]
+                hit.normal[2] = -hit.normal[2]
+                hit.normal[3] = -hit.normal[3]
+            end
+
+            return hit
         end,
         [SHAPE.TRIANGLE] = function (aabb_a, aabb_b, body_a, body_b)
             return intersect.aabb_aabb_collision(aabb_a, aabb_b)
