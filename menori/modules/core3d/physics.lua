@@ -17,6 +17,9 @@ local ModelNode    = require (modules .. 'core3d.model_node')
 local vec3         = ml.vec3
 local intersect    = ml.intersect
 local floor        = math.floor
+local sqrt         = math.sqrt
+local abs          = math.abs
+local max          = math.max
 
 local Box          = require(modules .. 'core3d.shapes.box')
 local Sphere       = require(modules .. 'core3d.shapes.sphere')
@@ -368,9 +371,9 @@ function World:aabb_to_cell_cube(minX, minY, minZ, maxX, maxY, maxZ)
     local startCellX, startCellY, startCellZ = self:grid_to_cell(minX, minY, minZ)
     local endCellX, endCellY, endCellZ       = self:grid_to_cell(maxX, maxY, maxZ)
 
-    endCellX = math.max(endCellX, startCellX)
-    endCellY = math.max(endCellY, startCellY)
-    endCellZ = math.max(endCellZ, startCellZ)
+    endCellX = max(endCellX, startCellX)
+    endCellY = max(endCellY, startCellY)
+    endCellZ = max(endCellZ, startCellZ)
 
     return startCellX, startCellY, startCellZ,
            endCellX - startCellX + 1,
@@ -444,7 +447,6 @@ end
 
 function World:step(dt)
     local processed_collision = {}
-    local empty_collision = {}
 
     for cell, position in pairs(self.non_empty_cells) do
         if position[4] then -- check flag is dynamic bodies
@@ -461,7 +463,7 @@ function World:step(dt)
 
                         if not processed_collision[key] then
                             local collision = self:_check_collision(body_a, body_b)
-                            processed_collision[key] = collision and {body_a, body_b, collision} or empty_collision
+                            processed_collision[key] = collision and {body_a, body_b, collision} or nil
                         end
                     end
                 end
@@ -488,11 +490,11 @@ function World:step(dt)
                 collision.normal[2] = -collision.normal[2]
                 collision.normal[3] = -collision.normal[3]
 
-                if body_a.inv_mass ~= 0 and body_b.inv_mass ~= 0 then -- a and b dynamic
-                    local velocity = math.abs(body_a.velocity.x) + math.abs(body_a.velocity.y) + math.abs(body_a.velocity.z)
-                    velocity = velocity + math.abs(body_b.velocity.x) + math.abs(body_b.velocity.y) + math.abs(body_b.velocity.z)
+                if body_a.inv_mass ~= 0 then
+                    local velocity = abs(body_a.velocity.x) + abs(body_a.velocity.y) + abs(body_a.velocity.z)
+                    velocity = velocity + abs(body_b.velocity.x) + abs(body_b.velocity.y) + abs(body_b.velocity.z)
 
-                    if velocity > 0.01 then
+                    if velocity > 0.02 then
                         body_a:set_awake(false)
                         body_b:set_awake(false)
                     end
@@ -505,7 +507,7 @@ function World:step(dt)
 
     for _, body_a in pairs(self.dynamic_bodies) do
         if self.sleep then
-            local velocity = math.abs(body_a.velocity.x) + math.abs(body_a.velocity.y) + math.abs(body_a.velocity.z)
+            local velocity = abs(body_a.velocity.x) + abs(body_a.velocity.y) + abs(body_a.velocity.z)
 
             if velocity < 0.01 then
                 body_a.sleep_timer = body_a.sleep_timer - dt
@@ -800,6 +802,176 @@ function World:_check_collision(body_a, body_b)
     end
 
     return intersect.aabb_aabb_collision(aabb_a, aabb_b)
+end
+
+function World:_raycast_body(ray, body, max_distance)
+    local ray_def = {
+        origin = ray.origin,
+        direction = ray.direction
+    }
+
+    local hit = nil
+
+    if body.shape_id == SHAPE.BOX then
+        local aabb = body.aabb
+        hit = intersect.ray_aabb(ray_def, aabb)
+    elseif body.shape_id == SHAPE.SPHERE then
+        hit = intersect.ray_sphere(ray_def, body.position, body.radius)
+    elseif body.shape_id == SHAPE.CAPSULE then
+        body:update_capsule_points()
+
+        hit = intersect.ray_capsule(ray_def, body.p0, body.p1, body.radius)
+    elseif body.shape_id == SHAPE.TRIANGLE then
+        local mat = body.world_matrix
+
+        local world_v1 = mat:multiply_vec3(vec3(body.v1[1], body.v1[2], body.v1[3]))
+        local world_v2 = mat:multiply_vec3(vec3(body.v2[1], body.v2[2], body.v2[3]))
+        local world_v3 = mat:multiply_vec3(vec3(body.v3[1], body.v3[2], body.v3[3]))
+
+        local triangle = {world_v1, world_v2, world_v3}
+        hit = intersect.ray_triangle(ray_def, triangle, false)
+    elseif body.shape_id == SHAPE.PLANE then
+        local mat = body.world_matrix
+
+        local normal = mat:multiply_vec3(vec3(0, 1, 0)) - mat:multiply_vec3(vec3(0, 0, 0))
+        normal = normal:normalize()
+
+        local position = body.position
+        hit = intersect.ray_plane(ray_def, position, normal)
+    end
+
+    if hit and hit.t > 0 and hit.t <= max_distance then
+        return hit
+    end
+
+    return nil
+end
+
+function World:raycast(start_x, start_y, start_z, end_x, end_y, end_z)
+    local ray = {
+        origin = vec3(start_x, start_y, start_z),
+        direction = vec3(end_x - start_x, end_y - start_y, end_z - start_z)
+    }
+
+    local dir_length = ray.direction:length()
+    if dir_length > 0 then
+        ray.direction = ray.direction:normalize()
+    else
+        return {}
+    end
+
+    local ray_length = dir_length
+
+    local cells_to_check = self:get_cells_along_ray(ray.origin, ray.direction, ray_length)
+
+    local all_hits = {}
+    local processed_bodies = {}
+
+    for _, cell_coords in pairs(cells_to_check) do
+        local cell = self:get_cell(cell_coords[1], cell_coords[2], cell_coords[3])
+
+        for _, body in pairs(cell) do
+            if not processed_bodies[body] then
+                local hit = self:_raycast_body(ray, body, ray_length)
+                if hit then
+                    local distance = sqrt(
+                        (hit.point[1] - start_x)^2 +
+                        (hit.point[2] - start_y)^2 +
+                        (hit.point[3] - start_z)^2
+                    )
+
+                    table.insert(all_hits, {
+                        body = body,
+                        point = hit.point,
+                        normal = hit.normal,
+                        distance = distance,
+                        fraction = distance / ray_length
+                    })
+
+                    processed_bodies[body] = true
+                end
+            end
+        end
+    end
+
+    table.sort(all_hits, function(a, b)
+        return a.distance < b.distance
+    end)
+
+    return all_hits
+end
+
+function World:get_cells_along_ray(start, direction, max_distance)
+    local cells = {}
+
+    local stepX, stepY, stepZ
+    local tMaxX, tMaxY, tMaxZ
+    local tDeltaX, tDeltaY, tDeltaZ
+
+    local current_cell_x, current_cell_y, current_cell_z =
+        self:grid_to_cell(start.x, start.y, start.z)
+
+    if direction.x > 0 then
+        stepX = 1
+        tMaxX = ((current_cell_x * self.cell_size) - start.x) / direction.x
+    else
+        stepX = -1
+        tMaxX = (((current_cell_x - 1) * self.cell_size) - start.x) / direction.x
+    end
+
+    if direction.y > 0 then
+        stepY = 1
+        tMaxY = ((current_cell_y * self.cell_size) - start.y) / direction.y
+    else
+        stepY = -1
+        tMaxY = (((current_cell_y - 1) * self.cell_size) - start.y) / direction.y
+    end
+
+    if direction.z > 0 then
+        stepZ = 1
+        tMaxZ = ((current_cell_z * self.cell_size) - start.z) / direction.z
+    else
+        stepZ = -1
+        tMaxZ = (((current_cell_z - 1) * self.cell_size) - start.z) / direction.z
+    end
+
+    tDeltaX = self.cell_size / abs(direction.x)
+    tDeltaY = self.cell_size / abs(direction.y)
+    tDeltaZ = self.cell_size / abs(direction.z)
+
+    local traveled = 0
+
+    while traveled < max_distance do
+        table.insert(cells, {current_cell_x, current_cell_y, current_cell_z})
+
+        if tMaxX < tMaxY then
+            if tMaxX < tMaxZ then
+                traveled = tMaxX
+                tMaxX = tMaxX + tDeltaX
+                current_cell_x = current_cell_x + stepX
+            else
+                traveled = tMaxZ
+                tMaxZ = tMaxZ + tDeltaZ
+                current_cell_z = current_cell_z + stepZ
+            end
+        else
+            if tMaxY < tMaxZ then
+                traveled = tMaxY
+                tMaxY = tMaxY + tDeltaY
+                current_cell_y = current_cell_y + stepY
+            else
+                traveled = tMaxZ
+                tMaxZ = tMaxZ + tDeltaZ
+                current_cell_z = current_cell_z + stepZ
+            end
+        end
+
+        if current_cell_x < 1 or current_cell_y < 1 or current_cell_z < 1 then
+            break
+        end
+    end
+
+    return cells
 end
 
 function World:remove()

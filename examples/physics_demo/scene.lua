@@ -243,6 +243,10 @@ function scene:update(dt)
 	local platform_body_position = self.platform.body.position
 	self.platform:set_position(platform_body_position.x, platform_body_position.y, platform_body_position.z)
 
+	-- local hits = self.world:raycast(platform_body_position.x - 0.25, platform_body_position.y - 0.5, platform_body_position.z,
+	-- 	platform_body_position.x - 5, platform_body_position.y - 0.5, platform_body_position.z)
+	-- print(#hits)
+
 	self.world:step(dt)
 
 	if love.keyboard.isDown('space') then
