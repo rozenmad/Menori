@@ -191,7 +191,7 @@ function Body(self, body_type)
         end
     end
 
-    function self:resolve_collision(collision)
+    function self:resolve_collision(collision, other_body)
         if self.inv_mass == 0 then return end
 
         local nx, ny, nz = collision.normal[1], collision.normal[2], collision.normal[3]
@@ -203,15 +203,55 @@ function Body(self, body_type)
             pos.z + nz * collision.depth
         )
 
-        local dot_product = self.velocity.x * nx + self.velocity.y * ny + self.velocity.z * nz
-        if dot_product < 0 then
-            self.velocity.x = self.velocity.x - nx * dot_product * (1 + self.restitution)
-            self.velocity.y = self.velocity.y - ny * dot_product * (1 + self.restitution)
-            self.velocity.z = self.velocity.z - nz * dot_product * (1 + self.restitution)
+        local relative_velocity_x, relative_velocity_y, relative_velocity_z
+            = self.velocity.x, self.velocity.y, self.velocity.z
+
+        if other_body and other_body.inv_mass ~= 0 then
+            relative_velocity_x = self.velocity.x - other_body.velocity.x
+            relative_velocity_y = self.velocity.y - other_body.velocity.y
+            relative_velocity_z = self.velocity.z - other_body.velocity.z
         end
 
-        self.velocity.x = self.velocity.x * (1 - self.friction)
-        self.velocity.z = self.velocity.z * (1 - self.friction)
+        local velocity_along_normal = relative_velocity_x * nx +
+                                      relative_velocity_y * ny +
+                                      relative_velocity_z * nz
+
+        if velocity_along_normal > 0 then
+            return
+        end
+
+        local restitution = math.min(self.restitution,
+            (other_body and other_body.restitution) or 0)
+
+        local impulse_scalar = -(1 + restitution) * velocity_along_normal
+
+        if other_body and other_body.inv_mass ~= 0 then
+            impulse_scalar = impulse_scalar / (self.inv_mass + other_body.inv_mass)
+        else
+            impulse_scalar = impulse_scalar / self.inv_mass
+        end
+
+        local impulse_x = impulse_scalar * nx
+        local impulse_y = impulse_scalar * ny
+        local impulse_z = impulse_scalar * nz
+
+        self.velocity.x = self.velocity.x + impulse_x * self.inv_mass
+        self.velocity.y = self.velocity.y + impulse_y * self.inv_mass
+        self.velocity.z = self.velocity.z + impulse_z * self.inv_mass
+
+        if other_body and other_body.inv_mass ~= 0 then
+            other_body.velocity.x = other_body.velocity.x - impulse_x * other_body.inv_mass
+            other_body.velocity.y = other_body.velocity.y - impulse_y * other_body.inv_mass
+            other_body.velocity.z = other_body.velocity.z - impulse_z * other_body.inv_mass
+        end
+
+        local friction = self.friction
+        if other_body then
+            friction = math.max(friction, other_body.friction)
+        end
+
+        self.velocity.x = self.velocity.x * (1 - friction)
+        self.velocity.z = self.velocity.z * (1 - friction)
     end
 end
 
@@ -483,24 +523,14 @@ function World:step(dt)
         local body_a, body_b, collision = unpack(collision_data)
 
         if collision then
-            body_a:resolve_collision(collision)
+            body_a:resolve_collision(collision, body_b)
 
             if body_b.inv_mass ~= 0 then
                 collision.normal[1] = -collision.normal[1]
                 collision.normal[2] = -collision.normal[2]
                 collision.normal[3] = -collision.normal[3]
 
-                if body_a.inv_mass ~= 0 then
-                    local velocity = abs(body_a.velocity.x) + abs(body_a.velocity.y) + abs(body_a.velocity.z)
-                    velocity = velocity + abs(body_b.velocity.x) + abs(body_b.velocity.y) + abs(body_b.velocity.z)
-
-                    if velocity > 0.02 then
-                        body_a:set_awake(false)
-                        body_b:set_awake(false)
-                    end
-                end
-
-                body_b:resolve_collision(collision)
+                body_b:resolve_collision(collision, body_a)
             end
         end
     end
@@ -509,7 +539,7 @@ function World:step(dt)
         if self.sleep then
             local velocity = abs(body_a.velocity.x) + abs(body_a.velocity.y) + abs(body_a.velocity.z)
 
-            if velocity < 0.01 then
+            if velocity < 0.1 then
                 body_a.sleep_timer = body_a.sleep_timer - dt
 
                 if body_a.sleep_timer < 0 then

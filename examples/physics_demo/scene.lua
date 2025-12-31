@@ -218,7 +218,7 @@ function scene:init()
 		local platform2_body = physics.box(1, 1, 1)
 		world:add_body(platform2_body)
 		platform2_body:set_body_type('dynamic')
-		platform2_body.restitution = 0.0
+		-- platform2_body.restitution = 0.0
 		platform2_body:set_position(-4 + i, 1, 0)
 
 		local platform2 = BoxModel(-4 + i, 1, 0, 1, 1, 1)
