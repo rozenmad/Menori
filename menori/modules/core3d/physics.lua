@@ -338,9 +338,10 @@ function CapsuleModel:init(radius, height)
 
     function self:update_capsule_points()
         local half = self.height * 0.5
-        local mat = self.world_matrix
-        self.p0 = mat:multiply_vec3(vec3(0, -half, 0))
-        self.p1 = mat:multiply_vec3(vec3(0, half, 0))
+        local mat  = self.world_matrix
+
+        self.p0   = mat:multiply_vec3(vec3(0, -half, 0))
+        self.p1   = mat:multiply_vec3(vec3(0, half, 0))
     end
 
     Body(self, 'static')
@@ -404,19 +405,31 @@ function World:init(cell_size, gravity_y, sleep)
 end
 
 function World:remove_body_in_cells(body)
-    for i = #body.in_cells, 1, -1 do
-        local cell = body.in_cells[i]
+    if body.inv_mass ~= 0 then
+        for i = #body.in_cells, 1, -1 do
+            local cell = body.in_cells[i]
 
-        for index, v_body in pairs(cell) do
-            if v_body == body then
-                table.remove(cell, index)
-                break
+            for index = #cell, 1, -1 do
+                if cell[index] == body then
+                    table.remove(cell, index)
+                    break
+                end
             end
         end
-    end
 
-    if body.inv_mass ~= 0 then
         self:update_cell_dynamic_flag_for_body(body, false)
+    else
+        for i = #body.in_cells, 1, -1 do
+            local cell = body.in_cells[i]
+            local l = #cell
+
+            for index = 1, l do
+                if cell[index] == body then
+                    table.remove(cell, index)
+                    break
+                end
+            end
+        end
     end
 
     body.in_cells = {}

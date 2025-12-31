@@ -72,7 +72,7 @@ function scene:init()
 
 	self.root_node = menori.Node()
 
-	local world = physics.world(64, -9.81, true)
+	local world = physics.world(12, -9.81, true)
 	self.world = world
 
 	------------ PLAYER BOX ---------------
