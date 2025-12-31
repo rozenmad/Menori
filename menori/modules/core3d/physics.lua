@@ -381,11 +381,13 @@ function World:add_body_in_cells(body)
                 local cell = self:get_cell(x, y, z)
 
                 if not processd_cells[cell] then
-                    table.insert(cell, body)
                     table.insert(body.in_cells, cell)
 
                     if body.inv_mass ~= 0 then
+                        table.insert(cell, body)
                         self:update_cell_dynamic_flag_for_body(body, true)
+                    else
+                        table.insert(cell, 1, body)
                     end
 
                     processd_cells[cell] = true
@@ -444,7 +446,11 @@ function World:update_cell_dynamic_flag_for_body(body, is_dynamic)
 
         if not is_dynamic then
             for body_i = #cell, 1, -1 do
-                if not (cell[body_i].inv_mass == 0 and cell[body_i].is_sleeping) then
+                if cell[body_i].inv_mass == 0 then
+                    break
+                end
+
+                if not cell[body_i].is_sleeping then
                     cell_has_dynamic = true
                     break
                 end
@@ -492,19 +498,20 @@ function World:step(dt)
         if position[4] then -- check flag is dynamic bodies
             local l = #cell
 
-            for i = 1, l do
+            for i = l, 1, -1 do
                 local body_a = cell[i]
 
-                for j = i + 1, l do
+                if body_a.inv_mass == 0 then
+                    break
+                end
+
+                for j = i - 1, 1, -1 do
                     local body_b = cell[j]
+                    local key = body_a.link_name .. body_b.link_name
 
-                    if body_b.inv_mass ~= 0 or body_a.inv_mass ~= 0 then -- a or b dynamic
-                        local key = body_a.link_name .. body_b.link_name
-
-                        if not processed_collision[key] then
-                            local collision = self:_check_collision(body_a, body_b)
-                            processed_collision[key] = collision and {body_a, body_b, collision} or nil
-                        end
+                    if not processed_collision[key] then
+                        local collision = self:_check_collision(body_a, body_b)
+                        processed_collision[key] = collision and {body_a, body_b, collision} or nil
                     end
                 end
             end
@@ -539,7 +546,7 @@ function World:step(dt)
         if self.sleep then
             local velocity = abs(body_a.velocity.x) + abs(body_a.velocity.y) + abs(body_a.velocity.z)
 
-            if velocity < 0.1 then
+            if velocity < 0.25 then
                 body_a.sleep_timer = body_a.sleep_timer - dt
 
                 if body_a.sleep_timer < 0 then

@@ -219,9 +219,9 @@ function scene:init()
 		world:add_body(platform2_body)
 		platform2_body:set_body_type('dynamic')
 		-- platform2_body.restitution = 0.0
-		platform2_body:set_position(-4 + i, 1, 0)
+		platform2_body:set_position(-4 + i, 2, 0)
 
-		local platform2 = BoxModel(-4 + i, 1, 0, 1, 1, 1)
+		local platform2 = BoxModel(-4 + i, 2, 0, 1, 1, 1)
 		platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
 		self.root_node:attach(platform2)
 		platform2.body = platform2_body
