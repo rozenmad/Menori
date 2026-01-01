@@ -594,7 +594,7 @@ function World:step(dt)
     local processed_collision = {}
 
     for cell, position in pairs(self.non_empty_cells) do
-        if position[4] then -- check flag is dynamic bodies
+        if position[4] then
             local l = #cell
 
             for i = l, 1, -1 do

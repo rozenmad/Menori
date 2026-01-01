@@ -72,7 +72,7 @@ function scene:init()
 
 	self.root_node = menori.Node()
 
-	local world = physics.world(12, -9.81, true)
+	local world = physics.world(10, -9.81, true)
 	self.world = world
 
 	------------ PLAYER BOX ---------------
@@ -231,17 +231,19 @@ function scene:init()
 		self.root_node:attach(platform2)
 		platform2.body = platform2_body
 
-		------------- DYNAMIC BOX ---------------
-		local platform2_body = physics.box(1, 1, 1)
-		world:add_body(platform2_body)
-		platform2_body:set_body_type('dynamic')
-		-- platform2_body.restitution = 0.0
-		platform2_body:set_position(-4 + i, 2, 0)
+		if i % 2 ~= 0 then
+			------------- DYNAMIC BOX ---------------
+			local platform2_body = physics.box(1, 1, 1)
+			world:add_body(platform2_body)
+			platform2_body:set_body_type('dynamic')
+			-- platform2_body.restitution = 0.0
+			platform2_body:set_position(-4 + i, 2, 0)
 
-		local platform2 = BoxModel(-4 + i, 2, 0, 1, 1, 1)
-		platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
-		self.root_node:attach(platform2)
-		platform2.body = platform2_body
+			local platform2 = BoxModel(-4 + i, 2, 0, 1, 1, 1)
+			platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+			self.root_node:attach(platform2)
+			platform2.body = platform2_body
+		end
 	end
 
 	local node = menori.objLoader.load('examples/assets/cube.obj')
