@@ -1,4 +1,4 @@
--- Camera in one player physics Menori
+-- Camera in one player physics Menori (ported to new physics API)
 --[[
 -------------------------------------------------------------------------------
 	Menori
@@ -13,14 +13,13 @@ local ml = menori.ml
 local vec3 = ml.vec3
 local quat = ml.quat
 
-local physics = menori.Physics()
+local physics = menori.Physics
 
 local scene = menori.Scene:extend('physics_scene')
 
 local BoxModel = menori.ModelNode:extend('BoxModel')
 function BoxModel:init(x, y, z, w, h, d)
 	BoxModel.super.init(self, menori.Box(w, h, d))
-
 	self:set_position(x, y, z)
 	self.is_box = true
 end
@@ -43,75 +42,67 @@ function scene:init()
 
 	self.root_node = menori.Node()
 
-	local world = physics.world(10, -9.81, true)
-	self.world = world
+	self.world = physics.newWorld({0, -9.81, 0})
 
-    self.dynamic_bodies = {}
+    self.physics_objects = {}
 
 	------------ PLAYER CAPSULE ---------------
-	local platform_body = physics.capsule(0.5, 1.8)
-	world:add_body(platform_body)
-	platform_body:set_body_type('dynamic')
-	platform_body.restitution = 0.0
-	platform_body.friction = 0.0
-	platform_body:set_position(0, 0, 0)
+	local capsuleShape = physics.newShape("capsule", 0.5, 1.8)
+
+	local platform_body = physics.newBody(self.world, capsuleShape, 1, {0, 0, 0})
+	platform_body:setRestitution(0.0)
+	platform_body:setDamping(0.1, 0.1)
+	platform_body:setFriction(1)
+	platform_body:setAngularFactor(0, 0, 0)
 
 	local platform = CapsuleModel(0, 0, 0, 0.5, 1.8)
 	platform.material:set('baseColor', {0.4, 0.9, 0.7, 1})
 	self.platform = platform
 	self.root_node:attach(platform)
 	platform.body = platform_body
-    table.insert(self.dynamic_bodies, {platform_body, platform})
+    table.insert(self.physics_objects, {visual = platform, body = platform_body})
 
-	-- local gltf = menori.glTFLoader.load('examples/assets/etrian_odyssey_3_monk.glb')
-	-- local scenes = menori.NodeTreeBuilder.create(gltf, function (scene, builder)
-	-- 	self.animations = menori.glTFAnimations(builder.animations)
-	-- 	self.animations:set_action(1)
-	-- end)
-	-- self.root_node:attach(scenes[1])
-
-	------------- STATIC BOX ---------------
-    for x = -10, 10, 1 do
+	------------- СТАТИЧЕСКАЯ ТЕРРАЙН И ОБЪЕКТЫ ---------------
+	for x = -10, 10, 1 do
         for z = -10, 10, 1 do
-	        local platform2_body = physics.box(1, 1, 1)
-	        world:add_body(platform2_body)
-            platform2_body:set_position(x, -2, z)
-            platform2_body.friction = 0.1
-			platform2_body.restitution = 0.0
+			local boxShape = physics.newShape("box", 0.5, 0.5, 0.5)
+			local platform2_body = physics.newBody(self.world, boxShape, 0, {x, -2, z})
+			platform2_body:setRestitution(0.0)
+			platform2_body:setFriction(1)
 
-	        local platform2 = BoxModel(x, -2, z, 1, 1, 1)
-	        platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
-	        self.root_node:attach(platform2)
-	        platform2.body = platform2_body
+			local platform2 = BoxModel(x, -2, z, 1, 1, 1)
+			platform2.material:set('baseColor', {0.9, 0.4, 0.4, 1})
+			self.root_node:attach(platform2)
+			platform2.body = platform2_body
+			table.insert(self.physics_objects, {visual = platform2, body = platform2_body})
 
-            if x % 6 == 0 and z % 6 == 0 then
-	            local platform2_body = physics.box(1, 1, 1)
-	            world:add_body(platform2_body)
-                platform2_body:set_body_type('dynamic')
-                platform2_body:set_position(x, -1, z)
-                platform2_body.friction = 0.0
-                platform2_body.restitution = 0.0
+            if x % 5 == 0 and z % 5 == 0 then
+				local boxShape2 = physics.newShape("box", 0.5, 0.5, 0.5)
+				local platform3_body = physics.newBody(self.world, boxShape2, 1, {x, -1, z})
+				platform3_body:setRestitution(0.0)
+				platform3_body:setDamping(0.1, 0.1)
+				platform3_body:setFriction(1)
 
-	            local platform2 = BoxModel(x, -1, z, 1, 1, 1)
-	            platform2.material:set('baseColor', {0.2, 0.4, 0.4, 1})
-	            self.root_node:attach(platform2)
-	            platform2.body = platform2_body
+				local platform3 = BoxModel(x, -1, z, 1, 1, 1)
+				platform3.material:set('baseColor', {0.2, 0.4, 0.4, 1})
+				self.root_node:attach(platform3)
+				platform3.body = platform3_body
 
-                table.insert(self.dynamic_bodies, {platform2_body, platform2})
+				table.insert(self.physics_objects, {visual = platform3, body = platform3_body})
             end
 
             if math.random(1, 100) == 1 then
-                for y = 1, math.random(1, 25), 1 do
-	                local platform2_body = physics.box(1, 1, 1)
-	                world:add_body(platform2_body)
-                    platform2_body:set_position(x, -2 + y, z)
-                    platform2_body.friction = 0.1
-					platform2_body.restitution = 0.0
+                for y = 1, math.random(1, 20), 1 do
+					local boxShape3 = physics.newShape("box", 0.5, 0.5, 0.5)
+					local platform4_body = physics.newBody(self.world, boxShape3, 0, {x, -2 + y, z})
+					platform4_body:setRestitution(0.0)
+					platform4_body:setFriction(1)
 
-	                local platform2 = BoxModel(x, -2 + y, z, 1, 1, 1)
-	                platform2.material:set('baseColor', {0.9, 0.9, 0.4, 1})
-	                self.root_node:attach(platform2)
-	                platform2.body = platform2_body
+					local platform4 = BoxModel(x, -2 + y, z, 1, 1, 1)
+					platform4.material:set('baseColor', {0.9, 0.9, 0.4, 1})
+					self.root_node:attach(platform4)
+					platform4.body = platform4_body
+					table.insert(self.physics_objects, {visual = platform4, body = platform4_body})
                 end
             end
         end
@@ -123,46 +114,57 @@ function scene:init()
 
 	local screen_w, screen_h = love.graphics.getDimensions()
 	love.mouse.setPosition(screen_w/2, screen_h/2)
-
     love.mouse.setVisible(false)
 end
 
 function scene:update(dt)
-	self.world:step(dt)
+	self.world:update(dt)
 
-    for index, body in ipairs(self.dynamic_bodies) do
-	    local platform_body_position = body[1].position
-	    body[2]:set_position(platform_body_position.x, platform_body_position.y, platform_body_position.z)
-    end
+	for _, obj in ipairs(self.physics_objects) do
+		local x, y, z = obj.body:getPosition()
+		obj.visual:set_position(x, y, z)
+
+		local rx, ry, rz, rw = obj.body:getRotation()
+		obj.visual:set_rotation(quat(rx, ry, rz, rw))
+	end
 
 	if love.keyboard.isDown('space') then
-		self.platform.body:set_velocity(self.platform.body.velocity.x, 5, self.platform.body.velocity.z)
+		local x, y, z = self.platform.body:getLinearVelocity()
+		self.platform.body:setLinearVelocity(x, 5, z)
 	end
-	if love.keyboard.isDown('s') then
-		self.platform.body:set_velocity(
-			math.sin(self.camera_yaw) * -3,
-			self.platform.body.velocity.y,
-			math.cos(self.camera_yaw) * -3
-		)
-	end
+
 	if love.keyboard.isDown('w') then
-		self.platform.body:set_velocity(
+		local x, y, z = self.platform.body:getLinearVelocity()
+		self.platform.body:setLinearVelocity(
 			math.sin(self.camera_yaw) * 3,
-			self.platform.body.velocity.y,
+			y,
 			math.cos(self.camera_yaw) * 3
 		)
 	end
+
+	if love.keyboard.isDown('s') then
+		local x, y, z = self.platform.body:getLinearVelocity()
+		self.platform.body:setLinearVelocity(
+			math.sin(self.camera_yaw) * -3,
+			y,
+			math.cos(self.camera_yaw) * -3
+		)
+	end
+
 	if love.keyboard.isDown('a') then
-    	self.platform.body:set_velocity(
+		local x, y, z = self.platform.body:getLinearVelocity()
+		self.platform.body:setLinearVelocity(
 			math.sin(self.camera_yaw + math.pi/2) * 3,
-			self.platform.body.velocity.y,
+			y,
 			math.cos(self.camera_yaw + math.pi/2) * 3
 		)
 	end
+
 	if love.keyboard.isDown('d') then
-		self.platform.body:set_velocity(
+		local x, y, z = self.platform.body:getLinearVelocity()
+		self.platform.body:setLinearVelocity(
 			math.sin(self.camera_yaw - math.pi/2) * 3,
-			self.platform.body.velocity.y,
+			y,
 			math.cos(self.camera_yaw - math.pi/2) * 3
 		)
 	end
@@ -173,7 +175,8 @@ function scene:update(dt)
 end
 
 function scene:update_first_person_camera()
-	local player_pos = self.platform.position
+	local x, y, z = self.platform.body:getPosition()
+	local player_pos = vec3(x, y, z)
 
 	local forward = vec3(
 		math.sin(self.camera_yaw) * math.cos(self.camera_pitch),
@@ -182,7 +185,6 @@ function scene:update_first_person_camera()
 	):normalize()
 
 	local right = vec3.cross(forward, vec3(0, 1, 0)):normalize()
-
 	local up = vec3.cross(right, forward):normalize()
 
 	local eye_height = 1.4
@@ -197,11 +199,9 @@ end
 function scene:render()
 	love.graphics.clear(0.3, 0.25, 0.2)
 
-	-- self:render_nodes(self.root_node, self.environment, {
-	-- 	node_sort_comp = menori.Scene.alpha_mode_comp
-	-- })
-
-    self.world:render(self, self.environment)
+	self:render_nodes(self.root_node, self.environment, {
+		node_sort_comp = menori.Scene.alpha_mode_comp
+	})
 
 	local mx, my = love.graphics.getDimensions()
 	love.graphics.setColor(1, 1, 1, 0.8)
@@ -221,6 +221,18 @@ function scene:mousemoved(x, y, dx, dy)
 
 	local screen_w, screen_h = love.graphics.getDimensions()
 	love.mouse.setPosition(screen_w/2, screen_h/2)
+end
+
+function scene:keypressed(key)
+	if key == 'escape' then
+		love.event.quit()
+	end
+
+	if key == 'r' then
+		self.platform.body:setPosition(0, 0, 0)
+		self.platform.body:setLinearVelocity(0, 0, 0)
+		self.platform.body:setAngularVelocity(0, 0, 0)
+	end
 end
 
 return scene

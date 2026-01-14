@@ -2,7 +2,7 @@ local menori = require 'menori'
 
 local scene_iterator = 1
 local example_list = {
-	{ title = "Minimal", path = "examples.physics.scene" },
+	-- { title = "Minimal", path = "examples.physics.scene" },
 	-- { title = "Minimal", path = "examples.minimal.scene" },
 	-- { title = "Basic Lighting", path = "examples.basic_lighting.scene" },
 	-- { title = "SSAO", path = "examples.SSAO.scene" },
