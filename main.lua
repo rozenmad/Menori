@@ -2,14 +2,13 @@ local menori = require 'menori'
 
 local scene_iterator = 1
 local example_list = {
-	-- { title = "Minimal", path = "examples.physics.scene" },
-	-- { title = "Minimal", path = "examples.minimal.scene" },
-	-- { title = "Basic Lighting", path = "examples.basic_lighting.scene" },
-	-- { title = "SSAO", path = "examples.SSAO.scene" },
-	-- { title = "RaycastBVH", path = "examples.raycast_bvh.scene" },
-	-- { title = "CollisionDemo", path = "examples.сollision_demo.scene" },
-	-- { title = "Physics_Demo", path = "examples.physics_demo.scene" },
-	-- { title = "Physics", path = "examples.physics.scene" },
+	{ title = "Minimal", path = "examples.minimal.scene" },
+	{ title = "Basic Lighting", path = "examples.basic_lighting.scene" },
+	{ title = "SSAO", path = "examples.SSAO.scene" },
+	{ title = "RaycastBVH", path = "examples.raycast_bvh.scene" },
+	{ title = "CollisionDemo", path = "examples.сollision_demo.scene" },
+	{ title = "Physics_Demo", path = "examples.physics_demo.scene" },
+	{ title = "Physics", path = "examples.physics.scene" },
 }
 for _, v in ipairs(example_list) do
 	local Scene = require(v.path)
