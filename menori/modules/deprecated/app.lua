@@ -12,9 +12,6 @@ The main class for managing scenes and the viewport.
 ]]
 --- @classmod App
 
-local modules = (...):match('(.*%menori.modules.)')
-
-local lovg = love.graphics
 local app_mt = {}
 app_mt.__index = app_mt
 

@@ -7,6 +7,8 @@ local example_list = {
 	{ title = "SSAO", path = "examples.SSAO.scene" },
 	{ title = "RaycastBVH", path = "examples.raycast_bvh.scene" },
 	{ title = "CollisionDemo", path = "examples.сollision_demo.scene" },
+	{ title = "Physics_Demo", path = "examples.physics_demo.scene" },
+	{ title = "Physics", path = "examples.physics.scene" },
 }
 for _, v in ipairs(example_list) do
 	local Scene = require(v.path)

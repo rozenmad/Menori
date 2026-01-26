@@ -17,8 +17,6 @@ local ModelNode = require (modules .. 'core3d.model_node')
 local Mesh = require (modules .. 'core3d.mesh')
 local Material = require (modules .. 'core3d.material')
 
-local ShaderUtils = require (modules .. 'shaders.utils')
-
 local ml = require (modules .. 'ml')
 local mat4 = ml.mat4
 local vec3 = ml.vec3

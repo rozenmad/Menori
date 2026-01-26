@@ -182,7 +182,7 @@ function Node:_recursive_get_aabb(t)
 	end
 
 	if #self.children > 0 then
-		for i, v in ipairs(self.children) do
+		for _, v in ipairs(self.children) do
 			v:_recursive_get_aabb(t)
 		end
 	end

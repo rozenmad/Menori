@@ -85,13 +85,13 @@ function InstancedMesh:_reallocate(current_count)
 end
 
 function InstancedMesh:_attach_buffer()
-	for i, v in ipairs(self.instanced_format) do
+	for _, v in ipairs(self.instanced_format) do
 		self.lg_mesh:attachAttribute(v.name, self.instanced_mesh_buffer, "perinstance")
 	end
 end
 
 function InstancedMesh:_detach_buffer()
-	for i, v in ipairs(self.instanced_format) do
+	for _, v in ipairs(self.instanced_format) do
 		self.lg_mesh:detachAttribute(v.name)
 	end
 end
